@@ -9,3 +9,9 @@ This is setup to be used with Docker for easy dependency requirements. You can d
 docker-compose build && docker-compose run --rm conv
 
 Output will be put into a subfolder `out`.
+
+Documentation
+=============
+
+ * https://docs.google.com/spreadsheets/d/1SiUVvauhdNSpAfHgds-vQpjAXYs34lFD8wSOZdkyCgY/edit?usp=sharing - MIAPPE spec
+ * https://docs.google.com/spreadsheets/d/1RE_lXBFY4FsFcJcPAr-3QTlvKz4azedLob18ONrGZj0/edit?usp=sharing - BrAPI <-> MIAPPE mapping
