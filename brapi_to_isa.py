@@ -3,7 +3,65 @@ import isatools.isatab
 import os
 import requests
 
-SERVER = 'https://www.eu-sol.wur.nl/webapi/tomato/brapi/v1/'
+EU_SOL_BRAPI_V1 = 'https://www.eu-sol.wur.nl/webapi/tomato/brapi/v1/'
+PIPPA_BRAPI_V1 = "https://pippa.psb.ugent.be/pippa_experiments/brapi/v1/"
+
+
+def get_brapi_trials(endpoint):
+    """Returns all the trials from an endpoint."""
+    page = 0
+    pagesize = 10
+    maxcount = None
+    while maxcount == None or page*pagesize < maxcount:
+        params = {'page':page,'pageSize':pagesize}
+        r = requests.get(endpoint+'trials', params=params)
+        if r.status_code != requests.codes.ok:
+            raise RuntimeError("Non-200 status code")
+        maxcount = int(r.json()['metadata']['pagination']['totalCount'])
+        for trial in r.json()['result']['data']:
+            yield trial
+        page += 1
+
+def get_brapi_study(endpoint, study_id):
+    """Returns a study from an endpoint, given its id."""
+    url = endpoint + 'studies/' + str(study_id)
+    r = requests.get(url)
+    if r.status_code != requests.codes.ok:
+        raise RuntimeError("Non-200 status code")
+    study = r.json()['result']
+    return study
+
+
+def create_isa_study(endpoint, brapi_study_id):
+    brapi_study = get_brapi_study(endpoint, brapi_study_id)
+    study = Study(filename="s_study.txt")
+    study.identifier = brapi_study['studyDbId']
+    study.title = brapi_study['name']
+    study.comments.append(Comment("Study Start Date", brapi_study['startDate']))
+    study.comments.append(Comment("Study End Date", brapi_study['endDate']))
+    study.comments.append(Comment("Study Geographical Location", brapi_study['location']['locationName']))
+    return study
+
+
+## Creating ISA objects
+def create_isa_investigations(endpoint):
+    investigations = []
+    for trial in trials:
+        #print(trial)
+        investigation = Investigation()
+        investigation.identifier = trial['trialDbId']
+        investigation.title = trial['trialName']
+        investigation.comments.append(Comment("Investigation Start Date", trial['startDate']))
+        investigation.comments.append(Comment("Investigation End Date", trial['endDate']))
+        investigation.comments.append(Comment("Active", trial['active']))
+
+        for study in trial['studies']:
+            study = create_isa_study(endpoint,study['studyDbId'])
+            investigation.studies.append(study)
+            investigations.append(investigation)
+    return investigations
+
+
 
 def create_descriptor():
     """Returns a simple but complete ISA-Tab 1.0 descriptor for illustration."""
@@ -164,93 +222,19 @@ def create_descriptor():
     return investigation
     
 
-def load_trials():
-    page = 0
-    pagesize = 10
-    maxcount = None
-    while maxcount == None or page*pagesize < maxcount:
-        params = {'page':page,'pageSize':pagesize}
-        r = requests.get(SERVER+'trials', params=params)
-        if r.status_code != requests.codes.ok:
-            raise RuntimeError("Non-200 status code")
-        maxcount = int(r.json()['metadata']['pagination']['totalCount'])
-        for trial in r.json()['result']['data']:
-            yield trial
-        page += 1
-
-
-#investigation = create_descriptor()
-#investigation = Investigation()
-
-#for trial in load_trials():
-#    print(trial['trialDbId'])
-
-#isatools.isatab.dump(investigation, output_path='./out/')  # dumps() writes out the ISA as a string representation of the ISA-Tab
-
-
-def get_brapi_trials(endpoint):
-    page = 0
-    pagesize = 10
-    maxcount = None
-    while maxcount == None or page*pagesize < maxcount:
-        params = {'page':page,'pageSize':pagesize}
-        r = requests.get(endpoint+'trials', params=params)
-        if r.status_code != requests.codes.ok:
-            raise RuntimeError("Non-200 status code")
-        maxcount = int(r.json()['metadata']['pagination']['totalCount'])
-        for trial in r.json()['result']['data']:
-            yield trial
-        page += 1
-
-
-def get_brapi_study(study_id):
-        url = SERVER+'studies/'+str(study_id)
-        r = requests.get(url)
-        if r.status_code != requests.codes.ok:
-            raise RuntimeError("Non-200 status code")
-        study = r.json()['result']
-        return study
-
-
-def create_isa_study(brapi_study_id):
-    brapi_study = get_brapi_study(brapi_study_id)
-    study = Study(filename="s_study.txt")
-    study.identifier = brapi_study['studyDbId']
-    study.title = brapi_study['name']
-    study.comments.append(Comment("Study Start Date", brapi_study['startDate']))
-    study.comments.append(Comment("Study End Date", brapi_study['endDate']))
-    study.comments.append(Comment("Study Geographical Location", brapi_study['location']['locationName']))
-    return study
-
-
-## Creating ISA objects
-def create_isa_investigations():
-    investigations = []
-    for trial in trials:
-        #print(trial)
-        investigation = Investigation()
-        investigation.identifier = trial['trialDbId']
-        investigation.title = trial['trialName']
-        investigation.comments.append(Comment("Investigation Start Date", trial['startDate']))
-        investigation.comments.append(Comment("Investigation End Date", trial['endDate']))
-        investigation.comments.append(Comment("Active", trial['active']))
-
-        for study in trial['studies']:
-            study = create_isa_study(study['studyDbId'])
-            investigation.studies.append(study)
-            investigations.append(investigation)
-    return investigations
-
-
-
-trials = get_brapi_trials(SERVER)
-investigations = create_isa_investigations()
+#### Creating ISA-Tab from EU_SOL_BRAPI_V1 data
+trials = get_brapi_trials(EU_SOL_BRAPI_V1)
+investigations = create_isa_investigations(EU_SOL_BRAPI_V1)
 
 if not os.path.exists("output"):
     os.makedirs("output")
 
+if not os.path.exists("output/eu_sol"):
+    os.makedirs("output/eu_sol")
+
+
 for investigation in investigations:
-    directory = "output/trial_"+str(investigation.identifier)
+    directory = "output/eu_sol/trial_"+str(investigation.identifier)
     if not os.path.exists(directory):
         os.makedirs(directory)
     isatools.isatab.dump(investigation, directory)
