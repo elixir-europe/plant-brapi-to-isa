@@ -182,10 +182,13 @@ def paging(url,params,data,method):
         print('retrieving page',page,'of',maxcount,'from',url)
         
         if method == 'GET':
+            print("GETing",url)
             r = requests.get(url, params=params,data=data)
         elif method == 'PUT':
+            print("PUTing",url)
             r = requests.put(url, params=params,data=data)
         elif method == 'POST':
+            print("POSTing",url)
             r = requests.post(url, params=params,data=data)
             
         if r.status_code != requests.codes.ok:
@@ -210,7 +213,6 @@ def get_study(studyId):
         raise RuntimeError("Non-200 status code")
     return r.json()["result"]
     
-    
 def get_germplasm_in_study(studyId):
     #can't find anyone that implements /studies/{id}/germplasm
     #have to do it as an phenotype search instead
@@ -220,6 +222,86 @@ def get_germplasm_in_study(studyId):
         germplasm.add(phenotype['germplasmDbId'])
     return germplasm
     
+def get_germplasm(germplasm_id):
+    #url = SERVER+'germplasm/'+str(germplasm_id)
+    #r = requests.get(url)
+    #if r.status_code != requests.codes.ok:
+    #    raise RuntimeError("Non-200 status code")
+    #germplasm = r.json()['result']
+    
+    url = SERVER+'germplasm-search?germplasmDbId='+str(germplasm_id)
+    print('GETing',url)
+    r = requests.get(url)
+    if r.status_code != requests.codes.ok:
+        raise RuntimeError("Non-200 status code")
+    germplasm = r.json()['result']['data'][0]
+    
+    
+    return germplasm
+
+def get_brapi_study(study_id):
+    url = SERVER+'studies/'+str(study_id)
+    r = requests.get(url)
+    if r.status_code != requests.codes.ok:
+        raise RuntimeError("Non-200 status code")
+    study = r.json()['result']
+    return study
+
+def create_isa_study(brapi_study_id):
+    brapi_study = get_brapi_study(brapi_study_id)
+    #print(brapi_study)
+    study = Study(filename="s_study.txt")
+    study.identifier = brapi_study['studyDbId']
+    if 'name' in brapi_study:
+        study.title = brapi_study['name']
+    elif 'studyName' in brapi_study:
+        study.title = brapi_study['studyName']
+    
+    study.comments.append(Comment("Study Start Date", brapi_study['startDate']))
+    study.comments.append(Comment("Study End Date", brapi_study['endDate']))
+    if 'location' in brapi_study and 'locationName' in brapi_study['location']:
+        study.comments.append(Comment("Study Geographical Location", brapi_study['location']['locationName']))
+    return study
+    
+    
+def create_isa_characteristic(category, value):
+    if category == None or len(category) == 0:
+        return None
+    if value == None or len(value) == 0:
+        return None
+    return Characteristic(category, str(value))
+    
+def create_isa_material(germplasm_id):
+    g = get_germplasm(germplasm_id)
+    characteristics = []
+    
+    validcategories = set()
+    validcategories.add("germplasmSeedSource")
+    validcategories.add("typeOfGermplasmStorageCode")
+    validcategories.add("acquisitionDate")
+    validcategories.add("defaultDisplayName")
+    validcategories.add("germplasmPUI")
+    validcategories.add("synonyms")
+    validcategories.add("speciesAuthority")
+    validcategories.add("species")
+    validcategories.add("subtaxa")
+    validcategories.add("accessionNumber")
+    validcategories.add("pedigree")
+    validcategories.add("subtaxaAuthority")
+    validcategories.add("instituteCode")
+    validcategories.add("germplasmName")
+    validcategories.add("instituteName")
+    validcategories.add("commonCropName")
+    validcategories.add("germplasmDbId")
+    validcategories.add("genus")
+    validcategories.add("biologicalStatusOfAccessionCode")
+    validcategories.add("countryOfOriginCode")
+    
+    for category in g:
+        if category in validcategories:
+            characteristics.append(create_isa_characteristic(category,g[category]))
+    
+    return Sample(germplasm_id, characteristics = characteristics)
 
 #investigation = create_descriptor()
 #investigation = Investigation()
@@ -230,35 +312,20 @@ def get_germplasm_in_study(studyId):
 #    for study in trial['studies']:
 #        study = get_study(study['studyDbId'])
 
-germplasm = get_germplasm_in_study('VIB_study___49')
-print(germplasm)
-
-#isatools.isatab.dump(investigation, output_path='./out/')  # dumps() writes out the ISA as a string representation of the ISA-Tab
-
-
-def get_brapi_study(study_id):
-        url = SERVER+'studies/'+str(study_id)
-        r = requests.get(url)
-        if r.status_code != requests.codes.ok:
-            raise RuntimeError("Non-200 status code")
-        study = r.json()['result']
-        return study
-
-
-def create_isa_study(brapi_study_id):
-    brapi_study = get_brapi_study(brapi_study_id)
-    print(brapi_study)
-    study = Study(filename="s_study.txt")
-    study.identifier = brapi_study['studyDbId']
-    study.title = brapi_study['name']
-    study.comments.append(Comment("Study Start Date", brapi_study['startDate']))
-    study.comments.append(Comment("Study End Date", brapi_study['endDate']))
-    study.comments.append(Comment("Study Geographical Location", brapi_study['location']['locationName']))
-    return study
-
+study_id = 'VIB_study___49'
+#germplasm = get_germplasm_in_study(study_id)
+#this is really slow and broken, so cheat for now!
+all_germplasm = ('Zea_VIB___1','Zea_VIB___2','Zea_VIB___3','Zea_VIB___4')
+print(all_germplasm)
 
 ## Creating ISA objects
 investigation = Investigation()
-study = create_isa_study(2)
+study = create_isa_study(study_id)
 investigation.studies.append(study)
-isatools.isatab.dump(investigation, "output")
+
+for germplasm_id in all_germplasm:
+    study.materials['samples'].append(create_isa_material(germplasm_id))
+
+#isatools.isatab.dump(investigation, output_path='./out/')  # dumps() writes out the ISA as a string representation of the ISA-Tab
+isatools.isatab.dumps(investigation)
+isatools.isatab.dump(isa_obj=investigation, output_path='./out/')
