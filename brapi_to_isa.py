@@ -197,20 +197,20 @@ def get_brapi_study(study_id):
         return study
 
 
-def createISAstudy(brapi_study_id):
-    investigation = Investigation()
+def create_isa_study(brapi_study_id):
     brapi_study = get_brapi_study(brapi_study_id)
     print(brapi_study)
     study = Study(filename="s_study.txt")
     study.identifier = brapi_study['studyDbId']
     study.title = brapi_study['name']
-    #study.submission_date = "2016-11-03"
-    #study.public_release_date = "2016-11-03"
-    study.comments.append(Comment("locationName", brapi_study['location']['locationName']))
-    investigation.studies.append(study)
-    return investigation
+    study.comments.append(Comment("Study Start Date", brapi_study['startDate']))
+    study.comments.append(Comment("Study End Date", brapi_study['endDate']))
+    study.comments.append(Comment("Study Geographical Location", brapi_study['location']['locationName']))
+    return study
 
 
-investigation = createISAstudy(2)
-
+## Creating ISA objects
+investigation = Investigation()
+study = create_isa_study(2)
+investigation.studies.append(study)
 isatools.isatab.dump(investigation, "output")
