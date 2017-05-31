@@ -56,6 +56,14 @@ def get_germplasms(endpoint):
     germplasms = r.json()['result']['data']
     return germplasms
 
+def get_germplasm(endpoint, germplasm_id):
+    url = endpoint + "germplasm-search" + str(germplasm_id)
+    r = requests.get(url)
+    if r.status_code != requests.codes.ok:
+        raise RuntimeError("Non-200 status code")
+    study = r.json()['result']
+    return study
+
 ###########################################################
 ## Creating ISA objects
 ###########################################################
