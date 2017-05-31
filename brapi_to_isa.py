@@ -182,8 +182,35 @@ def load_trials():
 #investigation = create_descriptor()
 #investigation = Investigation()
 
-for trial in load_trials():
-    print(trial['trialDbId'])
+#for trial in load_trials():
+#    print(trial['trialDbId'])
 
 #isatools.isatab.dump(investigation, output_path='./out/')  # dumps() writes out the ISA as a string representation of the ISA-Tab
 
+
+def get_brapi_study(study_id):
+        url = SERVER+'studies/'+str(study_id)
+        r = requests.get(url)
+        if r.status_code != requests.codes.ok:
+            raise RuntimeError("Non-200 status code")
+        study = r.json()['result']
+        return study
+
+
+def createISAstudy(brapi_study_id):
+    investigation = Investigation()
+    brapi_study = get_brapi_study(brapi_study_id)
+    print(brapi_study)
+    study = Study(filename="s_study.txt")
+    study.identifier = brapi_study['studyDbId']
+    study.title = brapi_study['name']
+    #study.submission_date = "2016-11-03"
+    #study.public_release_date = "2016-11-03"
+    study.comments.append(Comment("locationName", brapi_study['location']['locationName']))
+    investigation.studies.append(study)
+    return investigation
+
+
+investigation = createISAstudy(2)
+
+isatools.isatab.dump(investigation, "output")
