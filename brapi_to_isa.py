@@ -1,6 +1,6 @@
 from isatools.model.v1 import *
 import isatools.isatab
-
+import os
 import requests
 
 SERVER = 'https://www.eu-sol.wur.nl/webapi/tomato/brapi/v1/'
@@ -188,6 +188,21 @@ def load_trials():
 #isatools.isatab.dump(investigation, output_path='./out/')  # dumps() writes out the ISA as a string representation of the ISA-Tab
 
 
+def get_brapi_trials(endpoint):
+    page = 0
+    pagesize = 10
+    maxcount = None
+    while maxcount == None or page*pagesize < maxcount:
+        params = {'page':page,'pageSize':pagesize}
+        r = requests.get(endpoint+'trials', params=params)
+        if r.status_code != requests.codes.ok:
+            raise RuntimeError("Non-200 status code")
+        maxcount = int(r.json()['metadata']['pagination']['totalCount'])
+        for trial in r.json()['result']['data']:
+            yield trial
+        page += 1
+
+
 def get_brapi_study(study_id):
         url = SERVER+'studies/'+str(study_id)
         r = requests.get(url)
@@ -199,7 +214,6 @@ def get_brapi_study(study_id):
 
 def create_isa_study(brapi_study_id):
     brapi_study = get_brapi_study(brapi_study_id)
-    print(brapi_study)
     study = Study(filename="s_study.txt")
     study.identifier = brapi_study['studyDbId']
     study.title = brapi_study['name']
@@ -210,7 +224,33 @@ def create_isa_study(brapi_study_id):
 
 
 ## Creating ISA objects
-investigation = Investigation()
-study = create_isa_study(2)
-investigation.studies.append(study)
-isatools.isatab.dump(investigation, "output")
+def create_isa_investigations():
+    investigations = []
+    for trial in trials:
+        #print(trial)
+        investigation = Investigation()
+        investigation.identifier = trial['trialDbId']
+        investigation.title = trial['trialName']
+        investigation.comments.append(Comment("Investigation Start Date", trial['startDate']))
+        investigation.comments.append(Comment("Investigation End Date", trial['endDate']))
+        investigation.comments.append(Comment("Active", trial['active']))
+
+        for study in trial['studies']:
+            study = create_isa_study(study['studyDbId'])
+            investigation.studies.append(study)
+            investigations.append(investigation)
+    return investigations
+
+
+
+trials = get_brapi_trials(SERVER)
+investigations = create_isa_investigations()
+
+if not os.path.exists("output"):
+    os.makedirs("output")
+
+for investigation in investigations:
+    directory = "output/trial_"+str(investigation.identifier)
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+    isatools.isatab.dump(investigation, directory)
