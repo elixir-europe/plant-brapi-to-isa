@@ -235,3 +235,30 @@ print(germplasm)
 
 #isatools.isatab.dump(investigation, output_path='./out/')  # dumps() writes out the ISA as a string representation of the ISA-Tab
 
+
+def get_brapi_study(study_id):
+        url = SERVER+'studies/'+str(study_id)
+        r = requests.get(url)
+        if r.status_code != requests.codes.ok:
+            raise RuntimeError("Non-200 status code")
+        study = r.json()['result']
+        return study
+
+
+def create_isa_study(brapi_study_id):
+    brapi_study = get_brapi_study(brapi_study_id)
+    print(brapi_study)
+    study = Study(filename="s_study.txt")
+    study.identifier = brapi_study['studyDbId']
+    study.title = brapi_study['name']
+    study.comments.append(Comment("Study Start Date", brapi_study['startDate']))
+    study.comments.append(Comment("Study End Date", brapi_study['endDate']))
+    study.comments.append(Comment("Study Geographical Location", brapi_study['location']['locationName']))
+    return study
+
+
+## Creating ISA objects
+investigation = Investigation()
+study = create_isa_study(2)
+investigation.studies.append(study)
+isatools.isatab.dump(investigation, "output")
