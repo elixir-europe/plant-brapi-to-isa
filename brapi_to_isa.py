@@ -6,7 +6,10 @@ import requests
 EU_SOL_BRAPI_V1 = 'https://www.eu-sol.wur.nl/webapi/tomato/brapi/v1/'
 PIPPA_BRAPI_V1 = "https://pippa.psb.ugent.be/pippa_experiments/brapi/v1/"
 
+
+###########################################################
 ### Get info from BrAPI
+###########################################################
 
 def get_brapi_trials(endpoint):
     """Returns all the trials from an endpoint."""
@@ -25,7 +28,6 @@ def get_brapi_trials(endpoint):
 
 def get_brapi_study(endpoint, study_id):
     """Returns a study from an endpoint, given its id."""
-
     ###dealing with differences in the endpoints
     if (endpoint==EU_SOL_BRAPI_V1):
         url = endpoint + 'studies/' + str(study_id)
@@ -37,31 +39,23 @@ def get_brapi_study(endpoint, study_id):
     study = r.json()['result']
     return study
 
-
-def create_isa_study(endpoint, brapi_study_id):
-    brapi_study = get_brapi_study(endpoint, brapi_study_id)
-    study = Study(filename="s_study.txt")
-    study.identifier = brapi_study['studyDbId']
-    study.title = brapi_study['name']
-    study.comments.append(Comment("Study Start Date", brapi_study['startDate']))
-    study.comments.append(Comment("Study End Date", brapi_study['endDate']))
-    study.comments.append(Comment("Study Geographical Location", brapi_study['location']['locationName']))
-    return study
-
 def get_phenotypes(endpoint):
+    """Returns a phenotype information from a BrAPI endpoint."""
     url = endpoint + "phenotype-search"
     r = requests.get(url)
     if r.status_code != requests.codes.ok:
         raise RuntimeError("Non-200 status code")
-    study = r.json()['result']['data']
-    return study
+    phenotypes = r.json()['result']['data']
+    return phenotypes
 
-
+###########################################################
 ## Creating ISA objects
+###########################################################
+
 def create_isa_investigations(endpoint):
+    """Create ISA investigations from a BrAPI endpoint, starting from the trials information"""
     investigations = []
     for trial in get_brapi_trials(endpoint):
-        #print(trial)
         investigation = Investigation()
         investigation.identifier = trial['trialDbId']
         investigation.title = trial['trialName']
@@ -75,7 +69,29 @@ def create_isa_investigations(endpoint):
             investigations.append(investigation)
     return investigations
 
+def create_materials(endpoint):
+    """Create ISA studies from a BrAPI endpoint, starting from the studies, where there is no trial information."""
+    for phenotype in get_phenotypes(endpoint):
+        print(phenotype)
+        ### for now, creating the sample name combining studyDbId and potDbId - eventually this should be observationUnitDbId
+        sample_name = phenotype['studyDbId']+"_"+phenotype['potDbId']
+        sample = Sample(sample_name)
+        source = Source(phenotype['germplasmName'], phenotype['germplasmDbId'])
+        sample.derives_from = source
+        print(sample)
+        print(source)
 
+
+def create_isa_study(endpoint, brapi_study_id):
+    """Returns an ISA study given a BrAPI endpoints and a BrAPI study identifier."""
+    brapi_study = get_brapi_study(endpoint, brapi_study_id)
+    study = Study(filename="s_study.txt")
+    study.identifier = brapi_study['studyDbId']
+    study.title = brapi_study['name']
+    study.comments.append(Comment("Study Start Date", brapi_study['startDate']))
+    study.comments.append(Comment("Study End Date", brapi_study['endDate']))
+    study.comments.append(Comment("Study Geographical Location", brapi_study['location']['locationName']))
+    return study
 
 def create_descriptor():
     """Returns a simple but complete ISA-Tab 1.0 descriptor for illustration."""
@@ -237,7 +253,6 @@ def create_descriptor():
 
 
 #### Creating ISA-Tab from EU_SOL_BRAPI_V1 data
-# trials = get_brapi_trials(EU_SOL_BRAPI_V1)
 # investigations = create_isa_investigations(EU_SOL_BRAPI_V1)
 #
 # if not os.path.exists("output"):
@@ -255,7 +270,5 @@ def create_descriptor():
 
 ### Creating ISA-Tab from PIPPA endpoint data
 
-phenotypes = get_phenotypes(PIPPA_BRAPI_V1)
+#create_materials(PIPPA_BRAPI_V1)
 
-for phenotype in phenotypes:
-    print(phenotype)
