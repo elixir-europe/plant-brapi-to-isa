@@ -48,6 +48,14 @@ def get_phenotypes(endpoint):
     phenotypes = r.json()['result']['data']
     return phenotypes
 
+def get_germplasms(endpoint):
+    url = endpoint + "germplasm-search"
+    r = requests.get(url)
+    if r.status_code != requests.codes.ok:
+        raise RuntimeError("Non-200 status code")
+    germplasms = r.json()['result']['data']
+    return germplasms
+
 ###########################################################
 ## Creating ISA objects
 ###########################################################
@@ -74,12 +82,10 @@ def create_materials(endpoint):
     for phenotype in get_phenotypes(endpoint):
         print(phenotype)
         ### for now, creating the sample name combining studyDbId and potDbId - eventually this should be observationUnitDbId
-        sample_name = phenotype['studyDbId']+"_"+phenotype['potDbId']
+        sample_name = phenotype['studyDbId']+"_"+phenotype['plotNumber']
         sample = Sample(sample_name)
         source = Source(phenotype['germplasmName'], phenotype['germplasmDbId'])
         sample.derives_from = source
-        print(sample)
-        print(source)
 
 
 def create_isa_study(endpoint, brapi_study_id):
@@ -271,4 +277,8 @@ def create_descriptor():
 ### Creating ISA-Tab from PIPPA endpoint data
 
 #create_materials(PIPPA_BRAPI_V1)
+
+germplasms = get_germplasms(PIPPA_BRAPI_V1)
+for germplasm in germplasms:
+    print(germplasm)
 
