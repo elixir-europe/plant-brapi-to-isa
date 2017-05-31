@@ -6,6 +6,7 @@ import requests
 EU_SOL_BRAPI_V1 = 'https://www.eu-sol.wur.nl/webapi/tomato/brapi/v1/'
 PIPPA_BRAPI_V1 = "https://pippa.psb.ugent.be/pippa_experiments/brapi/v1/"
 
+### Get info from BrAPI
 
 def get_brapi_trials(endpoint):
     """Returns all the trials from an endpoint."""
@@ -24,7 +25,12 @@ def get_brapi_trials(endpoint):
 
 def get_brapi_study(endpoint, study_id):
     """Returns a study from an endpoint, given its id."""
-    url = endpoint + 'studies/' + str(study_id)
+
+    ###dealing with differences in the endpoints
+    if (endpoint==EU_SOL_BRAPI_V1):
+        url = endpoint + 'studies/' + str(study_id)
+    elif (endpoint==PIPPA_BRAPI_V1):
+        url = endpoint + 'studies-search/' + str(study_id)
     r = requests.get(url)
     if r.status_code != requests.codes.ok:
         raise RuntimeError("Non-200 status code")
@@ -42,11 +48,19 @@ def create_isa_study(endpoint, brapi_study_id):
     study.comments.append(Comment("Study Geographical Location", brapi_study['location']['locationName']))
     return study
 
+def get_phenotypes(endpoint):
+    url = endpoint + "phenotype-search"
+    r = requests.get(url)
+    if r.status_code != requests.codes.ok:
+        raise RuntimeError("Non-200 status code")
+    study = r.json()['result']['data']
+    return study
+
 
 ## Creating ISA objects
 def create_isa_investigations(endpoint):
     investigations = []
-    for trial in trials:
+    for trial in get_brapi_trials(endpoint):
         #print(trial)
         investigation = Investigation()
         investigation.identifier = trial['trialDbId']
@@ -220,21 +234,28 @@ def create_descriptor():
 
     study.assays.append(assay)
     return investigation
-    
+
 
 #### Creating ISA-Tab from EU_SOL_BRAPI_V1 data
-trials = get_brapi_trials(EU_SOL_BRAPI_V1)
-investigations = create_isa_investigations(EU_SOL_BRAPI_V1)
+# trials = get_brapi_trials(EU_SOL_BRAPI_V1)
+# investigations = create_isa_investigations(EU_SOL_BRAPI_V1)
+#
+# if not os.path.exists("output"):
+#     os.makedirs("output")
+#
+# if not os.path.exists("output/eu_sol"):
+#     os.makedirs("output/eu_sol")
+#
+#
+# for investigation in investigations:
+#     directory = "output/eu_sol/trial_"+str(investigation.identifier)
+#     if not os.path.exists(directory):
+#         os.makedirs(directory)
+#     isatools.isatab.dump(investigation, directory)
 
-if not os.path.exists("output"):
-    os.makedirs("output")
+### Creating ISA-Tab from PIPPA endpoint data
 
-if not os.path.exists("output/eu_sol"):
-    os.makedirs("output/eu_sol")
+phenotypes = get_phenotypes(PIPPA_BRAPI_V1)
 
-
-for investigation in investigations:
-    directory = "output/eu_sol/trial_"+str(investigation.identifier)
-    if not os.path.exists(directory):
-        os.makedirs(directory)
-    isatools.isatab.dump(investigation, directory)
+for phenotype in phenotypes:
+    print(phenotype)
