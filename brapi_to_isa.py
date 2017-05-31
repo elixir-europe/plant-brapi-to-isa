@@ -1,9 +1,13 @@
 from isatools.model.v1 import *
 import isatools.isatab
 
+import json
+
 import requests
 
 SERVER = 'https://www.eu-sol.wur.nl/webapi/tomato/brapi/v1/'
+SERVER = 'https://urgi.versailles.inra.fr/E1DfertSn986wm-GnpISCore-srv/brapi/v1/'
+SERVER = 'https://pippa.psb.ugent.be/pippa_experiments/brapi/v1/'
 
 def create_descriptor():
     """Returns a simple but complete ISA-Tab 1.0 descriptor for illustration."""
@@ -163,27 +167,71 @@ def create_descriptor():
     study.assays.append(assay)
     return investigation
     
-
-def load_trials():
+    
+def paging(url,params,data,method):
     page = 0
-    pagesize = 10
+    pagesize = 1000 #VIB doesn't seem to respect it
     maxcount = None
-    while maxcount == None or page*pagesize < maxcount:
-        params = {'page':page,'pageSize':pagesize}
-        r = requests.get(SERVER+'trials', params=params)
+    #set a default dict for parameters
+    if params == None:
+        params = {}
+    while maxcount == None or page < maxcount:
+        params['page'] = page
+        params['pageSize'] = pagesize
+        
+        print('retrieving page',page,'of',maxcount,'from',url)
+        
+        if method == 'GET':
+            r = requests.get(url, params=params,data=data)
+        elif method == 'PUT':
+            r = requests.put(url, params=params,data=data)
+        elif method == 'POST':
+            r = requests.post(url, params=params,data=data)
+            
         if r.status_code != requests.codes.ok:
+            print(r)
             raise RuntimeError("Non-200 status code")
-        maxcount = int(r.json()['metadata']['pagination']['totalCount'])
-        for trial in r.json()['result']['data']:
-            yield trial
+            
+        maxcount = int(r.json()['metadata']['pagination']['totalPages'])
+        
+        for data in r.json()['result']['data']:
+            yield data
+            
         page += 1
 
+def load_trials():
+    for trial in paging(SERVER+'trials', None, None, 'GET'):
+        yield trial
+
+def get_study(studyId):
+    r = requests.get(SERVER+'studies/'+str(studyId))
+    if r.status_code != requests.codes.ok:
+        print(r)
+        raise RuntimeError("Non-200 status code")
+    return r.json()["result"]
+    
+    
+def get_germplasm_in_study(studyId):
+    #can't find anyone that implements /studies/{id}/germplasm
+    #have to do it as an phenotype search instead
+    #note that this will omit any germplasm that hasn't got an associated phenotype
+    germplasm = set()
+    for phenotype in paging(SERVER+'phenotype-search', None, json.dumps({"studyDbIds" : [ str(studyId) ]}), 'POST') :
+        germplasm.add(phenotype['germplasmDbId'])
+    return germplasm
+    
 
 #investigation = create_descriptor()
 #investigation = Investigation()
 
-for trial in load_trials():
-    print(trial['trialDbId'])
+#ugent doesnt have trials
+#for trial in load_trials():
+#    print(trial['trialDbId'])
+#    for study in trial['studies']:
+#        study = get_study(study['studyDbId'])
+
+germplasm = get_germplasm_in_study('VIB_study___49')
+print(germplasm)
 
 #isatools.isatab.dump(investigation, output_path='./out/')  # dumps() writes out the ISA as a string representation of the ISA-Tab
 
