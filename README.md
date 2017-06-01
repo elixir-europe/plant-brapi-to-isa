@@ -1,5 +1,6 @@
 # plant-brapi-to-isa
 
+Code to pull data from BrAPI endpoints and create an [ISA](http://isa-tools.org) representation of the experiments. 
 
 Docker
 ======
