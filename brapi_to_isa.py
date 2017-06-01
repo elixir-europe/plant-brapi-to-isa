@@ -271,7 +271,7 @@ def create_isa_characteristic(category, value):
         return None
     return Characteristic(category, str(value))
     
-def create_isa_material(germplasm_id):
+def create_isa_source(germplasm_id):
     g = get_germplasm(germplasm_id)
     characteristics = []
     
@@ -301,7 +301,7 @@ def create_isa_material(germplasm_id):
         if category in validcategories:
             characteristics.append(create_isa_characteristic(category,g[category]))
     
-    return Sample(germplasm_id, characteristics = characteristics)
+    return Source(germplasm_id, characteristics = characteristics)
 
 #investigation = create_descriptor()
 #investigation = Investigation()
@@ -324,7 +324,10 @@ study = create_isa_study(study_id)
 investigation.studies.append(study)
 
 for germplasm_id in all_germplasm:
-    study.materials['samples'].append(create_isa_material(germplasm_id))
+    print("create germplasm for",germplasm_id)
+    germplasm = create_isa_source(germplasm_id)
+    print(germplasm)
+    study.materials['sources'].append(germplasm)
 
 #isatools.isatab.dump(investigation, output_path='./out/')  # dumps() writes out the ISA as a string representation of the ISA-Tab
 isatools.isatab.dumps(investigation)
