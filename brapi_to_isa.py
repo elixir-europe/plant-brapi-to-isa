@@ -91,9 +91,21 @@ def create_materials(endpoint):
         print(phenotype)
         ### for now, creating the sample name combining studyDbId and potDbId - eventually this should be observationUnitDbId
         sample_name = phenotype['studyDbId']+"_"+phenotype['plotNumber']
-        sample = Sample(sample_name)
         source = Source(phenotype['germplasmName'], phenotype['germplasmDbId'])
-        sample.derives_from = source
+        #source characteristics
+
+        ncbitaxon = OntologySource(name='NCBITaxon', description="NCBI Taxonomy")
+        #get this from the germplasm
+        # source_organism = Characteristic(category=OntologyAnnotation(term="Organism"),
+        #                                           value=OntologyAnnotation(term=phenotype['species'], term_source=ncbitaxon,
+        #                                                                    term_accession=phenotype['accessionNumber']))
+        # source_pedigree = Characteristic(category=OntologyAnnotation(term="Pedigree"),
+        #                                   value=OntologyAnnotation(term=phenotype['pedigree']))
+        #
+        # source.characteristics.append(source_organism)
+        # source.characteristics.append(source_pedigree)
+        sample = Sample(sample_name, derives_from=source)
+
 
 
 def create_isa_study(endpoint, brapi_study_id):
@@ -286,7 +298,8 @@ def create_descriptor():
 
 #create_materials(PIPPA_BRAPI_V1)
 
-germplasms = get_germplasms(PIPPA_BRAPI_V1)
-for germplasm in germplasms:
-    print(germplasm)
+# germplasms = get_germplasms(PIPPA_BRAPI_V1)
+# for germplasm in germplasms:
+#     print(germplasm)
 
+create_materials(PIPPA_BRAPI_V1)
