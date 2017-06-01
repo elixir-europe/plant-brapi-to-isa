@@ -3,7 +3,109 @@ import isatools.isatab
 import os
 import requests
 
-SERVER = 'https://www.eu-sol.wur.nl/webapi/tomato/brapi/v1/'
+EU_SOL_BRAPI_V1 = 'https://www.eu-sol.wur.nl/webapi/tomato/brapi/v1/'
+PIPPA_BRAPI_V1 = "https://pippa.psb.ugent.be/pippa_experiments/brapi/v1/"
+
+
+###########################################################
+### Get info from BrAPI
+###########################################################
+
+def get_brapi_trials(endpoint):
+    """Returns all the trials from an endpoint."""
+    page = 0
+    pagesize = 10
+    maxcount = None
+    while maxcount == None or page*pagesize < maxcount:
+        params = {'page':page,'pageSize':pagesize}
+        r = requests.get(endpoint+'trials', params=params)
+        if r.status_code != requests.codes.ok:
+            raise RuntimeError("Non-200 status code")
+        maxcount = int(r.json()['metadata']['pagination']['totalCount'])
+        for trial in r.json()['result']['data']:
+            yield trial
+        page += 1
+
+def get_brapi_study(endpoint, study_id):
+    """Returns a study from an endpoint, given its id."""
+    ###dealing with differences in the endpoints
+    if (endpoint==EU_SOL_BRAPI_V1):
+        url = endpoint + 'studies/' + str(study_id)
+    elif (endpoint==PIPPA_BRAPI_V1):
+        url = endpoint + 'studies-search/' + str(study_id)
+    r = requests.get(url)
+    if r.status_code != requests.codes.ok:
+        raise RuntimeError("Non-200 status code")
+    study = r.json()['result']
+    return study
+
+def get_phenotypes(endpoint):
+    """Returns a phenotype information from a BrAPI endpoint."""
+    url = endpoint + "phenotype-search"
+    r = requests.get(url)
+    if r.status_code != requests.codes.ok:
+        raise RuntimeError("Non-200 status code")
+    phenotypes = r.json()['result']['data']
+    return phenotypes
+
+def get_germplasms(endpoint):
+    url = endpoint + "germplasm-search"
+    r = requests.get(url)
+    if r.status_code != requests.codes.ok:
+        raise RuntimeError("Non-200 status code")
+    germplasms = r.json()['result']['data']
+    return germplasms
+
+def get_germplasm(endpoint, germplasm_id):
+    url = endpoint + "germplasm-search" + str(germplasm_id)
+    r = requests.get(url)
+    if r.status_code != requests.codes.ok:
+        raise RuntimeError("Non-200 status code")
+    study = r.json()['result']
+    return study
+
+###########################################################
+## Creating ISA objects
+###########################################################
+
+def create_isa_investigations(endpoint):
+    """Create ISA investigations from a BrAPI endpoint, starting from the trials information"""
+    investigations = []
+    for trial in get_brapi_trials(endpoint):
+        investigation = Investigation()
+        investigation.identifier = trial['trialDbId']
+        investigation.title = trial['trialName']
+        investigation.comments.append(Comment("Investigation Start Date", trial['startDate']))
+        investigation.comments.append(Comment("Investigation End Date", trial['endDate']))
+        investigation.comments.append(Comment("Active", trial['active']))
+
+        for study in trial['studies']:
+            study = create_isa_study(endpoint,study['studyDbId'])
+            investigation.studies.append(study)
+            investigations.append(investigation)
+    return investigations
+
+def create_materials(endpoint):
+    """Create ISA studies from a BrAPI endpoint, starting from the studies, where there is no trial information."""
+    for phenotype in get_phenotypes(endpoint):
+        print(phenotype)
+        ### for now, creating the sample name combining studyDbId and potDbId - eventually this should be observationUnitDbId
+        sample_name = phenotype['studyDbId']+"_"+phenotype['plotNumber']
+        sample = Sample(sample_name)
+        source = Source(phenotype['germplasmName'], phenotype['germplasmDbId'])
+        sample.derives_from = source
+
+
+def create_isa_study(endpoint, brapi_study_id):
+    """Returns an ISA study given a BrAPI endpoints and a BrAPI study identifier."""
+    brapi_study = get_brapi_study(endpoint, brapi_study_id)
+    study = Study(filename="s_study.txt")
+    study.identifier = brapi_study['studyDbId']
+    study.title = brapi_study['name']
+    study.comments.append(Comment("Study Start Date", brapi_study['startDate']))
+    study.comments.append(Comment("Study End Date", brapi_study['endDate']))
+    study.comments.append(Comment("Study Geographical Location", brapi_study['location']['locationName']))
+    return study
 
 def create_descriptor():
     """Returns a simple but complete ISA-Tab 1.0 descriptor for illustration."""
@@ -162,95 +264,29 @@ def create_descriptor():
 
     study.assays.append(assay)
     return investigation
-    
-
-def load_trials():
-    page = 0
-    pagesize = 10
-    maxcount = None
-    while maxcount == None or page*pagesize < maxcount:
-        params = {'page':page,'pageSize':pagesize}
-        r = requests.get(SERVER+'trials', params=params)
-        if r.status_code != requests.codes.ok:
-            raise RuntimeError("Non-200 status code")
-        maxcount = int(r.json()['metadata']['pagination']['totalCount'])
-        for trial in r.json()['result']['data']:
-            yield trial
-        page += 1
 
 
-#investigation = create_descriptor()
-#investigation = Investigation()
+#### Creating ISA-Tab from EU_SOL_BRAPI_V1 data
+# investigations = create_isa_investigations(EU_SOL_BRAPI_V1)
+#
+# if not os.path.exists("output"):
+#     os.makedirs("output")
+#
+# if not os.path.exists("output/eu_sol"):
+#     os.makedirs("output/eu_sol")
+#
+#
+# for investigation in investigations:
+#     directory = "output/eu_sol/trial_"+str(investigation.identifier)
+#     if not os.path.exists(directory):
+#         os.makedirs(directory)
+#     isatools.isatab.dump(investigation, directory)
 
-#for trial in load_trials():
-#    print(trial['trialDbId'])
+### Creating ISA-Tab from PIPPA endpoint data
 
-#isatools.isatab.dump(investigation, output_path='./out/')  # dumps() writes out the ISA as a string representation of the ISA-Tab
+#create_materials(PIPPA_BRAPI_V1)
 
+germplasms = get_germplasms(PIPPA_BRAPI_V1)
+for germplasm in germplasms:
+    print(germplasm)
 
-def get_brapi_trials(endpoint):
-    page = 0
-    pagesize = 10
-    maxcount = None
-    while maxcount == None or page*pagesize < maxcount:
-        params = {'page':page,'pageSize':pagesize}
-        r = requests.get(endpoint+'trials', params=params)
-        if r.status_code != requests.codes.ok:
-            raise RuntimeError("Non-200 status code")
-        maxcount = int(r.json()['metadata']['pagination']['totalCount'])
-        for trial in r.json()['result']['data']:
-            yield trial
-        page += 1
-
-
-def get_brapi_study(study_id):
-        url = SERVER+'studies/'+str(study_id)
-        r = requests.get(url)
-        if r.status_code != requests.codes.ok:
-            raise RuntimeError("Non-200 status code")
-        study = r.json()['result']
-        return study
-
-
-def create_isa_study(brapi_study_id):
-    brapi_study = get_brapi_study(brapi_study_id)
-    study = Study(filename="s_study.txt")
-    study.identifier = brapi_study['studyDbId']
-    study.title = brapi_study['name']
-    study.comments.append(Comment("Study Start Date", brapi_study['startDate']))
-    study.comments.append(Comment("Study End Date", brapi_study['endDate']))
-    study.comments.append(Comment("Study Geographical Location", brapi_study['location']['locationName']))
-    return study
-
-
-## Creating ISA objects
-def create_isa_investigations():
-    investigations = []
-    for trial in trials:
-        #print(trial)
-        investigation = Investigation()
-        investigation.identifier = trial['trialDbId']
-        investigation.title = trial['trialName']
-        investigation.comments.append(Comment("Investigation Start Date", trial['startDate']))
-        investigation.comments.append(Comment("Investigation End Date", trial['endDate']))
-        investigation.comments.append(Comment("Active", trial['active']))
-
-        for study in trial['studies']:
-            study = create_isa_study(study['studyDbId'])
-            investigation.studies.append(study)
-            investigations.append(investigation)
-    return investigations
-
-
-
-trials = get_brapi_trials(SERVER)
-investigations = create_isa_investigations()
-
-if not os.path.exists("output"):
-    os.makedirs("output")
-
-for investigation in investigations:
-    directory = "output/trial_"+str(investigation.identifier)
-    if not os.path.exists(directory):
-        os.makedirs(directory)
-    isatools.isatab.dump(investigation, directory)
