@@ -1,1 +1,3 @@
 out/
+# output folder for python notebook in BrAPI_to_BioSamples
+BrAPI_to_BioSamples/BioSamplesData
