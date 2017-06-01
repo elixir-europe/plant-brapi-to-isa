@@ -1,24 +1,20 @@
 from isatools.model.v1 import *
 import isatools.isatab
-
 import json
 import os
 import requests
 
-SERVER = 'https://www.eu-sol.wur.nl/webapi/tomato/brapi/v1/'
-SERVER = 'https://urgi.versailles.inra.fr/E1DfertSn986wm-GnpISCore-srv/brapi/v1/'
-SERVER = 'https://pippa.psb.ugent.be/pippa_experiments/brapi/v1/'
-
+URGI_BRAPI_V1 = 'https://urgi.versailles.inra.fr/E1DfertSn986wm-GnpISCore-srv/brapi/v1/'
 EU_SOL_BRAPI_V1 = 'https://www.eu-sol.wur.nl/webapi/tomato/brapi/v1/'
 PIPPA_BRAPI_V1 = "https://pippa.psb.ugent.be/pippa_experiments/brapi/v1/"
-
+SERVER = 'https://pippa.psb.ugent.be/pippa_experiments/brapi/v1/'
 
 ###########################################################
 ### Get info from BrAPI
 ###########################################################
 
 def get_brapi_trials(endpoint):
-    """Returns all the trials from an endpoint."""
+    """Returns all the trials from a BrAPI endpoint."""
     page = 0
     pagesize = 10
     maxcount = None
@@ -45,6 +41,15 @@ def get_brapi_study(endpoint, study_id):
     study = r.json()['result']
     return study
 
+def get_brapi_study(study_id):
+    url = SERVER+'studies/'+str(study_id)
+    r = requests.get(url)
+    if r.status_code != requests.codes.ok:
+        raise RuntimeError("Non-200 status code")
+    study = r.json()['result']
+    return study
+
+
 def get_phenotypes(endpoint):
     """Returns a phenotype information from a BrAPI endpoint."""
     url = endpoint + "phenotype-search"
@@ -55,6 +60,7 @@ def get_phenotypes(endpoint):
     return phenotypes
 
 def get_germplasms(endpoint):
+    """Returns all germplasms from a BrAPI endpoint."""
     url = endpoint + "germplasm-search"
     r = requests.get(url)
     if r.status_code != requests.codes.ok:
@@ -63,12 +69,13 @@ def get_germplasms(endpoint):
     return germplasms
 
 def get_germplasm(endpoint, germplasm_id):
+    """Return a germplasm by id from a BrAPI endpoint."""
     url = endpoint + "germplasm-search" + str(germplasm_id)
     r = requests.get(url)
     if r.status_code != requests.codes.ok:
         raise RuntimeError("Non-200 status code")
-    study = r.json()['result']
-    return study
+    germplasm = r.json()['result']
+    return germplasm
 
 ###########################################################
 ## Creating ISA objects
@@ -91,27 +98,54 @@ def create_isa_investigations(endpoint):
             investigations.append(investigation)
     return investigations
 
-def create_materials(endpoint):
+
+def create_isa(endpoint):
     """Create ISA studies from a BrAPI endpoint, starting from the studies, where there is no trial information."""
+    study_dict = dict()
+    investigations = []
     for phenotype in get_phenotypes(endpoint):
         print(phenotype)
-        ### for now, creating the sample name combining studyDbId and potDbId - eventually this should be observationUnitDbId
-        sample_name = phenotype['studyDbId']+"_"+phenotype['plotNumber']
-        source = Source(phenotype['germplasmName'], phenotype['germplasmDbId'])
-        #source characteristics
-
-        ncbitaxon = OntologySource(name='NCBITaxon', description="NCBI Taxonomy")
-        #get this from the germplasm
-        # source_organism = Characteristic(category=OntologyAnnotation(term="Organism"),
-        #                                           value=OntologyAnnotation(term=phenotype['species'], term_source=ncbitaxon,
-        #                                                                    term_accession=phenotype['accessionNumber']))
-        # source_pedigree = Characteristic(category=OntologyAnnotation(term="Pedigree"),
-        #                                   value=OntologyAnnotation(term=phenotype['pedigree']))
-        #
-        # source.characteristics.append(source_organism)
-        # source.characteristics.append(source_pedigree)
+        #creating a source per germplasm
+        source = create_isa_source(phenotype['germplasmDbId'])
+        ### for now, creating the sample name combining studyDbId and plotNumber - eventually this should be observationUnitDbId
+        sample_name = phenotype['studyDbId'] + "_" + phenotype['plotNumber']
         sample = Sample(sample_name, derives_from=source)
+        study_id = phenotype['studyDbId']
+        try:
+            study = study_dict[study_id]
+        except KeyError:
+            study = create_isa_study(phenotype['studyDbId'])
+            study_dict.update({ (study_id, study) })
+        study.materials['sources'].append(source)
+        study.materials['samples'].append(sample)
 
+        growth_protocol = Protocol(name="growth protocol",
+                                          protocol_type=OntologyAnnotation(term="growth protocol"))
+        study.protocols.append(growth_protocol)
+        growth_process = Process(executes_protocol=growth_protocol)
+
+        for src in study.materials['sources']:
+            growth_process.inputs.append(src)
+        for sam in study.materials['samples']:
+            growth_process.outputs.append(sam)
+
+
+        study.process_sequence.append(growth_process)
+        assay = Assay(filename="a_assay.txt")
+        study.assays.append(assay)
+
+
+    for key, value in study_dict.items():
+        investigation = Investigation()
+        investigation.studies.append(study_dict[key])
+        investigations.append(investigation)
+
+
+
+
+
+
+    return investigations
 
 
 def create_isa_study(endpoint, brapi_study_id):
@@ -197,14 +231,6 @@ def get_germplasm(germplasm_id):
     
     return germplasm
 
-def get_brapi_study(study_id):
-    url = SERVER+'studies/'+str(study_id)
-    r = requests.get(url)
-    if r.status_code != requests.codes.ok:
-        raise RuntimeError("Non-200 status code")
-    study = r.json()['result']
-    return study
-
 def create_isa_study(brapi_study_id):
     brapi_study = get_brapi_study(brapi_study_id)
     #print(brapi_study)
@@ -227,38 +253,42 @@ def create_isa_characteristic(category, value):
         return None
     if value == None or len(value) == 0:
         return None
-    return Characteristic(category, str(value))
-    
+    return Characteristic(category=OntologyAnnotation(term=category),
+                   value=OntologyAnnotation(term=str(value)))
+
 def create_isa_source(germplasm_id):
+    """Given a germplasm_id, create an ISA Source object"""
     g = get_germplasm(germplasm_id)
     characteristics = []
-    
+
     validcategories = set()
-    validcategories.add("germplasmSeedSource")
-    validcategories.add("typeOfGermplasmStorageCode")
-    validcategories.add("acquisitionDate")
-    validcategories.add("defaultDisplayName")
-    validcategories.add("germplasmPUI")
-    validcategories.add("synonyms")
-    validcategories.add("speciesAuthority")
+    # validcategories.add("germplasmSeedSource")
+    # validcategories.add("typeOfGermplasmStorageCode")
+    # validcategories.add("acquisitionDate")
+    # validcategories.add("defaultDisplayName")
+    # validcategories.add("germplasmPUI")
+    # validcategories.add("synonyms")
+    # validcategories.add("speciesAuthority")
     validcategories.add("species")
     validcategories.add("subtaxa")
-    validcategories.add("accessionNumber")
+    #validcategories.add("accessionNumber")
     validcategories.add("pedigree")
-    validcategories.add("subtaxaAuthority")
-    validcategories.add("instituteCode")
-    validcategories.add("germplasmName")
-    validcategories.add("instituteName")
-    validcategories.add("commonCropName")
-    validcategories.add("germplasmDbId")
+    # validcategories.add("subtaxaAuthority")
+    # validcategories.add("instituteCode")
+    # validcategories.add("germplasmName")
+    # validcategories.add("instituteName")
+    # validcategories.add("commonCropName")
+    # validcategories.add("germplasmDbId")
     validcategories.add("genus")
-    validcategories.add("biologicalStatusOfAccessionCode")
+    #validcategories.add("biologicalStatusOfAccessionCode")
     validcategories.add("countryOfOriginCode")
-    
+
     for category in g:
         if category in validcategories:
-            characteristics.append(create_isa_characteristic(category,g[category]))
-    
+            c = create_isa_characteristic(category, g[category])
+            if (c !=None):
+                characteristics.append(c)
+
     return Source(germplasm_id, characteristics = characteristics)
 
 #investigation = create_descriptor()
@@ -270,26 +300,26 @@ def create_isa_source(germplasm_id):
 #    for study in trial['studies']:
 #        study = get_study(study['studyDbId'])
 
-study_id = 'VIB_study___49'
-#germplasm = get_germplasm_in_study(study_id)
-#this is really slow and broken, so cheat for now!
-all_germplasm = ('Zea_VIB___1','Zea_VIB___2','Zea_VIB___3','Zea_VIB___4')
-print(all_germplasm)
+# study_id = 'VIB_study___49'
+# #germplasm = get_germplasm_in_study(study_id)
+# #this is really slow and broken, so cheat for now!
+# all_germplasm = ('Zea_VIB___1','Zea_VIB___2','Zea_VIB___3','Zea_VIB___4')
+# print(all_germplasm)
 
 ## Creating ISA objects
-investigation = Investigation()
-study = create_isa_study(study_id)
-investigation.studies.append(study)
-
-for germplasm_id in all_germplasm:
-    print("create germplasm for",germplasm_id)
-    germplasm = create_isa_source(germplasm_id)
-    print(germplasm)
-    study.materials['sources'].append(germplasm)
-
-#isatools.isatab.dump(investigation, output_path='./out/')  # dumps() writes out the ISA as a string representation of the ISA-Tab
-isatools.isatab.dumps(investigation)
-isatools.isatab.dump(isa_obj=investigation, output_path='./out/')
+# investigation = Investigation()
+# study = create_isa_study(study_id)
+# investigation.studies.append(study)
+#
+# for germplasm_id in all_germplasm:
+#     print("create germplasm for",germplasm_id)
+#     germplasm = create_isa_source(germplasm_id)
+#     print(germplasm)
+#     study.materials['sources'].append(germplasm)
+#
+# #isatools.isatab.dump(investigation, output_path='./out/')  # dumps() writes out the ISA as a string representation of the ISA-Tab
+# isatools.isatab.dumps(investigation)
+# isatools.isatab.dump(isa_obj=investigation, output_path='./out/')
 
 
 #### Creating ISA-Tab from EU_SOL_BRAPI_V1 data
@@ -317,4 +347,18 @@ isatools.isatab.dump(isa_obj=investigation, output_path='./out/')
 # for germplasm in germplasms:
 #     print(germplasm)
 
-create_materials(PIPPA_BRAPI_V1)
+
+investigations = create_isa(PIPPA_BRAPI_V1)
+
+if not os.path.exists("output"):
+    os.makedirs("output")
+
+if not os.path.exists("output/eu_sol"):
+    os.makedirs("output/eu_sol")
+
+for investigation in investigations:
+    directory = "output/pippa/trial_"+str(investigation.identifier)
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+    isatools.isatab.dump(investigation, directory)
+
