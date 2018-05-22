@@ -1,3 +1,6 @@
-out/
+outputdir/
+.idea
+.gitignore
+.DS_Store
 # output folder for python notebook in BrAPI_to_BioSamples
 BrAPI_to_BioSamples/BioSamplesData
