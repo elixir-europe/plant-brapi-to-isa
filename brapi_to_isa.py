@@ -718,7 +718,6 @@ def main(SERVER):
 
                     # # let's check it is fine:
                         print("Assay Post addition", this_assay)
-                    # counter = counter + 1
 
                 # Writing study to ISA-Tab format
                 try:
