@@ -10,7 +10,6 @@ from isatools import isatab
 from isatools.model import Investigation, OntologyAnnotation, OntologySource, Assay, Study, Characteristic, Source, \
     Sample, Protocol, Process, StudyFactor, FactorValue, DataFile, ParameterValue, Comment, ProtocolParameter, plink
 
-# log_file = "loggingtest.log"
 
 SERVER = 'https://test-server.brapi.org/brapi/v1/'
 
@@ -27,10 +26,10 @@ SERVER = 'https://test-server.brapi.org/brapi/v1/'
 # CASSAVA_BRAPI_V1 = 'https://cassavabase.org/brapi/v1/'
 
 
-
 ###########################################################
 # Get info from BrAPI
 ###########################################################
+
 
 def paging(url: object, params: object, data: object, method: object) -> object:
 
@@ -49,10 +48,10 @@ def paging(url: object, params: object, data: object, method: object) -> object:
         logging.info("paging params:", params)
 
         if method == 'GET':
-            print("GETing", url)
+            print("GETting", url)
             r = requests.get(url, params=params, data=data)
         elif method == 'PUT':
-            print("PUTing", url)
+            print("PUTting", url)
             r = requests.put(url, params=params, data=data)
         elif method == 'POST':
             # params['User-Agent'] = "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko)
@@ -95,7 +94,7 @@ def get_brapi_trials(endpoint):
             yield this_trial
             # print("trial ", this_trial ," in page: ", page)
         page += 1
-        print("trial page: ", page)
+        # print("trial page: ", page)
         logging.info("trial page: ", page)
 
 #
@@ -441,7 +440,7 @@ def create_isa_obs_data_from_obsvars(all_obs_units):
 
         for item in range(len(all_obs_units[index]['observations'])):
             data_record = ("assay-name_(" + str(all_obs_units[index]["observationUnitName"]) + ")_" +
-                           str(len(all_obs_units[index]['observations'][item])) + "\t" +
+                           str(item) + "\t" +
                            str(all_obs_units[index]['observations'][item]['observationVariableDbId']) + "\t" +
                            str(all_obs_units[index]['observations'][item]['value']) + "\t" +
                            str(all_obs_units[index]['observations'][item]['observationTimeStamp']) + "\t" +
@@ -452,8 +451,8 @@ def create_isa_obs_data_from_obsvars(all_obs_units):
     return data_records
 
 
-def write_records_to_file(this_study_id, records, this_directory, filetype):
-    logging.info('Doing something')
+def write_records_to_file(this_study_id, records, this_directory, filetype, logger):
+    logger.info('Doing something')
     # tdf_file = 'out/' + this_study_id
     with open(this_directory + filetype + this_study_id + '.txt', 'w') as fh:
         for this_element in records:
@@ -465,19 +464,27 @@ def write_records_to_file(this_study_id, records, this_directory, filetype):
 def main(arg):
     """ Given a SERVER value (and BRAPI study identifier), generates an ISA-Tab document"""
 
-    logging.basicConfig(filename='brapi.log',
-                        filemode='a',
-                        format='%(asctime)s,%(msecs)d %(name)s %(levelname)s %(message)s',
-                        level=logging.INFO)
+    log_file = "brapilog.log"
+    # logging.basicConfig(filename=log_file,
+    #                     filemode='a',
+    #                     level=logging.DEBUG)
+    logger = logging.getLogger('brapi_converter')
+    logger.debug('This message should go to the log file')
+    logger.info('Starting now...')
+    logger.warning('And this, too')
+    logger.setLevel(logging.INFO)
 
-    logging.debug('This message should go to the log file')
-    logging.info('Starting now...')
-    logging.warning('And this, too')
+    file4log = logging.FileHandler(log_file)
+    file4log.setLevel(logging.INFO)
+
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    file4log.setFormatter(formatter)
+    logger.addHandler(file4log)
 
     # iterating through the trials held in a BRAPI server:
     for trial in load_trials():
         # print("Trial: ", trial['trialDbId'], "|", trial['trialName'])
-        logging.info('we start from a set of Trials')
+        logger.info('we start from a set of Trials')
         investigation = Investigation()
 
         # iterating through the BRAPI studies associated to a given BRAPI trial:
@@ -499,7 +506,7 @@ def main(arg):
                     if not os.path.exists(directory):
                         os.makedirs(directory)
                 except OSError as oserror:
-                    logging.exception(oserror)
+                    logger.exception(oserror)
                     if oserror.errno != errno.EEXIST:
                         raise
 
@@ -559,14 +566,14 @@ def main(arg):
                 try:
                     obsunits = get_obs_units_in_study(study_id)
                 except Exception as excep:
-                    logging.exception(excep)
+                    logger.exception(excep)
                     print("error: ", excep)
 
                 for i in range(len(obsunits)):
                     # Getting the relevant germplasm used for that observation event:
                     # ---------------------------------------------------------------
                     this_source = study.get_source(obsunits[i]['germplasmName'])
-                    logging.debug("testing for the source reference: ", this_source)
+                    logger.debug("testing for the source reference: ", this_source)
                     # print("SOURCE:", this_source)
                     if this_source is not None:
                         this_sample = Sample(
@@ -655,7 +662,7 @@ def main(arg):
                         study.samples.append(this_sample)
                         # print("counting observations: ", i, "before: ", this_source.name)
                     else:
-                        logging.info("Can't find a reference to known source for that observation unit:", this_source)
+                        logger.info("Can't find a reference to known source for that observation unit:", this_source)
 
                     # Creating the corresponding ISA sample entity for structure the document:
                     # ------------------------------------------------------------------------
@@ -673,7 +680,7 @@ def main(arg):
                         # !!!: fix isatab.py to access other protocol_type values to enable Assay Tab serialization
                         phenotyping_process = Process(executes_protocol=phenotyping_protocol)
                         phenotyping_process.name = "assay-name_(" + obsunits[i]["observationUnitName"] + ")_" +\
-                                                   str(len(obsunits[i]['observations'][j]))
+                                                   str(j)
                         # print("assay name: ", j, "|", phenotyping_process.name)
                         phenotyping_process.inputs.append(this_sample)
 
@@ -729,10 +736,10 @@ def main(arg):
                     # !!!: fix isatab.py to access other protocol_type values to enable Assay Tab serialization
                     # !!!: if Assay Table is missing the 'Assay Name' field, remember to check protocol_type used !!!
                     isatab.dump(isa_obj=investigation, output_path=directory)
-                    logging.info('DONE!...')
+                    logger.info('DONE!...')
                 except IOError as ioe:
                     print(ioe)
-                    logging.info('CONVERSION FAILED!...')
+                    logger.info('CONVERSION FAILED!...')
 
                 try:
                     variable_records = create_isa_tdf_from_obsvars(get_study_observed_variables(study_id))
@@ -741,7 +748,8 @@ def main(arg):
                     write_records_to_file(this_study_id=str(study_id),
                                           this_directory=directory,
                                           records=variable_records,
-                                          filetype="t_")
+                                          filetype="t_",
+                                          logger=logger)
                 except Exception as ioe:
                     print(ioe)
 
@@ -750,7 +758,7 @@ def main(arg):
                 try:
                     data_readings = create_isa_obs_data_from_obsvars(get_obs_units_in_study(study_id))
                     write_records_to_file(this_study_id=str(study_id), this_directory=directory, records=data_readings,
-                                          filetype="d_")
+                                          filetype="d_", logger=logger)
                 except Exception as ioe:
                     print(ioe)
 
