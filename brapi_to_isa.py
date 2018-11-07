@@ -1,12 +1,12 @@
 import datetime
 import os
 import errno
-import isatools
 import json
 import requests
 import logging
 import sys
 
+from isatools import isatab
 from isatools.model import Investigation, OntologyAnnotation, OntologySource, Assay, Study, Characteristic, Source, \
     Sample, Protocol, Process, StudyFactor, FactorValue, DataFile, ParameterValue, Comment, ProtocolParameter, plink
 
@@ -25,6 +25,7 @@ SERVER = 'https://test-server.brapi.org/brapi/v1/'
 # PIPPA_BRAPI_V1 = "https://pippa.psb.ugent.be/pippa_experiments/brapi/v1/"
 # TRITI_BRAPI_V1 = 'https://triticeaetoolbox.org/wheat/brapi/v1/'
 # CASSAVA_BRAPI_V1 = 'https://cassavabase.org/brapi/v1/'
+
 
 
 ###########################################################
@@ -131,9 +132,9 @@ def get_phenotypes(endpoint):
     url = endpoint + "phenotype-search"
     r = requests.get(url)
     if r.status_code != requests.codes.ok:
-        raise RuntimeError("Non-200 status code")
-        logging.error(e)
+        logging.error("check over here", r)
         logging.fatal('Could not decode response from server!')
+        raise RuntimeError("Non-200 status code")
     phenotypes = r.json()['result']['data']
     return phenotypes
 
@@ -143,9 +144,9 @@ def get_germplasms(endpoint):
     url = endpoint + "germplasm-search"
     r = requests.get(url)
     if r.status_code != requests.codes.ok:
-        raise RuntimeError("Non-200 status code")
-        logging.error(e)
+        logging.error("check over here", r)
         logging.fatal('Could not decode response from server!')
+        raise RuntimeError("Non-200 status code")
     these_germplasms = r.json()['result']['data']
     return these_germplasms
 
@@ -439,18 +440,20 @@ def create_isa_obs_data_from_obsvars(all_obs_units):
     for index in range(len(all_obs_units)):
 
         for item in range(len(all_obs_units[index]['observations'])):
-            data_record = str(all_obs_units[index]['observations'][item]['observationDbId']) + "\t" +\
-                          str(all_obs_units[index]['observations'][item]['observationVariableDbId']) + "\t" +\
-                          str(all_obs_units[index]['observations'][item]['value']) + "\t" +\
-                          str(all_obs_units[index]['observations'][item]['observationTimeStamp']) + "\t" +\
-                          str(all_obs_units[index]['observations'][item]['collector'])
-            print("data_record # ", index, data_record)
+            data_record = ("assay-name_(" + str(all_obs_units[index]["observationUnitName"]) + ")_" +
+                           str(len(all_obs_units[index]['observations'][item])) + "\t" +
+                           str(all_obs_units[index]['observations'][item]['observationVariableDbId']) + "\t" +
+                           str(all_obs_units[index]['observations'][item]['value']) + "\t" +
+                           str(all_obs_units[index]['observations'][item]['observationTimeStamp']) + "\t" +
+                           str(all_obs_units[index]['observations'][item]['collector']))
+            # print("data_record # ", index, data_record)
             data_records.append(data_record)
 
     return data_records
 
 
 def write_records_to_file(this_study_id, records, this_directory, filetype):
+    logging.info('Doing something')
     # tdf_file = 'out/' + this_study_id
     with open(this_directory + filetype + this_study_id + '.txt', 'w') as fh:
         for this_element in records:
@@ -459,15 +462,16 @@ def write_records_to_file(this_study_id, records, this_directory, filetype):
     fh.close()
 
 
-def main(argument = SERVER):
+def main(arg):
     """ Given a SERVER value (and BRAPI study identifier), generates an ISA-Tab document"""
-    logging.basicConfig(filename='test.log',
+
+    logging.basicConfig(filename='brapi.log',
                         filemode='a',
                         format='%(asctime)s,%(msecs)d %(name)s %(levelname)s %(message)s',
-                        level=logging.DEBUG)
+                        level=logging.INFO)
 
     logging.debug('This message should go to the log file')
-    logging.info('So should this')
+    logging.info('Starting now...')
     logging.warning('And this, too')
 
     # iterating through the trials held in a BRAPI server:
@@ -494,9 +498,9 @@ def main(argument = SERVER):
                 try:
                     if not os.path.exists(directory):
                         os.makedirs(directory)
-                except OSError as e:
-                    logging.exception(e)
-                    if e.errno != errno.EEXIST:
+                except OSError as oserror:
+                    logging.exception(oserror)
+                    if oserror.errno != errno.EEXIST:
                         raise
 
                 study = get_study(study['studyDbId'])
@@ -510,8 +514,10 @@ def main(argument = SERVER):
                                                       protocol_type=OntologyAnnotation(term="sample collection"))
                 study.protocols.append(sample_collection_protocol)
 
+                # !!!: fix isatab.py to access other protocol_type values to enable Assay Tab serialization
+                # TODO: see https://github.com/ISA-tools/isa-api/blob/master/isatools/isatab.py#L886
                 phenotyping_protocol = Protocol(name="phenotyping",
-                                                protocol_type=OntologyAnnotation(term="phenotyping"))
+                                                protocol_type=OntologyAnnotation(term="nucleic acid sequencing"))
                 study.protocols.append(phenotyping_protocol)
 
                 # Getting the ISA assay table generated by the 'create_isa_study' method by default
@@ -531,7 +537,7 @@ def main(argument = SERVER):
 
                     # Creating corresponding ISA biosources:
                     # --------------------------------------
-                    source = Source(name=germ['germplasmName']) # germplasmDbId
+                    source = Source(name=germ['germplasmName'])
 
                     # Creating isa characteristics from germplasm attributes.
                     # -------------------------------------------------------
@@ -552,15 +558,15 @@ def main(argument = SERVER):
                 obsunits = []
                 try:
                     obsunits = get_obs_units_in_study(study_id)
-                except Exception as e:
-                    logging.exception(e)
-                    print("error: ", e)
+                except Exception as excep:
+                    logging.exception(excep)
+                    print("error: ", excep)
 
                 for i in range(len(obsunits)):
                     # Getting the relevant germplasm used for that observation event:
                     # ---------------------------------------------------------------
-                    this_source = study.get_source(obsunits[i]['germplasmName']) # germplasmDbId
-                    logging.debug("testing for the source reference: ",this_source)
+                    this_source = study.get_source(obsunits[i]['germplasmName'])
+                    logging.debug("testing for the source reference: ", this_source)
                     # print("SOURCE:", this_source)
                     if this_source is not None:
                         this_sample = Sample(
@@ -578,7 +584,8 @@ def main(argument = SERVER):
 
                         if 'plotNumber' in obsunits[i].keys():
                             c = Characteristic(category=OntologyAnnotation(term="plotNumber"),
-                                               value=OntologyAnnotation(term=str(obsunits[i]['plotNumber']), term_source="",
+                                               value=OntologyAnnotation(term=str(obsunits[i]['plotNumber']),
+                                                                        term_source="",
                                                                         term_accession=""))
                             this_sample.characteristics.append(c)
 
@@ -591,7 +598,8 @@ def main(argument = SERVER):
 
                         if 'replicate' in obsunits[i].keys():
                             c = Characteristic(category=OntologyAnnotation(term="replicate"),
-                                               value=OntologyAnnotation(term=str(obsunits[i]['replicate']), term_source="",
+                                               value=OntologyAnnotation(term=str(obsunits[i]['replicate']),
+                                                                        term_source="",
                                                                         term_accession=""))
                             this_sample.characteristics.append(c)
 
@@ -630,7 +638,6 @@ def main(argument = SERVER):
                                                                         term_accession=""))
                             this_sample.characteristics.append(c)
 
-
                         # Looking for treatment in BRAPI and mapping to ISA Study Factor Value
                         # --------------------------------------------------------------------
                         if 'treatments' in obsunits[i].keys():
@@ -641,13 +648,14 @@ def main(argument = SERVER):
                                         study.factors.append(f)
 
                                     fv = FactorValue(factor_name=f,
-                                                     value=OntologyAnnotation(term=str(element[key]), term_source="",
+                                                     value=OntologyAnnotation(term=str(element[key]),
+                                                                              term_source="",
                                                                               term_accession=""))
                                     this_sample.factor_values.append(fv)
                         study.samples.append(this_sample)
                         # print("counting observations: ", i, "before: ", this_source.name)
                     else:
-                        logging.info("we can't find a reference to known source for that observation unit:", this_source)
+                        logging.info("Can't find a reference to known source for that observation unit:", this_source)
 
                     # Creating the corresponding ISA sample entity for structure the document:
                     # ------------------------------------------------------------------------
@@ -662,10 +670,11 @@ def main(argument = SERVER):
                     # -------------------------------------------------------------------------------------
                     # obs_counter = 0
                     for j in range(len((obsunits[i]['observations']))):
+                        # !!!: fix isatab.py to access other protocol_type values to enable Assay Tab serialization
                         phenotyping_process = Process(executes_protocol=phenotyping_protocol)
                         phenotyping_process.name = "assay-name_(" + obsunits[i]["observationUnitName"] + ")_" +\
                                                    str(len(obsunits[i]['observations'][j]))
-                        print("assay name: ", j, "|", phenotyping_process.name)
+                        # print("assay name: ", j, "|", phenotyping_process.name)
                         phenotyping_process.inputs.append(this_sample)
 
                         # Creating relevant protocol parameter values associated with the protocol application:
@@ -688,8 +697,8 @@ def main(argument = SERVER):
                         if obsunits[i]['observations'][j]['observationTimeStamp'] is not None:
                             phenotyping_process.date = str(obsunits[i]['observations'][j]['observationTimeStamp'])
                         else:
-                            phenotyping_process.date = "not available" # datetime.datetime.today().isoformat()
-
+                            # TODO: implement testing and use of datetime.datetime.today().isoformat()
+                            phenotyping_process.date = "not available"
                         if obsunits[i]['observations'][j]['collector'] is not None:
                             phenotyping_process.performer = str(obsunits[i]['observations'][j]['collector'])
                         else:
@@ -704,35 +713,37 @@ def main(argument = SERVER):
 
                         # Creating processes and linking
                         this_assay.samples.append(this_sample)
-                        this_assay.process_sequence.append(sample_collection_process)
+                        # this_assay.process_sequence.append(sample_collection_process)
                         this_assay.process_sequence.append(phenotyping_process)
                         this_assay.data_files.append(datafile)
                         plink(sample_collection_process, phenotyping_process)
 
-                        # let's check it is fine:
-                        print("Assay Post addition", this_assay)
+                        # For debugging purpose only, let's check it is fine:
+                        # print("process:", this_assay.process_sequence[0].name)
+                        # print("Assay Post addition", this_assay)
 
                 # Writing study to ISA-Tab format:
                 # --------------------------------
                 try:
-                    isatools.isatab.dump(investigation, output_path=directory)  # dumps() writes out the ISA
-                except IOError as e:
-                    print(e)
+                    # isatools.isatab.dumps(investigation)  # dumps() writes out the ISA
+                    # !!!: fix isatab.py to access other protocol_type values to enable Assay Tab serialization
+                    # !!!: if Assay Table is missing the 'Assay Name' field, remember to check protocol_type used !!!
+                    isatab.dump(isa_obj=investigation, output_path=directory)
+                    logging.info('DONE!...')
+                except IOError as ioe:
+                    print(ioe)
+                    logging.info('CONVERSION FAILED!...')
 
                 try:
                     variable_records = create_isa_tdf_from_obsvars(get_study_observed_variables(study_id))
-                except Exception as e:
-                    print(e)
-
-                # Writing Trait Definition File:
-                # ------------------------------
-                try:
+                    # Writing Trait Definition File:
+                    # ------------------------------
                     write_records_to_file(this_study_id=str(study_id),
                                           this_directory=directory,
                                           records=variable_records,
                                           filetype="t_")
-                except IOError as e:
-                    print(e)
+                except Exception as ioe:
+                    print(ioe)
 
                 # Getting Variable Data and writing Measurement Data File
                 # -------------------------------------------------------
@@ -740,8 +751,8 @@ def main(argument = SERVER):
                     data_readings = create_isa_obs_data_from_obsvars(get_obs_units_in_study(study_id))
                     write_records_to_file(this_study_id=str(study_id), this_directory=directory, records=data_readings,
                                           filetype="d_")
-                except Exception as e:
-                    print(e)
+                except Exception as ioe:
+                    print(ioe)
 
             # TODO:  This is for testing purpose hence use a specifc BRAPI study known to test BRAPI Endpoint
             else:
@@ -755,11 +766,10 @@ def main(argument = SERVER):
 """ starting up """
 if __name__ == '__main__':
     try:
-        main(argument=SERVER)
+        main(arg=SERVER)
     except Exception as e:
         logging.exception(e)
         sys.exit(1)
-
 
 
 #################################################################################
