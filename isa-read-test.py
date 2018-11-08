@@ -5,11 +5,29 @@ import json
 import requests
 
 from isatools import isatab
-my_json_report = isatab.validate(open(os.path.join('/Users/Philippe/Downloads/ISAcreator-1.7.11-all/isatab files/SRA_assembly_test', 'i_investigation.txt')), '/Users/Philippe/Documents/git/Configuration-Files/isaconfig-seq_v2016-11-17-SRA1.5-august2014mod/')
+
+
+directory_1 = '/Users/Philippe/Documents/Dropbox-Backup/Eurovis 2015 - Chronoglyph/ISATAB-datasets/BII-S-8_FP001RO-isatab-TEST'
+inv_name_1 = 'i_fp001ro-investigation.txt'
+isa_config_1 = '/Users/Philippe/Documents/git/Configuration-Files/isaconfig-default_v2014-01-16/'
+
+directory_2 = '/Users/Philippe/Downloads/ISAcreator-1.7.11-all/isatab files/SRA_assembly_test'
+inv_name_2 = 'i_investigation.txt'
+isa_config_2 = '/Users/Philippe/Documents/git/Configuration-Files/isaconfig-seq_v2016-11-17-SRA1.5-august2014mod/'
+
+
 
 try:
-    my_isa_read = isatab.load(open(os.path.join('/Users/Philippe/Downloads/ISAcreator-1.7.11-all/isatab files/SRA_assembly_test', 'i_investigation.txt')))
+    # my_isa_read = isatab.load(open(os.path.join('/Users/Philippe/Downloads/ISAcreator-1.7.11-all/isatab files/SRA_assembly_test', 'i_investigation.txt')))
+    my_isa_read = isatab.load(open(os.path.join(directory_1, inv_name_1)))
     print(my_isa_read.studies)
 
-except e as IOError:
+
+    # my_json_report = isatab.validate(open(os.path.join('/Users/Philippe/Downloads/ISAcreator-1.7.11-all/isatab files/SRA_assembly_test', 'i_investigation.txt')), '/Users/Philippe/Documents/git/Configuration-Files/isaconfig-seq_v2016-11-17-SRA1.5-august2014mod/')
+
+    my_json_report = isatab.validate(open(os.path.join(directory_1,inv_name_1)), isa_config_1)
+    print(my_json_report)
+
+
+except IOError as e:
     print(e)

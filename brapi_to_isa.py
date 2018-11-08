@@ -10,6 +10,7 @@ from isatools import isatab
 from isatools.model import Investigation, OntologyAnnotation, OntologySource, Assay, Study, Characteristic, Source, \
     Sample, Protocol, Process, StudyFactor, FactorValue, DataFile, ParameterValue, Comment, ProtocolParameter, plink
 
+__author__ = 'proccaserra (Philippe Rocca-Serra)'
 
 SERVER = 'https://test-server.brapi.org/brapi/v1/'
 
@@ -344,6 +345,7 @@ def get_germplasm_chars(germplasm):
 
     for item in germplasm.keys():
         if item in valid_categories:
+
             these_characteristics.append(create_isa_characteristic(str(item), str(germplasm[item])))
         charax_per_germplasm[germplasm_id] = these_characteristics
 
@@ -351,7 +353,7 @@ def get_germplasm_chars(germplasm):
     return charax_per_germplasm
 
 
-def create_isa_study(brapi_study_id):
+def create_isa_study(brapi_study_id, investigation):
     """Returns an ISA study given a BrAPI endpoints and a BrAPI study identifier."""
     brapi_study = get_brapi_study(brapi_study_id)
 
@@ -383,8 +385,11 @@ def create_isa_study(brapi_study_id):
     isa_assay_file = "a_" + str(brapi_study_id) + ".txt"
     new_assay = Assay(measurement_type=oa_tt, technology_type=oa_mt, filename=isa_assay_file)
     this_study.assays.append(new_assay)
-
-    return this_study
+    if oref_mt not in investigation.ontology_source_references:
+        investigation.ontology_source_references.append(oref_mt)
+    if oref_tt not in investigation.ontology_source_references:
+        investigation.ontology_source_references.append(oref_tt)
+    return this_study, investigation
 
 
 def create_isa_characteristic(category, value):
@@ -513,7 +518,7 @@ def main(arg):
                 study = get_study(study['studyDbId'])
                 study_id = study['studyDbId']
                 # NB: this method always create an ISA Assay Type
-                study = create_isa_study(study_id)
+                study, investigation = create_isa_study(study_id, investigation)
                 investigation.studies.append(study)
 
                 # creating the main ISA protocols:
@@ -549,10 +554,28 @@ def main(arg):
                     # Creating isa characteristics from germplasm attributes.
                     # -------------------------------------------------------
                     for key in germ.keys():
-                        c = Characteristic(category=OntologyAnnotation(term=str(key)),
-                                           value=OntologyAnnotation(term=str(germ[key]),
-                                                                    term_source="",
-                                                                    term_accession=""))
+
+                        if isinstance(germ[key], list):
+                            # print("HERE: ", germ[key])
+                            ontovalue = ";".join(germ[key])
+                            c = Characteristic(category=OntologyAnnotation(term=str(key)),
+                                               value=OntologyAnnotation(term=ontovalue,
+                                                                        term_source="",
+                                                                        term_accession=""))
+                        # elif germ[key].startswith("["):
+                        #     print("THERE: ", germ[key])
+                        #     germ[key] = ast.literal_leval(germ[key])
+                        #     ontovalue = ";".join(germ[key])
+                        #     c = Characteristic(category=OntologyAnnotation(term=str(key)),
+                        #                        value=OntologyAnnotation(term=ontovalue,
+                        #                                                 term_source="",
+                        #                                                 term_accession=""))
+                        else:
+                            # print("normal: ", germ[key])
+                            c = Characteristic(category=OntologyAnnotation(term=str(key)),
+                                               value=OntologyAnnotation(term=str(germ[key]),
+                                                                        term_source="",
+                                                                        term_accession=""))
                         if c not in source.characteristics:
                             source.characteristics.append(c)
 
@@ -581,6 +604,23 @@ def main(arg):
                             derives_from=[this_source])
                         # --------------------------
                         # print("ou: ", ou)
+
+                        if 'X' in obsunits[i].keys():
+                            # print('KEY:', obsunits[i]['X'])
+                            c = Characteristic(category=OntologyAnnotation(term="X"),
+                                               value=OntologyAnnotation(term=str(obsunits[i]['X']),
+                                                                        term_source="",
+                                                                        term_accession=""))
+                            this_sample.characteristics.append(c)
+
+                        if 'Y' in obsunits[i].keys():
+                            # print('KEY:', obsunits[i]['X'])
+                            c = Characteristic(category=OntologyAnnotation(term="Y"),
+                                               value=OntologyAnnotation(term=str(obsunits[i]['Y']),
+                                                                        term_source="",
+                                                                        term_accession=""))
+                            this_sample.characteristics.append(c)
+
                         if 'blockNumber' in obsunits[i].keys():
                             # print('KEY:', obsunits[i]['X'])
                             c = Characteristic(category=OntologyAnnotation(term="blockNumber"),
