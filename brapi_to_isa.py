@@ -112,24 +112,206 @@ def paging(url: object, params: object, data: object, method: object) -> object:
         page += 1
 
 
-def get_brapi_trials(endpoint):
-    """Returns all the trials from an endpoint."""
-    page = 0
-    pagesize = 10
-    maxcount = None
-    while maxcount is None or page * pagesize < maxcount:
-        params = {'page': page, 'pageSize': pagesize}
+class BrapiClient:
+    """ Provide methods to the BRAPI
+    """
 
-        r = requests.get(endpoint + 'trials', params=params)
+    def __init__(self, endpoint: str):
+        self.endpoint = endpoint
+
+    def get_brapi_trials(self):
+        """Returns all the trials from an endpoint."""
+        page = 0
+        pagesize = 10
+        maxcount = None
+        while maxcount is None or page * pagesize < maxcount:
+            params = {'page': page, 'pageSize': pagesize}
+
+            r = requests.get(self.endpoint + 'trials', params=params)
+            if r.status_code != requests.codes.ok:
+                raise RuntimeError("Non-200 status code")
+            maxcount = int(r.json()['metadata']['pagination']['totalCount'])
+            for this_trial in r.json()['result']['data']:
+                yield this_trial
+                # print("trial ", this_trial ," in page: ", page)
+            page += 1
+            # print("trial page: ", page)
+            logging.info("trial page: ", page)
+
+    def get_phenotypes(self):
+        """Returns a phenotype information from a BrAPI endpoint."""
+        url = self.endpoint + "phenotype-search"
+        r = requests.get(url)
+        if r.status_code != requests.codes.ok:
+            logging.error("check over here", r)
+            logging.fatal('Could not decode response from server!')
+            raise RuntimeError("Non-200 status code")
+        phenotypes = r.json()['result']['data']
+        return phenotypes
+
+    def get_germplasms(self):
+        """Returns germplasm information from a BrAPI endpoint."""
+        url = self.endpoint + "germplasm-search"
+        r = requests.get(url)
+        if r.status_code != requests.codes.ok:
+            logging.error("check over here", r)
+            logging.fatal('Could not decode response from server!')
+            raise RuntimeError("Non-200 status code")
+        these_germplasms = r.json()['result']['data']
+        return these_germplasms
+
+    def get_study(self, study_identifier):
+        """"Given a BRAPI study object from a BRAPI endpoint server"""
+        r = requests.get(self.endpoint + 'studies/' + str(study_identifier))
+        if r.status_code != requests.codes.ok:
+            print(r)
+            logging.error("problem with request get_study: ", r)
+            raise RuntimeError("Non-200 status code")
+        return r.json()["result"]
+
+    def get_germplasm_in_study(self, study_identifier):
+        """"Given a BRAPI study identifier returns an array of germplasm objects"""
+
+        r = requests.get(self.endpoint + "studies/" + study_identifier + '/germplasm')
+        num_pages = r.json()['metadata']['pagination']['totalPages']
+        all_germplasms = []
+        for page in range(0, num_pages):
+            r = requests.get(self.endpoint + "studies/" + study_identifier +
+                             '/germplasm', params={'page': page})
+
+            logging.debug("from 'get_germplasm_in_study' function page:", page, "request:",
+                          len(r.json()['result']['data']))
+            if r.status_code != requests.codes.ok:
+                raise RuntimeError("Non-200 status code")
+            all_germplasms = all_germplasms + (r.json()['result']['data'])
+        return all_germplasms
+
+        # params={}
+        # can't find anyone that implements /studies/{id}/germplasm
+        # have to do it as an phenotype search instead
+        # note that this will omit any germplasm that hasn't got an associated phenotype
+        # germplasm = set()
+        # indata = json.dumps({"studyDbIds":[studyId]})
+        # print(indata)
+        # params['User-Agent'] = "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko)
+        #  Chrome/41.0.2272.101 Safari/537.36"
+        # params['Accept'] = "application/json"
+        # params['Content-Type'] = "application/json;charset=utf-8"
+        # request_url='https://urgi.versailles.inra.fr/gnpis-core-srv/brapi/v1/phenotypes-search'
+        # headers = {}
+        # r = requests.post(request_url, params=json.dumps(params),data=json.dumps({"studyDbIds":[studyId]}))
+        # print("Post request response content: ", r.content)
+
+        # for phenotype in paging(SERVER + 'phenotypes-search/', params, indata, 'POST'):
+        #     germplasm.add(phenotype['germplasmDbId'])
+        # return germplasm
+
+    def get_obs_units_in_study(self, study_identifier):
+        """ Given a BRAPI study identifier, return an list of BRAPI observation units"""
+        r = requests.get(self.endpoint + "studies/" + study_identifier + '/observationunits')
+
+        num_pages = r.json()['metadata']['pagination']['totalPages']
+        all_obs_units = []
+        for page in range(0, num_pages):
+            r = requests.get(self.endpoint + "studies/" + study_identifier +
+                             '/observationunits', params={'page': page})
+            if r.status_code != requests.codes.ok:
+                raise RuntimeError("Non-200 status code")
+
+            all_obs_units = all_obs_units + (r.json()['result']['data'])
+        # print("from function, nb obsunits:: ", len(all_obs_units))
+        return all_obs_units
+
+    def get_germplasm(self, germplasm_id):
+        """ Given a BRAPI germplasm identifiers, return an list of BRAPI germplasm attributes"""
+        r = requests.get(self.endpoint + 'germplasm/' + str(germplasm_id) + '/attributes')
+        num_pages = r.json()['metadata']['pagination']['totalPages']
+        all_germplasm_attributes = []
+        for page in range(0, num_pages):
+            r = requests.get(self.endpoint + 'germplasm/' + str(germplasm_id) + 'attributes', params={'page': page})
+            # print("from get_germplasm_attributes function: ", page, "total count:", len(r.json()['result']['data']))
+            if r.status_code != requests.codes.ok:
+                raise RuntimeError("Non-200 status code")
+            all_germplasm_attributes = all_germplasm_attributes + r.json()['result']['data']
+        # print("from function, nb obsunits:: ", len(all_germplasm_attributes))
+        # url = SERVER+'germplasm-search?germplasmDbId='+str(germplasm_id)
+        # print('GETing',url)
+        # r = requests.get(url)
+        # if r.status_code != requests.codes.ok:
+        #     raise RuntimeError("Non-200 status code")
+        # germplasm = r.json()['result']['data'][0]
+
+        return all_germplasm_attributes
+
+    def get_brapi_study(self, study_identifier):
+        """" Given a BRAPI study identifier,obtains a BRAPI study object """
+        url = self.endpoint + 'studies/' + str(study_identifier)
+        r = requests.get(url)
         if r.status_code != requests.codes.ok:
             raise RuntimeError("Non-200 status code")
-        maxcount = int(r.json()['metadata']['pagination']['totalCount'])
-        for this_trial in r.json()['result']['data']:
-            yield this_trial
-            # print("trial ", this_trial ," in page: ", page)
-        page += 1
-        # print("trial page: ", page)
-        logging.info("trial page: ", page)
+        this_study = r.json()['result']
+        return this_study
+
+    def get_study_observed_variables(self, brapi_study_id):
+        """" Given a BRAPI study identifier, returns a list of BRAPI observation Variables objects """
+        r = requests.get(self.endpoint + "studies/" + brapi_study_id + '/observationVariables')
+        if r.status_code != requests.codes.ok:
+            raise RuntimeError("Non-200 status code")
+        all_obsvars = r.json()['result']['data']
+
+        return all_obsvars
+
+    @staticmethod
+    def get_germplasm_chars(germplasm):
+        """" Given a BRAPI Germplasm ID, returns a list of ISA characteristics """
+        # TODO: switch BRAPI tags to MIAPPE Tags
+        charax_per_germplasm = {}
+
+        germplasm_id = germplasm['germplasmDbId']
+        these_characteristics = []
+
+        valid_categories = set()
+        valid_categories.add("germplasmSeedSource")
+        valid_categories.add("typeOfGermplasmStorageCode")
+        valid_categories.add("acquisitionDate")
+        valid_categories.add("defaultDisplayName")
+        valid_categories.add("germplasmPUI")
+        valid_categories.add("synonyms")
+        valid_categories.add("speciesAuthority")
+        valid_categories.add("species")
+        valid_categories.add("subtaxa")
+        valid_categories.add("accessionNumber")
+        valid_categories.add("pedigree")
+        valid_categories.add("subtaxaAuthority")
+        valid_categories.add("instituteCode")
+        valid_categories.add("germplasmName")
+        valid_categories.add("instituteName")
+        valid_categories.add("commonCropName")
+        valid_categories.add("germplasmDbId")
+        valid_categories.add("genus")
+        valid_categories.add("biologicalStatusOfAccessionCode")
+        valid_categories.add("countryOfOriginCode")
+
+        for item in germplasm.keys():
+            print("there", item)
+            if item in valid_categories:
+                if item == "subtaxa":
+                    miameitem = "Infraspecific name"
+                    these_characteristics.append(create_isa_characteristic(str(miameitem), str(germplasm[item])))
+                if item == "commonCropName":
+                    miameitem = "Organism"
+                    these_characteristics.append(create_isa_characteristic(str(miameitem), str(germplasm[item])))
+                if item == "accessionNumber":
+                    miameitem = "accnum"
+                    print(miameitem)
+                    these_characteristics.append(create_isa_characteristic(str(miameitem), str(germplasm[item])))
+                else:
+                    these_characteristics.append(create_isa_characteristic(str(item), str(germplasm[item])))
+
+            charax_per_germplasm[germplasm_id] = these_characteristics
+
+        # return Source(germplasm_id, characteristics=these_characteristics)
+        return charax_per_germplasm
 
 
 #
@@ -157,7 +339,7 @@ def get_brapi_trials(endpoint):
 
 def load_trials():
     """" Return trials found in a given BRAPI endpoint server """
-    if (not TRIAL_IDS):
+    if not TRIAL_IDS:
         logger.info("Return all trials")
         for trial in paging(SERVER + 'trials', None, None, 'GET'):
             yield trial
@@ -172,32 +354,6 @@ def load_trials():
                 logging.error("problem with request: ", r)
                 raise RuntimeError("Non-200 status code")
             yield r.json()['result']
-
-
-
-
-def get_phenotypes(endpoint):
-    """Returns a phenotype information from a BrAPI endpoint."""
-    url = endpoint + "phenotype-search"
-    r = requests.get(url)
-    if r.status_code != requests.codes.ok:
-        logging.error("check over here", r)
-        logging.fatal('Could not decode response from server!')
-        raise RuntimeError("Non-200 status code")
-    phenotypes = r.json()['result']['data']
-    return phenotypes
-
-
-def get_germplasms(endpoint):
-    """Returns germplasm information from a BrAPI endpoint."""
-    url = endpoint + "germplasm-search"
-    r = requests.get(url)
-    if r.status_code != requests.codes.ok:
-        logging.error("check over here", r)
-        logging.fatal('Could not decode response from server!')
-        raise RuntimeError("Non-200 status code")
-    these_germplasms = r.json()['result']['data']
-    return these_germplasms
 
 
 # def get_germplasm_by_endpoint(endpoint, germplasm_id):
@@ -218,8 +374,9 @@ def get_germplasms(endpoint):
 
 def create_isa_investigations(endpoint):
     """Create ISA investigations from a BrAPI endpoint, starting from the trials information"""
+    client = BrapiClient(endpoint)
     endpoint_investigations = []
-    for this_trial in get_brapi_trials(endpoint):
+    for this_trial in client.get_brapi_trials():
         this_investigation = Investigation()
         this_investigation.identifier = this_trial['trialDbId']
         this_investigation.title = this_trial['trialName']
@@ -236,7 +393,8 @@ def create_isa_investigations(endpoint):
 
 def create_materials(endpoint):
     """Create ISA studies from a BrAPI endpoint, starting from the studies, where there is no trial information."""
-    for phenotype in get_phenotypes(endpoint):
+    client = BrapiClient(endpoint)
+    for phenotype in client.get_phenotypes():
         print(phenotype)
         # for now, creating the sample name combining studyDbId and potDbId -
         # eventually this should be observationUnitDbId
@@ -246,178 +404,20 @@ def create_materials(endpoint):
         this_sample.derives_from = that_source
 
 
-def get_study(study_identifier):
-    """"Given a BRAPI study object from a BRAPI endpoint server"""
-    r = requests.get(SERVER + 'studies/' + str(study_identifier))
-    if r.status_code != requests.codes.ok:
-        print(r)
-        logging.error("problem with request get_study: ", r)
-        raise RuntimeError("Non-200 status code")
-    return r.json()["result"]
-
-
 # def load_germplasms(study_identifier):
 #     for germplasms in paging(SERVER + 'studies/' + study_identifier + '/germplasm', None, None, 'GET'):
 #         yield germplasms
-
-
-def get_germplasm_in_study(study_identifier):
-    """"Given a BRAPI study identifier returns an array of germplasm objects"""
-
-    r = requests.get(SERVER + "studies/" + study_identifier + '/germplasm')
-    num_pages = r.json()['metadata']['pagination']['totalPages']
-    all_germplasms = []
-    for page in range(0, num_pages):
-        r = requests.get(SERVER + "studies/" + study_identifier +
-                         '/germplasm', params={'page': page})
-
-        logging.debug("from 'get_germplasm_in_study' function page:", page, "request:", len(r.json()['result']['data']))
-        if r.status_code != requests.codes.ok:
-            raise RuntimeError("Non-200 status code")
-        all_germplasms = all_germplasms + (r.json()['result']['data'])
-    return all_germplasms
-
-    # params={}
-    # can't find anyone that implements /studies/{id}/germplasm
-    # have to do it as an phenotype search instead
-    # note that this will omit any germplasm that hasn't got an associated phenotype
-    # germplasm = set()
-    # indata = json.dumps({"studyDbIds":[studyId]})
-    # print(indata)
-    # params['User-Agent'] = "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko)
-    #  Chrome/41.0.2272.101 Safari/537.36"
-    # params['Accept'] = "application/json"
-    # params['Content-Type'] = "application/json;charset=utf-8"
-    # request_url='https://urgi.versailles.inra.fr/gnpis-core-srv/brapi/v1/phenotypes-search'
-    # headers = {}
-    # r = requests.post(request_url, params=json.dumps(params),data=json.dumps({"studyDbIds":[studyId]}))
-    # print("Post request response content: ", r.content)
-
-    # for phenotype in paging(SERVER + 'phenotypes-search/', params, indata, 'POST'):
-    #     germplasm.add(phenotype['germplasmDbId'])
-    # return germplasm
-
 
 # def load_obsunits(study_identifier):
 #     for obsunits in paging(SERVER + 'studies/' + study_identifier + '/observationUnits', None, None, 'GET'):
 #         yield obsunits
 
 
-def get_obs_units_in_study(study_identifier):
-    """ Given a BRAPI study identifier, return an list of BRAPI observation units"""
-    r = requests.get(SERVER + "studies/" + study_identifier + '/observationunits')
-
-    num_pages = r.json()['metadata']['pagination']['totalPages']
-    all_obs_units = []
-    for page in range(0, num_pages):
-        r = requests.get(SERVER + "studies/" + study_identifier +
-                         '/observationunits', params={'page': page})
-        if r.status_code != requests.codes.ok:
-            raise RuntimeError("Non-200 status code")
-
-        all_obs_units = all_obs_units + (r.json()['result']['data'])
-    # print("from function, nb obsunits:: ", len(all_obs_units))
-    return all_obs_units
-
-
-def get_germplasm(germplasm_id):
-    """ Given a BRAPI germplasm identifiers, return an list of BRAPI germplasm attributes"""
-    r = requests.get(SERVER + 'germplasm/' + str(germplasm_id) + '/attributes')
-    num_pages = r.json()['metadata']['pagination']['totalPages']
-    all_germplasm_attributes = []
-    for page in range(0, num_pages):
-        r = requests.get(SERVER + 'germplasm/' + str(germplasm_id) + 'attributes', params={'page': page})
-        # print("from get_germplasm_attributes function: ", page, "total count:", len(r.json()['result']['data']))
-        if r.status_code != requests.codes.ok:
-            raise RuntimeError("Non-200 status code")
-        all_germplasm_attributes = all_germplasm_attributes + r.json()['result']['data']
-    # print("from function, nb obsunits:: ", len(all_germplasm_attributes))
-    # url = SERVER+'germplasm-search?germplasmDbId='+str(germplasm_id)
-    # print('GETing',url)
-    # r = requests.get(url)
-    # if r.status_code != requests.codes.ok:
-    #     raise RuntimeError("Non-200 status code")
-    # germplasm = r.json()['result']['data'][0]
-
-    return all_germplasm_attributes
-
-
-def get_brapi_study(study_identifier):
-    """" Given a BRAPI study identifier,obtains a BRAPI study object """
-    url = SERVER + 'studies/' + str(study_identifier)
-    r = requests.get(url)
-    if r.status_code != requests.codes.ok:
-        raise RuntimeError("Non-200 status code")
-    this_study = r.json()['result']
-    return this_study
-
-
-def get_study_observed_variables(brapi_study_id):
-    """" Given a BRAPI study identifier, returns a list of BRAPI observation Variables objects """
-    r = requests.get(SERVER + "studies/" + brapi_study_id + '/observationVariables')
-    if r.status_code != requests.codes.ok:
-        raise RuntimeError("Non-200 status code")
-    all_obsvars = r.json()['result']['data']
-
-    return all_obsvars
-
-
-def get_germplasm_chars(germplasm):
-    """" Given a BRAPI Germplasm ID, returns a list of ISA characteristics """
-    # TODO: switch BRAPI tags to MIAPPE Tags
-    charax_per_germplasm = {}
-
-    germplasm_id = germplasm['germplasmDbId']
-    these_characteristics = []
-
-    valid_categories = set()
-    valid_categories.add("germplasmSeedSource")
-    valid_categories.add("typeOfGermplasmStorageCode")
-    valid_categories.add("acquisitionDate")
-    valid_categories.add("defaultDisplayName")
-    valid_categories.add("germplasmPUI")
-    valid_categories.add("synonyms")
-    valid_categories.add("speciesAuthority")
-    valid_categories.add("species")
-    valid_categories.add("subtaxa")
-    valid_categories.add("accessionNumber")
-    valid_categories.add("pedigree")
-    valid_categories.add("subtaxaAuthority")
-    valid_categories.add("instituteCode")
-    valid_categories.add("germplasmName")
-    valid_categories.add("instituteName")
-    valid_categories.add("commonCropName")
-    valid_categories.add("germplasmDbId")
-    valid_categories.add("genus")
-    valid_categories.add("biologicalStatusOfAccessionCode")
-    valid_categories.add("countryOfOriginCode")
-
-    for item in germplasm.keys():
-        print("there", item)
-        if item in valid_categories:
-            miameitem = ""
-            if item == "subtaxa":
-                miameitem == "Infraspecific name"
-                these_characteristics.append(create_isa_characteristic(str(miameitem), str(germplasm[item])))
-            if item == "commonCropName":
-                miameitem == "Organism"
-                these_characteristics.append(create_isa_characteristic(str(miameitem), str(germplasm[item])))
-            if item == "accessionNumber":
-                miameitem == "accnum"
-                print(miameitem)
-                these_characteristics.append(create_isa_characteristic(str(miameitem), str(germplasm[item])))
-            else:
-                these_characteristics.append(create_isa_characteristic(str(item), str(germplasm[item])))
-
-        charax_per_germplasm[germplasm_id] = these_characteristics
-
-    # return Source(germplasm_id, characteristics=these_characteristics)
-    return charax_per_germplasm
-
-
 def create_isa_study(brapi_study_id, investigation):
     """Returns an ISA study given a BrAPI endpoints and a BrAPI study identifier."""
-    brapi_study = get_brapi_study(brapi_study_id)
+
+    client = BrapiClient(SERVER)
+    brapi_study = client.get_brapi_study(brapi_study_id)
 
     this_study = Study(filename="s_" + str(brapi_study_id) + ".txt")
     this_study.identifier = brapi_study['studyDbId']
@@ -571,6 +571,8 @@ def write_records_to_file(this_study_id, records, this_directory, filetype):
 def main(arg):
     """ Given a SERVER value (and BRAPI study identifier), generates an ISA-Tab document"""
 
+    client = BrapiClient(SERVER)
+
     # iterating through the trials held in a BRAPI server:
     for trial in load_trials():
         # print("Trial: ", trial['trialDbId'], "|", trial['trialName'])
@@ -600,7 +602,7 @@ def main(arg):
                 if oserror.errno != errno.EEXIST:
                     raise
 
-            study = get_study(study['studyDbId'])
+            study = client.get_study(study['studyDbId'])
             study_id = study['studyDbId']
             # NB: this method always create an ISA Assay Type
             study, investigation = create_isa_study(study_id, investigation)
@@ -621,7 +623,7 @@ def main(arg):
             this_assay = study.assays[0]
 
             # Getting the list of all germplasms used in the BRAPI study:
-            germplasms = get_germplasm_in_study(study_id)
+            germplasms = client.get_germplasm_in_study(study_id)
 
             germ_counter = 0
 
@@ -683,7 +685,7 @@ def main(arg):
             # Now dealing with BRAPI observation units and attempting to create ISA samples
             obsunits = []
             try:
-                obsunits = get_obs_units_in_study(study_id)
+                obsunits = client.get_obs_units_in_study(study_id)
             except Exception as excep:
                 logger.exception(excep)
                 print("error: ", excep)
