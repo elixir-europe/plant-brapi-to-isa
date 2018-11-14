@@ -314,56 +314,75 @@ def get_study_observed_variables(brapi_study_id):
 
 
 def get_germplasm_chars(germplasm):
-    """" Given a BRAPI Germplasm ID, returns a list of ISA characteristics """
+    """" Given a BRAPI Germplasm ID, retrieve the list of all attributes from BRAPI and returns a list of ISA
+     characteristics using MIAPPE tags for compliance + X-check against ISAconfiguration"""
     # TODO: switch BRAPI tags to MIAPPE Tags
-    charax_per_germplasm = {}
 
-    germplasm_id = germplasm['germplasmDbId']
     these_characteristics = []
 
-    valid_categories = set()
-    valid_categories.add("germplasmSeedSource")
-    valid_categories.add("typeOfGermplasmStorageCode")
-    valid_categories.add("acquisitionDate")
-    valid_categories.add("defaultDisplayName")
-    valid_categories.add("germplasmPUI")
-    valid_categories.add("synonyms")
-    valid_categories.add("speciesAuthority")
-    valid_categories.add("species")
-    valid_categories.add("subtaxa")
-    valid_categories.add("accessionNumber")
-    valid_categories.add("pedigree")
-    valid_categories.add("subtaxaAuthority")
-    valid_categories.add("instituteCode")
-    valid_categories.add("germplasmName")
-    valid_categories.add("instituteName")
-    valid_categories.add("commonCropName")
-    valid_categories.add("germplasmDbId")
-    valid_categories.add("genus")
-    valid_categories.add("biologicalStatusOfAccessionCode")
-    valid_categories.add("countryOfOriginCode")
+    germplasm_id = germplasm['germplasmDbId']
+    r = requests.get(SERVER + "germplasm/" + germplasm_id)
+    if r.status_code != requests.codes.ok:
+        raise RuntimeError("Non-200 status code")
 
-    for item in germplasm.keys():
-        print("there",item)
-        if item in valid_categories:
-            miameitem = ""
-            if item == "subtaxa":
-                miameitem == "Infraspecific name"
-                these_characteristics.append(create_isa_characteristic(str(miameitem), str(germplasm[item])))
-            if item == "commonCropName":
-                miameitem == "Organism"
-                these_characteristics.append(create_isa_characteristic(str(miameitem), str(germplasm[item])))
-            if item == "accessionNumber":
-                miameitem == "accnum"
-                print(miameitem)
-                these_characteristics.append(create_isa_characteristic(str(miameitem), str(germplasm[item])))
-            else:
-                these_characteristics.append(create_isa_characteristic(str(item), str(germplasm[item])))
+    all_germplasm_attributes = r.json()['result']
 
-        charax_per_germplasm[germplasm_id] = these_characteristics
+    for key in all_germplasm_attributes.keys():
 
-    # return Source(germplasm_id, characteristics=these_characteristics)
-    return charax_per_germplasm
+        print("key:", key, "value:", str(all_germplasm_attributes[key]))
+        miappeKey = ""
+
+        if key == "accessionNumber":
+            miappeKey = "Material Source ID"
+            # print("key", key, "value", all_germplasm_attributes[key])
+            c = create_isa_characteristic(miappeKey, str(all_germplasm_attributes[key]))
+
+        elif key == "commonCropName":
+            miappeKey = "Material Source ID"
+            # print("key", key, "value", all_germplasm_attributes[key])
+            c =create_isa_characteristic(key, str(all_germplasm_attributes[key]))
+
+        elif key == "genus":
+            miappeKey = "Genus"
+            # print("key", key, "value", all_germplasm_attributes[key])
+            c = create_isa_characteristic(miappeKey, str(all_germplasm_attributes[key]))
+
+        elif key == "species":
+            miappeKey = "Species"
+            c = create_isa_characteristic(miappeKey, str(all_germplasm_attributes[key]))
+
+        elif key == "subtaxa":
+            miappeKey = "Infraspecific Name"
+            c = create_isa_characteristic(miappeKey, str(all_germplasm_attributes[key]))
+
+        elif key == "taxonIds":
+            miappeKey = "Organism"
+            taxinfo = []
+            for item in range(len(all_germplasm_attributes["taxonIds"])):
+                taxinfo.append( all_germplasm_attributes[key][item]["sourceName"] + ":" + all_germplasm_attributes[key][item]["taxonId"])
+            ontovalue = ";".join(taxinfo)
+            c = create_isa_characteristic(miappeKey, ontovalue)
+
+        elif key == "donors":
+            miappeKey = "Donors"
+            donors = []
+            for item in range(len(all_germplasm_attributes["donors"])):
+                donors.append( all_germplasm_attributes[key][item]["donorInstituteCode"] + ":" + all_germplasm_attributes[key][item]["donorAccessionNumber"])
+            ontovalue = ";".join(donors)
+            c = create_isa_characteristic(miappeKey, ontovalue)
+
+        elif key == "synonyms":
+            if isinstance(all_germplasm_attributes[key], list):
+                ontovalue = ";".join(all_germplasm_attributes[key])
+                c = create_isa_characteristic(key, ontovalue)
+
+        else:
+            c = create_isa_characteristic(key, str(all_germplasm_attributes[key]))
+
+        if c not in these_characteristics:
+                these_characteristics.append(c)
+
+    return these_characteristics
 
 
 def create_isa_study(brapi_study_id, investigation):
@@ -443,17 +462,11 @@ def create_isa_study(brapi_study_id, investigation):
     return this_study, investigation
 
 
-def create_isa_characteristic(category, value):
+def create_isa_characteristic(my_key, my_value):
     """Given a pair of category and value, return an ISA Characteristics element """
-    if category is None or len(category) == 0:
-        return None
-    if value is None or len(value) == 0:
-        return None
-    # return Characteristic(category, str(value))
-    this_characteristic = Characteristic(category=OntologyAnnotation(term=str(category)),
-                                         value=OntologyAnnotation(term=str(value), term_source="",
+    this_characteristic = Characteristic(category=OntologyAnnotation(term=str(my_key)),
+                                         value=OntologyAnnotation(term=str(my_value), term_source="",
                                          term_accession=""))
-    # print("category: ", this_characteristic.category.term, "value: ", this_characteristic.value.term)
     return this_characteristic
 
 
@@ -599,50 +612,10 @@ def main(arg):
                     # print("GERM:", germ['germplasmName']) # germplasmDbId
                     # WARNING: BRAPIv1 endpoints are not consistently using these
                     # depending on endpoints, attributes may have to swapped
-
-                    # Creating corresponding ISA biosources:
-                    # --------------------------------------
-                    source = Source(name=germ['germplasmName'])
-
-                    # Creating isa characteristics from germplasm attributes.
-                    # -------------------------------------------------------
-                    for key in germ.keys():
-
-                        if isinstance(germ[key], list):
-                            # print("HERE: ", germ[key])
-                            ontovalue = ";".join(germ[key])
-                            c = Characteristic(category=OntologyAnnotation(term=str(key)),
-                                               value=OntologyAnnotation(term=ontovalue,
-                                                                        term_source="",
-                                                                        term_accession=""))
-                        # elif germ[key].startswith("["):
-                        #     print("THERE: ", germ[key])
-                        #     germ[key] = ast.literal_leval(germ[key])
-                        #     ontovalue = ";".join(germ[key])
-                        #     c = Characteristic(category=OntologyAnnotation(term=str(key)),
-                        #                        value=OntologyAnnotation(term=ontovalue,
-                        #                                                 term_source="",
-                        #                                                 term_accession=""))
-                        else:
-                            # print("normal: ", germ[key])
-                            c = Characteristic(category=OntologyAnnotation(term=str(key)),
-                                               value=OntologyAnnotation(term=str(germ[key]),
-                                                                        term_source="",
-                                                                        term_accession=""))
-                        if key == 'accessionNumber':
-                            c = Characteristic(category=OntologyAnnotation(term="Material Source ID"),
-                                               value=OntologyAnnotation(term=str(germ[key]),
-                                                                        term_source="",
-                                                                        term_accession=""))
-                        if key == 'accessionNumber':
-                            c = Characteristic(category=OntologyAnnotation(term="Material Source ID"),
-                                               value=OntologyAnnotation(term=str(germ[key]),
-                                                                        term_source="",
-                                                                        term_accession=""))
-
-
-                        if c not in source.characteristics:
-                            source.characteristics.append(c)
+                    # get_germplasm_chars(germ)
+                    # Creating corresponding ISA biosources with is Creating isa characteristics from germplasm attributes.
+                    # ------------------------------------------------------
+                    source = Source(name=germ['germplasmName'], characteristics=get_germplasm_chars(germ))
 
                     # Associating ISA sources to ISA study object
                     study.sources.append(source)
@@ -688,21 +661,21 @@ def main(arg):
 
                         if 'blockNumber' in obsunits[i].keys():
                             # print('KEY:', obsunits[i]['X'])
-                            c = Characteristic(category=OntologyAnnotation(term="blockNumber"),
+                            c = Characteristic(category=OntologyAnnotation(term="block Number"),
                                                value=OntologyAnnotation(term=str(obsunits[i]['blockNumber']),
                                                                         term_source="",
                                                                         term_accession=""))
                             this_sample.characteristics.append(c)
 
                         if 'plotNumber' in obsunits[i].keys():
-                            c = Characteristic(category=OntologyAnnotation(term="plotNumber"),
+                            c = Characteristic(category=OntologyAnnotation(term="plot Number"),
                                                value=OntologyAnnotation(term=str(obsunits[i]['plotNumber']),
                                                                         term_source="",
                                                                         term_accession=""))
                             this_sample.characteristics.append(c)
 
                         if 'plantNumber' in obsunits[i].keys():
-                            c = Characteristic(category=OntologyAnnotation(term="plantNumber"),
+                            c = Characteristic(category=OntologyAnnotation(term="plant Number"),
                                                value=OntologyAnnotation(term=str(obsunits[i]['plantNumber']),
                                                                         term_source="",
                                                                         term_accession=""))
@@ -730,7 +703,7 @@ def main(arg):
                             this_sample.characteristics.append(c)
 
                         if 'observationLevel' in obsunits[i].keys():
-                            c = Characteristic(category=OntologyAnnotation(term="observationLevel"),
+                            c = Characteristic(category=OntologyAnnotation(term="observation Level"),
                                                value=OntologyAnnotation(term=str(obsunits[i]['observationLevel']),
                                                                         term_source="",
                                                                         term_accession=""))
