@@ -315,7 +315,7 @@ def get_study_observed_variables(brapi_study_id):
 
 def get_germplasm_chars(germplasm):
     """" Given a BRAPI Germplasm ID, returns a list of ISA characteristics """
-
+    # TODO: switch BRAPI tags to MIAPPE Tags
     charax_per_germplasm = {}
 
     germplasm_id = germplasm['germplasmDbId']
@@ -344,9 +344,22 @@ def get_germplasm_chars(germplasm):
     valid_categories.add("countryOfOriginCode")
 
     for item in germplasm.keys():
+        print("there",item)
         if item in valid_categories:
+            miameitem = ""
+            if item == "subtaxa":
+                miameitem == "Infraspecific name"
+                these_characteristics.append(create_isa_characteristic(str(miameitem), str(germplasm[item])))
+            if item == "commonCropName":
+                miameitem == "Organism"
+                these_characteristics.append(create_isa_characteristic(str(miameitem), str(germplasm[item])))
+            if item == "accessionNumber":
+                miameitem == "accnum"
+                print(miameitem)
+                these_characteristics.append(create_isa_characteristic(str(miameitem), str(germplasm[item])))
+            else:
+                these_characteristics.append(create_isa_characteristic(str(item), str(germplasm[item])))
 
-            these_characteristics.append(create_isa_characteristic(str(item), str(germplasm[item])))
         charax_per_germplasm[germplasm_id] = these_characteristics
 
     # return Source(germplasm_id, characteristics=these_characteristics)
@@ -369,10 +382,48 @@ def create_isa_study(brapi_study_id, investigation):
     this_study.comments.append(Comment(name="Study End Date", value=brapi_study['endDate']))
 
     if brapi_study['location'] is not None and brapi_study['location']['name'] is not None:
-        this_study.comments.append(Comment(name="Study Geographical Location",
+        this_study.comments.append(Comment(name="Experimental site name",
                                            value=brapi_study['location']['name']))
     else:
-        this_study.comments.append(Comment(name="Study Geographical Location", value=""))
+        this_study.comments.append(Comment(name="Experimental site name", value=""))
+
+    if brapi_study['location'] is not None and brapi_study['location']['countryCode'] is not None:
+        this_study.comments.append(Comment(name="geographical location (country)",
+                                           value=brapi_study['location']['countryCode']))
+
+    elif brapi_study['location'] is not None and brapi_study['location']['countryName'] is not None:
+        this_study.comments.append(Comment(name="geographical location (country)",
+                                           value=brapi_study['location']['countryName']))
+    else:
+        this_study.comments.append(Comment(name="geographical location (country)", value=""))
+
+    if brapi_study['location'] is not None and brapi_study['location']['latitude'] is not None:
+        this_study.comments.append(Comment(name="geographical location (latitude)",
+                                           value=brapi_study['location']['latitude']))
+    else:
+        this_study.comments.append(Comment(name="geographical location (latitude)", value=""))
+
+    if brapi_study['location'] is not None and brapi_study['location']['latitude'] is not None:
+        this_study.comments.append(Comment(name="geographical location (longitude)",
+                                           value=brapi_study['location']['longitude']))
+    else:
+        this_study.comments.append(Comment(name="geographical location (longitude)", value=""))
+
+    if brapi_study['location'] is not None and brapi_study['location']['altitude'] is not None:
+        this_study.comments.append(Comment(name="geographical location (altitude)",
+                                           value=brapi_study['location']['altitude']))
+    else:
+        this_study.comments.append(Comment(name="geographical location (altitude)", value=""))
+
+    # TODO: look at the brapi call https://app.swaggerhub.com/apis/PlantBreedingAPI/BrAPI/1.2#/Studies/get_studies__studyDbId__layout
+    # mapping into ISA Comment [Observation unit level hierarchy] MIAPPE DM24 [BRAPI mapping:  Layout/obvservationLevel || Layout/observationReplicate ||Layout/blockNumber
+
+# TODO: 		<field header="Comment[Map of experimental design]" data-type="String" is-file-field="true" is-multiple-value="false" is-required="false" is-hidden="false" is-forced-ontology="false" section="INVESTIGATION">
+# 			<description>
+# 				<![CDATA[Representation of the experimental design, a GIS or excel file. BRAPI mapping: if Study/dataLinks/@type="experimental design map", then Study/dataLinks/@url || @name ]]>
+# 			</description>
+# 			<default-value/>
+# 		</field>
 
     study_design = brapi_study['studyType']
     oa_st_design = OntologyAnnotation(term=study_design)
@@ -434,6 +485,8 @@ def create_isa_tdf_from_obsvars(obsvars):
 
 
 def create_isa_obs_data_from_obsvars(all_obs_units):
+    # TODO: BH2018 - discussion with Cyril and Guillaume: Observation Values should be grouped by Observation Level {plot,block,plant,individual,replicate}
+    # TODO: create as many ISA assays as there as declared ObservationLevel in the BRAPI message
     data_records = []
     header_elements = ["Assay Name", "Observation Identifier", "Trait Name", "Trait Value", "Performer", "Date",
                        "Comment[season]"]
@@ -576,6 +629,18 @@ def main(arg):
                                                value=OntologyAnnotation(term=str(germ[key]),
                                                                         term_source="",
                                                                         term_accession=""))
+                        if key == 'accessionNumber':
+                            c = Characteristic(category=OntologyAnnotation(term="Material Source ID"),
+                                               value=OntologyAnnotation(term=str(germ[key]),
+                                                                        term_source="",
+                                                                        term_accession=""))
+                        if key == 'accessionNumber':
+                            c = Characteristic(category=OntologyAnnotation(term="Material Source ID"),
+                                               value=OntologyAnnotation(term=str(germ[key]),
+                                                                        term_source="",
+                                                                        term_accession=""))
+
+
                         if c not in source.characteristics:
                             source.characteristics.append(c)
 
@@ -701,6 +766,8 @@ def main(arg):
                                     this_sample.factor_values.append(fv)
                         study.samples.append(this_sample)
                         # print("counting observations: ", i, "before: ", this_source.name)
+
+                        # TODO: Add Comment[Factor Values] : iterate through BRAPI treatments to obtain all possible values for a given Factor
                     else:
                         logger.info("Can't find a reference to known source for that observation unit:", this_source)
 
