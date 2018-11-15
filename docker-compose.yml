@@ -15,3 +15,8 @@ services:
         command: ["python","/brapi_to_isa.py", "-e https://urgi.versailles.inra.fr/gnpis-core-srv/brapi/v1/",  "-sRIGW1,SxG-DoligezEtAl2013"]
         volumes:
          - ./out:/outputdir
+    test_test_serv:
+        build: ./
+        command: ["python","/brapi_to_isa.py", "-e https://test-server.brapi.org/brapi/v1/"]
+        volumes:
+         - ./out:/outputdir
