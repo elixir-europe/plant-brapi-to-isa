@@ -105,17 +105,17 @@ class BrapiClient:
 
     def get_obs_unit_call(self):
         if self.obs_unit_call == " " :
-            r = requests.get(self.endpoint +"calls")
+            r = requests.get(self.endpoint +"calls?pageSize=100")
             if r.status_code != requests.codes.ok:
                 self.logger.debug("\n\nERROR in get_obs_units_in_study " + r.status_code + r.json)
                 raise RuntimeError("Non-200 status code")
-            #available_calls = json.load (r.json()['result']['data'])
-            if 'studies/{studyDbId}/observationUnits' not in r.json():
+            if any(el['call'] == 'studies/{studyDbId}/observationUnits' for el in r.json()['result']['data']):
                 self.logger.debug(" GOT OBSERVATIONUNIT THE 1.1 WAY")
                 self.obs_unit_call = "/observationUnits"
             else:
                 self.obs_unit_call = "/observationunits"
         return self.obs_unit_call
+
 
     def get_obs_units_in_study(self, study_identifier):
         """ Given a BRAPI study identifier, return an list of BRAPI observation units"""
@@ -181,7 +181,7 @@ class BrapiClient:
     def paging(self, url: object, params: object, data: object, method: object) -> object:
         """ "Housekeeping" function to deal with paging during http calls"""
         page = 0
-        pagesize = 1000  # VIB doesn't seem to respect it
+        pagesize = 1000
         maxcount = None
         # set a default dict for parameters
         if params is None:
@@ -189,9 +189,8 @@ class BrapiClient:
         while maxcount is None or page < maxcount:
             params['page'] = page
             params['pageSize'] = pagesize
-            print('retrieving page', page, 'of', maxcount, 'from', url)
-            print(params)
-            logging.info("paging params:", params)
+            self.logger.debug('retrieving page', page, 'of', maxcount, 'from', url)
+            self.logger.info("paging params:", params)
 
             if method == 'GET':
                 print("GETting", url)
@@ -217,6 +216,9 @@ class BrapiClient:
                 raise RuntimeError("Non-200 status code")
 
             maxcount = int(r.json()['metadata']['pagination']['totalPages'])
+            #TODO: remove, hack to adress GnpIS bug, to be fixed in produciton by January 2019
+            if '/observationUnits' in url:
+                page = 1000
 
             for data in r.json()['result']['data']:
                 yield data

@@ -357,6 +357,7 @@ def write_records_to_file(this_study_id, records, this_directory, filetype):
     fh.close()
 
 def get_output_path(path):
+    path = "outputdir/" + path + "/"
     try:
         if not os.path.exists(path):
             os.makedirs(path)
@@ -364,7 +365,7 @@ def get_output_path(path):
         logger.exception(oserror)
         if oserror.errno != errno.EEXIST:
             raise
-    return "outputdir/" + path + "/"
+    return path
 
 
 def main(arg):
@@ -379,6 +380,7 @@ def main(arg):
         investigation = Investigation()
 
         output_directory = get_output_path( trial['trialName'] )
+        logger.info("Generating output in : "+ output_directory)
 
         # iterating through the BRAPI studies associated to a given BRAPI trial:
         for study in trial['studies']:
@@ -485,7 +487,7 @@ def main(arg):
                 # Getting the relevant germplasm used for that observation event:
                 # ---------------------------------------------------------------
                 this_source = study.get_source(obs_unit['germplasmName'])
-                logger.debug("testing for the source reference: ", this_source)
+                #logger.debug("testing for the source reference: ", this_source)
 
                 if this_source is not None:
                     this_sample = Sample(
@@ -673,7 +675,7 @@ def main(arg):
                 logger.info('CONVERSION FAILED!...')
 
             try:
-                variable_records = create_isa_tdf_from_obsvars(get_study_observed_variables(study_id))
+                variable_records = create_isa_tdf_from_obsvars(client.get_study_observed_variables(study_id))
                 # Writing Trait Definition File:
                 # ------------------------------
                 write_records_to_file(this_study_id=str(study_id),
