@@ -1,3 +1,4 @@
+import logging
 import os
 import unittest
 
@@ -11,26 +12,72 @@ import test_mock_data
 from brapi_client import BrapiClient
 
 
+logger = logging.getLogger()
+
+
 class BrapiClientTest(unittest.TestCase):
 
-    @requests_mock.mock()
-    def test_get_study(self, mock_requests_session):
-        # Init client with mock requests session
-        client = BrapiClient('foo/', mock_requests_session)
-        mock_requests_session.get('foo/studies/bar', text='baz')
+    def setUp(self):
+        self.endpoint = 'http://foo/'
 
-        study_id = "bar"
-        client.get_study(study_id)
+    @requests_mock.mock()
+    def test_get_study_fail(self, mock_requests_session):
+        # Mock
+        study_id = 'bar'
+        mock_requests_session.get(f'{self.endpoint}studies/{study_id}', status_code=500)
+
+        # Init
+        client = BrapiClient(self.endpoint, logger, mock_requests_session)
+
+        # Call / Assert
+        self.assertRaises(RuntimeError, client.get_study, study_id)
+
+    @requests_mock.mock()
+    def test_get_study_success(self, mock_requests_session):
+        # Mock
+        study_id = 'bar'
+        url = f'{self.endpoint}studies/{study_id}'
+        result = test_mock_data.mock_brapi_result(test_mock_data.mock_study)
+        mock_requests_session.get(url, json=result)
+
+        # Init
+        client = BrapiClient(self.endpoint, logger, mock_requests_session)
+
+        # Call
+        actual_study = client.get_study(study_id)
+        # Assert
+        assert actual_study == test_mock_data.mock_study
+
+    @requests_mock.mock()
+    def test_paging_get(self, mock_requests_session):
+        # Mock
+        url = f'{self.endpoint}/studies'
+        params = None
+        data = None
+        method = 'GET'
+        results = test_mock_data.mock_brapi_results([test_mock_data.mock_study], 1)
+        mock_requests_session.get(url, json=results)
+
+        # Init
+        client = BrapiClient(self.endpoint, logger, mock_requests_session)
+
+        # Call
+        actual_results = list(client.paging(url, params, data, method))
+
+        # Assert
+        assert actual_results is not None
+        assert len(actual_results) == 1
+        assert actual_results[0] == test_mock_data.mock_study
 
 
 class ConvertTest(unittest.TestCase):
     """Run BrAPI 2 ISA conversion test on mocked data (from http://test-server.brapi.org)"""
 
     @mock.patch('brapi_client.BrapiClient')
-    def test_convert_study(self, BrapiClientMock):
+    def test_convert_study(self, brapi_client_mock):
         """Test conversion of BrAPI study to ISA study using mock data."""
         # Mock call to BrAPI study
-        BrapiClientMock.get_brapi_study.return_value = test_mock_data.mock_study
+        brapi_client_mock.get_brapi_study.return_value = test_mock_data.mock_study
 
         study_id = test_mock_data.mock_study['studyDbId']
         investigation = Investigation()
