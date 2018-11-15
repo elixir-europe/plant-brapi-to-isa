@@ -202,66 +202,6 @@ def create_materials(endpoint):
 #         yield obsunits
 
 
-
-def get_obs_units_in_study(study_identifier):
-    """ Given a BRAPI study identifier, return an list of BRAPI observation units"""
-    r = requests.get(SERVER + "studies/" + study_identifier + '/observationunits')
-
-    num_pages = r.json()['metadata']['pagination']['totalPages']
-    all_obs_units = []
-    for page in range(0, num_pages):
-        r = requests.get(SERVER + "studies/" + study_identifier +
-                         '/observationunits', params={'page': page})
-        if r.status_code != requests.codes.ok:
-            raise RuntimeError("Non-200 status code")
-
-        all_obs_units = all_obs_units + (r.json()['result']['data'])
-    # print("from function, nb obsunits:: ", len(all_obs_units))
-    return all_obs_units
-
-
-def get_germplasm(germplasm_id):
-    """ Given a BRAPI germplasm identifiers, return an list of BRAPI germplasm attributes"""
-    r = requests.get(SERVER + 'germplasm/' + str(germplasm_id) + '/attributes')
-    num_pages = r.json()['metadata']['pagination']['totalPages']
-    all_germplasm_attributes = []
-    for page in range(0, num_pages):
-        r = requests.get(SERVER + 'germplasm/' + str(germplasm_id) + 'attributes', params={'page': page})
-        # print("from get_germplasm_attributes function: ", page, "total count:", len(r.json()['result']['data']))
-        if r.status_code != requests.codes.ok:
-            raise RuntimeError("Non-200 status code")
-        all_germplasm_attributes = all_germplasm_attributes + r.json()['result']['data']
-    # print("from function, nb obsunits:: ", len(all_germplasm_attributes))
-    # url = SERVER+'germplasm-search?germplasmDbId='+str(germplasm_id)
-    # print('GETing',url)
-    # r = requests.get(url)
-    # if r.status_code != requests.codes.ok:
-    #     raise RuntimeError("Non-200 status code")
-    # germplasm = r.json()['result']['data'][0]
-
-    return all_germplasm_attributes
-
-
-def get_brapi_study(study_identifier):
-    """" Given a BRAPI study identifier,obtains a BRAPI study object """
-    url = SERVER + 'studies/' + str(study_identifier)
-    r = requests.get(url)
-    if r.status_code != requests.codes.ok:
-        raise RuntimeError("Non-200 status code")
-    this_study = r.json()['result']
-    return this_study
-
-
-def get_study_observed_variables(brapi_study_id):
-    """" Given a BRAPI study identifier, returns a list of BRAPI observation Variables objects """
-    r = requests.get(SERVER + "studies/" + brapi_study_id + '/observationVariables')
-    if r.status_code != requests.codes.ok:
-        raise RuntimeError("Non-200 status code")
-    all_obsvars = r.json()['result']['data']
-
-    return all_obsvars
-
-
 def get_germplasm_chars(germplasm):
     """" Given a BRAPI Germplasm ID, retrieve the list of all attributes from BRAPI and returns a list of ISA
      characteristics using MIAPPE tags for compliance + X-check against ISAconfiguration"""
@@ -563,7 +503,7 @@ def main(arg):
             # Now dealing with BRAPI observation units and attempting to create ISA samples
             obsunits = []
             try:
-                obsunits = get_obs_units_in_study(study_id)
+                obsunits = client.get_obs_units_in_study(study_id)
             except Exception as excep:
                 logger.exception(excep)
                 print("error: ", excep)
@@ -903,7 +843,7 @@ def main(arg):
                 logger.info('CONVERSION FAILED!...')
 
             try:
-                variable_records = create_isa_tdf_from_obsvars(get_study_observed_variables(study_id))
+                variable_records = create_isa_tdf_from_obsvars(client.get_study_observed_variables(study_id))
                 # Writing Trait Definition File:
                 # ------------------------------
                 write_records_to_file(this_study_id=str(study_id),

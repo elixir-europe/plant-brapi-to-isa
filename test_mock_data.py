@@ -238,3 +238,12 @@ mock_observation_units = [
         ],
     },
 ]
+
+
+def mock_brapi_results(results, total_pages):
+    return {"metadata": {"pagination": {"totalPages": total_pages}},
+            "result": {"data": results}}
+
+
+def mock_brapi_result(result):
+    return {"metadata": {}, "result": result}

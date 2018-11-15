@@ -1,3 +1,5 @@
+from collections import Iterable
+
 import requests
 import logging
 import json
@@ -9,7 +11,7 @@ class BrapiClient:
 
     def __init__(self, endpoint: str, logger, session: requests.Session = None):
         self.endpoint = endpoint
-        self.logger=logger
+        self.logger = logger
         self.obs_unit_call = " "
         if session is not None:
             self.session = session
@@ -178,7 +180,7 @@ class BrapiClient:
 
         return all_obsvars
 
-    def paging(self, url: object, params: object, data: object, method: object) -> object:
+    def paging(self, url: str, params: object, data: object, method: str) -> Iterable:
         """ "Housekeeping" function to deal with paging during http calls"""
         page = 0
         pagesize = 1000  # VIB doesn't seem to respect it
