@@ -2,11 +2,25 @@ import os
 import unittest
 
 import mock
+import requests_mock
 from isatools import isatab
 from isatools.model import Investigation
 
 import brapi_to_isa
-from test_mock_data import mock_study, mock_trials, mock_germplasms, mock_variables, mock_observation_units
+import test_mock_data
+from brapi_client import BrapiClient
+
+
+class BrapiClientTest(unittest.TestCase):
+
+    @requests_mock.mock()
+    def test_get_study(self, mock_requests_session):
+        # Init client with mock requests session
+        client = BrapiClient('foo/', mock_requests_session)
+        mock_requests_session.get('foo/studies/bar', text='baz')
+
+        study_id = "bar"
+        client.get_study(study_id)
 
 
 class ConvertTest(unittest.TestCase):
@@ -16,9 +30,9 @@ class ConvertTest(unittest.TestCase):
     def test_convert_study(self, BrapiClientMock):
         """Test conversion of BrAPI study to ISA study using mock data."""
         # Mock call to BrAPI study
-        BrapiClientMock.get_brapi_study.return_value = mock_study
+        BrapiClientMock.get_brapi_study.return_value = test_mock_data.mock_study
 
-        study_id = mock_study['studyDbId']
+        study_id = test_mock_data.mock_study['studyDbId']
         investigation = Investigation()
 
         # Convert BrAPI study to ISA study
@@ -36,17 +50,17 @@ class ConvertTest(unittest.TestCase):
         args = []
 
         # Mock API calls
-        load_trials_mock.return_value = mock_trials
-        brapi_client_mock.return_value.get_study.return_value = mock_study
-        brapi_client_mock.return_value.get_brapi_study.return_value = mock_study
-        brapi_client_mock.return_value.get_germplasm_in_study.return_value = mock_germplasms
-        brapi_client_mock.return_value.get_obs_units_in_study.return_value = mock_observation_units
-        brapi_client_mock.return_value.get_study_observed_variables.return_value = mock_variables
+        load_trials_mock.return_value = test_mock_data.mock_trials
+        brapi_client_mock.return_value.get_study.return_value = test_mock_data.mock_study
+        brapi_client_mock.return_value.get_brapi_study.return_value = test_mock_data.mock_study
+        brapi_client_mock.return_value.get_germplasm_in_study.return_value = test_mock_data.mock_germplasms
+        brapi_client_mock.return_value.get_obs_units_in_study.return_value = test_mock_data.mock_observation_units
+        brapi_client_mock.return_value.get_study_observed_variables.return_value = test_mock_data.mock_variables
 
         # Run full conversion
         brapi_to_isa.main(args)
 
-        out_folder = os.path.join("outputdir", mock_trials[0]['trialName'])
+        out_folder = os.path.join("outputdir", test_mock_data.mock_trials[0]['trialName'])
         assert os.path.exists(out_folder)
 
         # TODO: use MIAPPE ISA configuration for validation here
