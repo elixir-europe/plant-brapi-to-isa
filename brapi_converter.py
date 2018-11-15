@@ -19,7 +19,7 @@ class BrapiToIsaConverter:
         self.logger = logger
         self.endpoint = endpoint
 
-    def create_germplasm_chars(self, germplasm):
+        def create_germplasm_chars(self, germplasm):
         """" Given a BRAPI Germplasm ID, retrieve the list of all attributes from BRAPI and returns a list of ISA
         characteristics using MIAPPE tags for compliance + X-check against ISAconfiguration"""
         # TODO: switch BRAPI tags to MIAPPE Tags
@@ -33,42 +33,31 @@ class BrapiToIsaConverter:
 
         all_germplasm_attributes = r.json()['result']
 
+        mapping_dictionnary = {
+            "accessionNumber": "Material Source ID",
+            "commonCropName":  "commonCropName",
+            "genus": "Genus",
+            "species": "Species",
+            "subtaxa": "Infraspecific Name",
+            "taxonIds": ["Organism", "sourceName", "taxonId"]
+
+        }
+
         for key in all_germplasm_attributes.keys():
 
             print("key:", key, "value:", str(all_germplasm_attributes[key]))
             miappeKey = ""
 
-            if key == "accessionNumber":
-                miappeKey = "Material Source ID"
-                # print("key", key, "value", all_germplasm_attributes[key])
-                c = self.create_isa_characteristic(miappeKey, str(all_germplasm_attributes[key]))
-
-            elif key == "commonCropName":
-                miappeKey = "Material Source ID"
-                # print("key", key, "value", all_germplasm_attributes[key])
-                c =self.create_isa_characteristic(key, str(all_germplasm_attributes[key]))
-
-            elif key == "genus":
-                miappeKey = "Genus"
-                # print("key", key, "value", all_germplasm_attributes[key])
-                c = self.create_isa_characteristic(miappeKey, str(all_germplasm_attributes[key]))
-
-            elif key == "species":
-                miappeKey = "Species"
-                c = self.create_isa_characteristic(miappeKey, str(all_germplasm_attributes[key]))
-
-            elif key == "subtaxa":
-                miappeKey = "Infraspecific Name"
-                c = self.create_isa_characteristic(miappeKey, str(all_germplasm_attributes[key]))
-
-            elif key == "taxonIds":
-                miappeKey = "Organism"
-                if "taxonIds" in all_germplasm_attributes.keys() and len(all_germplasm_attributes["taxonIds"])>0 :
+            if key in mapping_dictionnary.keys():
+                if isinstance(mapping_dictionnary[key], str):
+                    c = self.create_isa_characteristic(mapping_dictionnary[key], str(all_germplasm_attributes[key]))
+                else:
                     taxinfo = []
-                    for item in range(len(all_germplasm_attributes["taxonIds"])):
-                        taxinfo.append( all_germplasm_attributes[key][item]["sourceName"] + ":" + all_germplasm_attributes[key][item]["taxonId"])
+                    for item in range(len(all_germplasm_attributes[key])):
+                        taxinfo.append(all_germplasm_attributes[key][item][mapping_dictionnary[key][1]] + ":" +
+                                       all_germplasm_attributes[key][item][mapping_dictionnary[key][2]])
                     ontovalue = ";".join(taxinfo)
-                    c = self.create_isa_characteristic(miappeKey, ontovalue)
+                    c = self.create_isa_characteristic(mapping_dictionnary[key][0], ontovalue)
 
             elif key == "donors":
                 miappeKey = "Donors"
