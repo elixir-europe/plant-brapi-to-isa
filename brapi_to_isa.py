@@ -1,12 +1,12 @@
+import argparse
 import datetime
-import os
 import errno
 import json
-import requests
 import logging
+import os
 import sys
-import argparse
 
+import requests
 from isatools import isatab
 from isatools.model import Investigation, OntologyAnnotation, OntologySource, Assay, Study, Characteristic, Source, \
     Sample, Protocol, Process, StudyFactor, FactorValue, DataFile, ParameterValue, Comment, ProtocolParameter, plink
@@ -733,7 +733,7 @@ def main(arg):
                 logger.info('CONVERSION FAILED!...')
 
             try:
-                variable_records = create_isa_tdf_from_obsvars(get_study_observed_variables(study_id))
+                variable_records = create_isa_tdf_from_obsvars(client.get_study_observed_variables(study_id))
                 # Writing Trait Definition File:
                 # ------------------------------
                 write_records_to_file(this_study_id=str(study_id),
@@ -746,7 +746,7 @@ def main(arg):
             # Getting Variable Data and writing Measurement Data File
             # -------------------------------------------------------
             try:
-                data_readings = create_isa_obs_data_from_obsvars(get_obs_units_in_study(study_id))
+                data_readings = create_isa_obs_data_from_obsvars(client.get_obs_units_in_study(study_id))
                 write_records_to_file(this_study_id=str(study_id), this_directory=directory, records=data_readings,
                                       filetype="d_")
             except Exception as ioe:
