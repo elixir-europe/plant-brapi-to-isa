@@ -23,10 +23,12 @@ mock_trials = [
 
 mock_germplasms = [
     {
-        "germplasmName": "Name001"
+        "germplasmDbId": "1",
+        "germplasmName": "Name001",
     },
     {
-        "germplasmName": "Name002"
+        "germplasmDbId": "2",
+        "germplasmName": "Name002",
     },
 ]
 mock_variables = [
@@ -194,11 +196,13 @@ mock_variables = [
         },
     },
 ]
+
 mock_observation_units = [
     {
         "observationUnitDbId": "1",
         "observationUnitName": "Plot 1",
         "germplasmName": mock_germplasms[0]["germplasmName"],
+        "germplasmDbId": mock_germplasms[0]["germplasmDbId"],
         "observations": [
           {
             "collector": "A. Technician",
@@ -220,6 +224,7 @@ mock_observation_units = [
         "observationUnitDbId": "3",
         "observationUnitName": "Plot 2",
         "germplasmName": mock_germplasms[1]["germplasmName"],
+        "germplasmDbId": mock_germplasms[1]["germplasmDbId"],
         "observations": [
           {
             "collector": "A. Technician",

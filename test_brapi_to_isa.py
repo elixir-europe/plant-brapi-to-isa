@@ -38,6 +38,7 @@ class ConvertTest(unittest.TestCase):
         """Test the full conversion from BrAPI to ISA using mock data and validating using ISA validator."""
         # Mock API calls
         instance_mock = client_mock.return_value
+        instance_mock.get_trials.return_value = mock_data.mock_trials
         instance_mock.get_brapi_trials.return_value = mock_data.mock_trials
         instance_mock.get_study.return_value = mock_data.mock_study
         instance_mock.get_brapi_study.return_value = mock_data.mock_study
@@ -48,7 +49,7 @@ class ConvertTest(unittest.TestCase):
         # Run full conversion
         brapi_to_isa.main(None)
 
-        out_folder = os.path.join("outputdir", mock_data.mock_trials[0]['trialName'])
+        out_folder = brapi_to_isa.get_output_path(mock_data.mock_trials[0]['trialName'])
         assert os.path.exists(out_folder)
 
         # TODO: use MIAPPE ISA configuration for validation here
