@@ -11,7 +11,7 @@ from isatools.model import Investigation, OntologyAnnotation, OntologySource, As
     Sample, Protocol, Process, StudyFactor, FactorValue, DataFile, ParameterValue, Comment, ProtocolParameter, plink
 
 from brapi_client import BrapiClient
-from brapi_converter import BrapiToIsaConverter
+from brapi_to_isa_converter import BrapiToIsaConverter
 
 __author__ = 'proccaserra (Philippe Rocca-Serra)'
 
@@ -209,11 +209,10 @@ def main(arg):
 
     # iterating through the trials held in a BRAPI server:
     for trial in client.get_trials(TRIAL_IDS):
-        # print("Trial: ", trial['trialDbId'], "|", trial['trialName'])
         logger.info('we start from a set of Trials')
         investigation = Investigation()
 
-        output_directory = get_output_path( trial['trialName'] )
+        output_directory = get_output_path( trial['trialName'])
         logger.info("Generating output in : "+ output_directory)
 
         # iterating through the BRAPI studies associated to a given BRAPI trial:
@@ -227,8 +226,6 @@ def main(arg):
             # BRAPI TEST SERVER = 'https://test-server.brapi.org/brapi/v1/'
 
 
-
-            #isa_study = get_study(isa_study['studyDbId'])
             study_id = brapi_study['studyDbId']
             # NB: this method always create an ISA Assay Type
             isa_study, investigation = converter.create_isa_study(study_id, investigation)

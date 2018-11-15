@@ -9,7 +9,7 @@ from isatools.model import Investigation
 
 import brapi_to_isa
 import mock_data
-from brapi_converter import BrapiToIsaConverter
+from brapi_to_isa_converter import BrapiToIsaConverter
 import requests_mock
 
 logger = logging.getLogger()
