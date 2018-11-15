@@ -661,21 +661,21 @@ def main(arg):
 
                         if 'blockNumber' in obsunits[i].keys():
                             # print('KEY:', obsunits[i]['X'])
-                            c = Characteristic(category=OntologyAnnotation(term="block Number"),
+                            c = Characteristic(category=OntologyAnnotation(term="Block Number"),
                                                value=OntologyAnnotation(term=str(obsunits[i]['blockNumber']),
                                                                         term_source="",
                                                                         term_accession=""))
                             this_sample.characteristics.append(c)
 
                         if 'plotNumber' in obsunits[i].keys():
-                            c = Characteristic(category=OntologyAnnotation(term="plot Number"),
+                            c = Characteristic(category=OntologyAnnotation(term="Plot Number"),
                                                value=OntologyAnnotation(term=str(obsunits[i]['plotNumber']),
                                                                         term_source="",
                                                                         term_accession=""))
                             this_sample.characteristics.append(c)
 
                         if 'plantNumber' in obsunits[i].keys():
-                            c = Characteristic(category=OntologyAnnotation(term="plant Number"),
+                            c = Characteristic(category=OntologyAnnotation(term="Plant Number"),
                                                value=OntologyAnnotation(term=str(obsunits[i]['plantNumber']),
                                                                         term_source="",
                                                                         term_accession=""))
@@ -703,7 +703,8 @@ def main(arg):
                             this_sample.characteristics.append(c)
 
                         if 'observationLevel' in obsunits[i].keys():
-                            c = Characteristic(category=OntologyAnnotation(term="observation Level"),
+                            # TODO: if absent, a warning should be logged as this is a MIAPPE requirement
+                            c = Characteristic(category=OntologyAnnotation(term="Observation unit type"),
                                                value=OntologyAnnotation(term=str(obsunits[i]['observationLevel']),
                                                                         term_source="",
                                                                         term_accession=""))
