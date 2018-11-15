@@ -7,8 +7,10 @@ class BrapiClient:
     """ Provide methods to the BRAPI
     """
 
-    def __init__(self, endpoint: str, session: requests.Session = None):
+    def __init__(self, endpoint: str, logger, session: requests.Session = None):
         self.endpoint = endpoint
+        self.logger=logger
+        self.obs_unit_call = " "
         if session is not None:
             self.session = session
         else:
@@ -101,21 +103,41 @@ class BrapiClient:
         #     germplasm.add(phenotype['germplasmDbId'])
         # return germplasm
 
+    def get_obs_unit_call(self):
+        if self.obs_unit_call == " " :
+            r = requests.get(self.endpoint +"calls")
+            if r.status_code != requests.codes.ok:
+                self.logger.debug("\n\nERROR in get_obs_units_in_study " + r.status_code + r.json)
+                raise RuntimeError("Non-200 status code")
+            #available_calls = json.load (r.json()['result']['data'])
+            if 'studies/{studyDbId}/observationUnits' not in r.json():
+                self.logger.debug(" GOT OBSERVATIONUNIT THE 1.1 WAY")
+                self.obs_unit_call = "/observationUnits"
+            else:
+                self.obs_unit_call = "/observationunits"
+        return self.obs_unit_call
+
     def get_obs_units_in_study(self, study_identifier):
         """ Given a BRAPI study identifier, return an list of BRAPI observation units"""
-        r = self.session.get(self.endpoint + "studies/" + study_identifier + '/observationunits')
+        for obs_unit in self.paging(self.endpoint + "studies/" + study_identifier + self.get_obs_unit_call(), None, None,  'GET'):
+            yield obs_unit
 
-        num_pages = r.json()['metadata']['pagination']['totalPages']
-        all_obs_units = []
-        for page in range(0, num_pages):
-            r = self.session.get(self.endpoint + "studies/" + study_identifier +
-                             '/observationunits', params={'page': page})
-            if r.status_code != requests.codes.ok:
-                raise RuntimeError("Non-200 status code")
 
-            all_obs_units = all_obs_units + (r.json()['result']['data'])
-        # print("from function, nb obsunits:: ", len(all_obs_units))
-        return all_obs_units
+    # def get_obs_units_in_study(self, study_identifier):
+    #     """ Given a BRAPI study identifier, return an list of BRAPI observation units"""
+    #     r = self.session.get(self.endpoint + "studies/" + study_identifier + '/observationunits')
+    #
+    #     num_pages = r.json()['metadata']['pagination']['totalPages']
+    #     all_obs_units = []
+    #     for page in range(0, num_pages):
+    #         r = self.session.get(self.endpoint + "studies/" + study_identifier +
+    #                          '/observationunits', params={'page': page})
+    #         if r.status_code != requests.codes.ok:
+    #             raise RuntimeError("Non-200 status code")
+    #
+    #         all_obs_units = all_obs_units + (r.json()['result']['data'])
+    #     # print("from function, nb obsunits:: ", len(all_obs_units))
+    #     return all_obs_units
 
     def get_germplasm(self, germplasm_id):
         """ Given a BRAPI germplasm identifiers, return an list of BRAPI germplasm attributes"""
@@ -201,19 +223,19 @@ class BrapiClient:
 
             page += 1
 
-    def load_trials(self, TRIAL_IDS, logger):
+    def get_trials(self, TRIAL_IDS):
         """" Return trials found in a given BRAPI endpoint server """
 
         url = self.endpoint+"trials"
         if not TRIAL_IDS:
-            logger.info("Return all trials")
+            self.logger.info("Return all trials")
             for trial in self.paging(url, None, None, 'GET'):
                 yield trial
         else:
-            logger.info("Return  trials: " + str(TRIAL_IDS))
+            self.logger.info("Return  trials: " + str(TRIAL_IDS))
             for trial_id in TRIAL_IDS:
                 url_with_ids = url + "/" + trial_id
-                logger.debug(url_with_ids)
+                self.logger.debug(url_with_ids)
                 r = requests.get(url_with_ids)
                 if r.status_code != requests.codes.ok:
                     print(r)
