@@ -1,9 +1,10 @@
 import datetime
+import argparse
+import datetime
 import errno
 import logging
 import os
 import sys
-import argparse
 
 from isatools import isatab
 from isatools.model import Investigation, OntologyAnnotation, OntologySource, Assay, Study, Characteristic, Source, \
@@ -186,54 +187,157 @@ def main(arg):
                 # print("GERM:", germ['germplasmName']) # germplasmDbId
                 # WARNING: BRAPIv1 endpoints are not consistently using these
                 # depending on endpoints, attributes may have to swapped
-
-                # Creating corresponding ISA biosources:
-                # --------------------------------------
-                source = Source(name=germ['germplasmName'])
-
-                # Creating isa characteristics from germplasm attributes.
-                # -------------------------------------------------------
-                for key in germ.keys():
-
-                    if isinstance(germ[key], list):
-                        # print("HERE: ", germ[key])
-                        ontovalue = ";".join(germ[key])
-                        c = Characteristic(category=OntologyAnnotation(term=str(key)),
-                                           value=OntologyAnnotation(term=ontovalue,
-                                                                    term_source="",
-                                                                    term_accession=""))
-                    # elif germ[key].startswith("["):
-                    #     print("THERE: ", germ[key])
-                    #     germ[key] = ast.literal_leval(germ[key])
-                    #     ontovalue = ";".join(germ[key])
-                    #     c = Characteristic(category=OntologyAnnotation(term=str(key)),
-                    #                        value=OntologyAnnotation(term=ontovalue,
-                    #                                                 term_source="",
-                    #                                                 term_accession=""))
-                    else:
-                        # print("normal: ", germ[key])
-                        c = Characteristic(category=OntologyAnnotation(term=str(key)),
-                                           value=OntologyAnnotation(term=str(germ[key]),
-                                                                    term_source="",
-                                                                    term_accession=""))
-                    if key == 'accessionNumber':
-                        c = Characteristic(category=OntologyAnnotation(term="Material Source ID"),
-                                           value=OntologyAnnotation(term=str(germ[key]),
-                                                                    term_source="",
-                                                                    term_accession=""))
-                    if key == 'accessionNumber':
-                        c = Characteristic(category=OntologyAnnotation(term="Material Source ID"),
-                                           value=OntologyAnnotation(term=str(germ[key]),
-                                                                    term_source="",
-                                                                    term_accession=""))
-
-                    if c not in source.characteristics:
-                        source.characteristics.append(c)
+                # get_germplasm_chars(germ)
+                # Creating corresponding ISA biosources with is Creating isa characteristics from germplasm attributes.
+                # ------------------------------------------------------
+                source = Source(name=germ['germplasmName'], characteristics=get_germplasm_chars(germ))
 
                 # Associating ISA sources to ISA study object
                 study.sources.append(source)
 
                 germ_counter = germ_counter + 1
+
+            # Now dealing with BRAPI observation units and attempting to create ISA samples
+            obsunits = []
+            try:
+                obsunits = client.get_obs_units_in_study(study_id)
+            except Exception as excep:
+                logger.exception(excep)
+                print("error: ", excep)
+
+            for i in range(len(obsunits)):
+                # Getting the relevant germplasm used for that observation event:
+                # ---------------------------------------------------------------
+                this_source = study.get_source(obsunits[i]['germplasmName'])
+                logger.debug("testing for the source reference: ", this_source)
+                # print("SOURCE:", this_source)
+                if this_source is not None:
+                    this_sample = Sample(
+                        name=obsunits[i]['observationUnitDbId'] + "_" + obsunits[i]['observationUnitName'],
+                        derives_from=[this_source])
+                    # --------------------------
+                    # print("ou: ", ou)
+
+                    if 'X' in obsunits[i].keys():
+                        # print('KEY:', obsunits[i]['X'])
+                        c = Characteristic(category=OntologyAnnotation(term="X"),
+                                           value=OntologyAnnotation(term=str(obsunits[i]['X']),
+                                                                    term_source="",
+                                                                    term_accession=""))
+                        this_sample.characteristics.append(c)
+
+                    if 'Y' in obsunits[i].keys():
+                        # print('KEY:', obsunits[i]['X'])
+                        c = Characteristic(category=OntologyAnnotation(term="Y"),
+                                           value=OntologyAnnotation(term=str(obsunits[i]['Y']),
+                                                                    term_source="",
+                                                                    term_accession=""))
+                        this_sample.characteristics.append(c)
+
+                    if 'blockNumber' in obsunits[i].keys():
+                        # print('KEY:', obsunits[i]['X'])
+                        c = Characteristic(category=OntologyAnnotation(term="Block Number"),
+                                           value=OntologyAnnotation(term=str(obsunits[i]['blockNumber']),
+                                                                    term_source="",
+                                                                    term_accession=""))
+                        this_sample.characteristics.append(c)
+
+                    if 'plotNumber' in obsunits[i].keys():
+                        c = Characteristic(category=OntologyAnnotation(term="Plot Number"),
+                                           value=OntologyAnnotation(term=str(obsunits[i]['plotNumber']),
+                                                                    term_source="",
+                                                                    term_accession=""))
+                        this_sample.characteristics.append(c)
+
+                    if 'plantNumber' in obsunits[i].keys():
+                        c = Characteristic(category=OntologyAnnotation(term="Plant Number"),
+                                           value=OntologyAnnotation(term=str(obsunits[i]['plantNumber']),
+                                                                    term_source="",
+                                                                    term_accession=""))
+                        this_sample.characteristics.append(c)
+
+                    if 'replicate' in obsunits[i].keys():
+                        c = Characteristic(category=OntologyAnnotation(term="replicate"),
+                                           value=OntologyAnnotation(term=str(obsunits[i]['replicate']),
+                                                                    term_source="",
+                                                                    term_accession=""))
+                        this_sample.characteristics.append(c)
+
+                    if 'observationUnitDbId' in obsunits[i].keys():
+                        c = Characteristic(category=OntologyAnnotation(term="observationUnitDbId"),
+                                           value=OntologyAnnotation(term=str(obsunits[i]['observationUnitDbId']),
+                                                                    term_source="",
+                                                                    term_accession=""))
+                        this_sample.characteristics.append(c)
+
+                    if 'observationUnitName' in obsunits[i].keys():
+                        c = Characteristic(category=OntologyAnnotation(term="observationUnitName"),
+                                           value=OntologyAnnotation(term=str(obsunits[i]['observationUnitName']),
+                                                                    term_source="",
+                                                                    term_accession=""))
+                        this_sample.characteristics.append(c)
+
+                    if 'observationLevel' in obsunits[i].keys():
+                        # TODO: if absent, a warning should be logged as this is a MIAPPE requirement
+                        c = Characteristic(category=OntologyAnnotation(term="Observation unit type"),
+                                           value=OntologyAnnotation(term=str(obsunits[i]['observationLevel']),
+                                                                    term_source="",
+                                                                    term_accession=""))
+                        this_sample.characteristics.append(c)
+
+                    if 'observationLevels' in obsunits[i].keys():
+                        c = Characteristic(category=OntologyAnnotation(term="observationLevels"),
+                                           value=OntologyAnnotation(term=str(obsunits[i]['observationLevels']),
+                                                                    term_source="",
+                                                                    term_accession=""))
+                        this_sample.characteristics.append(c)
+
+                    if 'germplasmName' in obsunits[i].keys():
+                        c = Characteristic(category=OntologyAnnotation(term="germplasmName"),
+                                           value=OntologyAnnotation(term=str(obsunits[i]['germplasmName']),
+                                                                    term_source="",
+                                                                    term_accession=""))
+                        this_sample.characteristics.append(c)
+
+                    # Looking for treatment in BRAPI and mapping to ISA Study Factor Value
+                    # --------------------------------------------------------------------
+                    if 'treatments' in obsunits[i].keys():
+                        for element in obsunits[i]['treatments']:
+                            for key in element.keys():
+                                f = StudyFactor(name=key, factor_type=OntologyAnnotation(term=key))
+                                if f not in study.factors:
+                                    study.factors.append(f)
+
+                                fv = FactorValue(factor_name=f,
+                                                 value=OntologyAnnotation(term=str(element[key]),
+                                                                          term_source="",
+                                                                          term_accession=""))
+                                this_sample.factor_values.append(fv)
+                    study.samples.append(this_sample)
+                    # print("counting observations: ", i, "before: ", this_source.name)
+
+                    # TODO: Add Comment[Factor Values] : iterate through BRAPI treatments to obtain all possible values for a given Factor
+
+                # else:
+                #     # print("normal: ", germ[key])
+                #     c = Characteristic(category=OntologyAnnotation(term=str(key)),
+                #                        value=OntologyAnnotation(term=str(germ[key]),
+                #                                                 term_source="",
+                #                                                 term_accession=""))
+                # if key == 'accessionNumber':
+                #     c = Characteristic(category=OntologyAnnotation(term="Material Source ID"),
+                #                        value=OntologyAnnotation(term=str(germ[key]),
+                #                                                 term_source="",
+                #                                                 term_accession=""))
+                #
+                #
+                # if c not in source.characteristics:
+                #     source.characteristics.append(c)
+
+            # Associating ISA sources to ISA study object
+            study.sources.append(source)
+
+            # germ_counter = germ_counter + 1
 
             # Now dealing with BRAPI observation units and attempting to create ISA samples
             #obsunits = []
@@ -454,7 +558,6 @@ def main(arg):
                                       filetype="d_")
             except Exception as ioe:
                 print(ioe)
-
 
 
 #############################################
