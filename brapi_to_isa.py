@@ -231,7 +231,7 @@ def main(arg):
             #isa_study = get_study(isa_study['studyDbId'])
             study_id = brapi_study['studyDbId']
             # NB: this method always create an ISA Assay Type
-            isa_study, investigation = create_isa_study(study_id, investigation)
+            isa_study, investigation = converter.create_isa_study(study_id, investigation)
             investigation.studies.append(isa_study)
 
             # creating the main ISA protocols:

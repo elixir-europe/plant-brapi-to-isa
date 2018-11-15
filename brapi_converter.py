@@ -1,3 +1,4 @@
+import requests
 from brapi_client import BrapiClient
 
 from isatools.model import Investigation, OntologyAnnotation, OntologySource, Assay, Study, Characteristic, Source, \
@@ -26,7 +27,7 @@ class BrapiToIsaConverter:
         these_characteristics = []
 
         germplasm_id = germplasm['germplasmDbId']
-        r = requests.get(SERVER + "germplasm/" + germplasm_id)
+        r = requests.get(self.endpoint + "germplasm/" + germplasm_id)
         if r.status_code != requests.codes.ok:
             raise RuntimeError("Non-200 status code")
 
@@ -62,11 +63,12 @@ class BrapiToIsaConverter:
 
             elif key == "taxonIds":
                 miappeKey = "Organism"
-                taxinfo = []
-                for item in range(len(all_germplasm_attributes["taxonIds"])):
-                    taxinfo.append( all_germplasm_attributes[key][item]["sourceName"] + ":" + all_germplasm_attributes[key][item]["taxonId"])
-                ontovalue = ";".join(taxinfo)
-                c = self.create_isa_characteristic(miappeKey, ontovalue)
+                if "taxonIds" in all_germplasm_attributes.keys() and len(all_germplasm_attributes["taxonIds"])>0 :
+                    taxinfo = []
+                    for item in range(len(all_germplasm_attributes["taxonIds"])):
+                        taxinfo.append( all_germplasm_attributes[key][item]["sourceName"] + ":" + all_germplasm_attributes[key][item]["taxonId"])
+                    ontovalue = ";".join(taxinfo)
+                    c = self.create_isa_characteristic(miappeKey, ontovalue)
 
             elif key == "donors":
                 miappeKey = "Donors"
