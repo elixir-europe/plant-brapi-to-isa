@@ -19,7 +19,7 @@ class BrapiToIsaConverter:
         self.logger = logger
         self.endpoint = endpoint
 
-        def create_germplasm_chars(self, germplasm):
+    def create_germplasm_chars(self, germplasm):
         """" Given a BRAPI Germplasm ID, retrieve the list of all attributes from BRAPI and returns a list of ISA
         characteristics using MIAPPE tags for compliance + X-check against ISAconfiguration"""
         # TODO: switch BRAPI tags to MIAPPE Tags
