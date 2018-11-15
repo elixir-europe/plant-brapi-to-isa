@@ -1,13 +1,10 @@
+import datetime
 import argparse
 import datetime
-import os
 import errno
-import json
-import requests
 import logging
 import os
 import sys
-import argparse
 
 from isatools import isatab
 from isatools.model import Investigation, OntologyAnnotation, OntologySource, Assay, Study, Characteristic, Source, \

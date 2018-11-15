@@ -1,22 +1,18 @@
+import json
+import logging
 from collections import Iterable
 
 import requests
-import logging
-import json
 
 
 class BrapiClient:
     """ Provide methods to the BRAPI
     """
 
-    def __init__(self, endpoint: str, logger, session: requests.Session = None):
+    def __init__(self, endpoint: str, logger: logging.Logger):
         self.endpoint = endpoint
         self.logger = logger
         self.obs_unit_call = " "
-        if session is not None:
-            self.session = session
-        else:
-            self.session = requests.Session()
 
     def get_brapi_trials(self):
         """Returns all the trials from an endpoint."""
@@ -26,7 +22,7 @@ class BrapiClient:
         while maxcount is None or page * pagesize < maxcount:
             params = {'page': page, 'pageSize': pagesize}
 
-            r = self.session.get(self.endpoint + 'trials', params=params)
+            r = requests.get(self.endpoint + 'trials', params=params)
             if r.status_code != requests.codes.ok:
                 raise RuntimeError("Non-200 status code")
             maxcount = int(r.json()['metadata']['pagination']['totalCount'])
@@ -40,7 +36,7 @@ class BrapiClient:
     def get_phenotypes(self):
         """Returns a phenotype information from a BrAPI endpoint."""
         url = self.endpoint + "phenotype-search"
-        r = self.session.get(url)
+        r = requests.get(url)
         if r.status_code != requests.codes.ok:
             logging.error("check over here", r)
             logging.fatal('Could not decode response from server!')
@@ -51,7 +47,7 @@ class BrapiClient:
     def get_germplasms(self):
         """Returns germplasm information from a BrAPI endpoint."""
         url = self.endpoint + "germplasm-search"
-        r = self.session.get(url)
+        r = requests.get(url)
         if r.status_code != requests.codes.ok:
             logging.error("check over here", r)
             logging.fatal('Could not decode response from server!')
@@ -61,7 +57,7 @@ class BrapiClient:
 
     def get_study(self, study_identifier):
         """"Given a BRAPI study object from a BRAPI endpoint server"""
-        r = self.session.get(self.endpoint + 'studies/' + str(study_identifier))
+        r = requests.get(self.endpoint + 'studies/' + str(study_identifier))
         if r.status_code != requests.codes.ok:
             print(r, self.endpoint)
             logging.error("problem with request get_study: ", r)
@@ -71,11 +67,11 @@ class BrapiClient:
     def get_germplasm_in_study(self, study_identifier):
         """"Given a BRAPI study identifier returns an array of germplasm objects"""
 
-        r = self.session.get(self.endpoint + "studies/" + study_identifier + '/germplasm')
+        r = requests.get(self.endpoint + "studies/" + study_identifier + '/germplasm')
         num_pages = r.json()['metadata']['pagination']['totalPages']
         all_germplasms = []
         for page in range(0, num_pages):
-            r = self.session.get(self.endpoint + "studies/" + study_identifier +
+            r = requests.get(self.endpoint + "studies/" + study_identifier +
                              '/germplasm', params={'page': page})
 
             logging.debug("from 'get_germplasm_in_study' function page:", page, "request:",
@@ -98,7 +94,7 @@ class BrapiClient:
         # params['Content-Type'] = "application/json;charset=utf-8"
         # request_url='https://urgi.versailles.inra.fr/gnpis-core-srv/brapi/v1/phenotypes-search'
         # headers = {}
-        # r = self.session.post(request_url, params=json.dumps(params),data=json.dumps({"studyDbIds":[studyId]}))
+        # r = requests.post(request_url, params=json.dumps(params),data=json.dumps({"studyDbIds":[studyId]}))
         # print("Post request response content: ", r.content)
 
         # for phenotype in paging(SERVER + 'phenotypes-search/', params, indata, 'POST'):
@@ -127,12 +123,12 @@ class BrapiClient:
 
     # def get_obs_units_in_study(self, study_identifier):
     #     """ Given a BRAPI study identifier, return an list of BRAPI observation units"""
-    #     r = self.session.get(self.endpoint + "studies/" + study_identifier + '/observationunits')
+    #     r = requests.get(self.endpoint + "studies/" + study_identifier + '/observationunits')
     #
     #     num_pages = r.json()['metadata']['pagination']['totalPages']
     #     all_obs_units = []
     #     for page in range(0, num_pages):
-    #         r = self.session.get(self.endpoint + "studies/" + study_identifier +
+    #         r = requests.get(self.endpoint + "studies/" + study_identifier +
     #                          '/observationunits', params={'page': page})
     #         if r.status_code != requests.codes.ok:
     #             raise RuntimeError("Non-200 status code")
@@ -143,11 +139,11 @@ class BrapiClient:
 
     def get_germplasm(self, germplasm_id):
         """ Given a BRAPI germplasm identifiers, return an list of BRAPI germplasm attributes"""
-        r = self.session.get(self.endpoint + 'germplasm/' + str(germplasm_id) + '/attributes')
+        r = requests.get(self.endpoint + 'germplasm/' + str(germplasm_id) + '/attributes')
         num_pages = r.json()['metadata']['pagination']['totalPages']
         all_germplasm_attributes = []
         for page in range(0, num_pages):
-            r = self.session.get(self.endpoint + 'germplasm/' + str(germplasm_id) + 'attributes', params={'page': page})
+            r = requests.get(self.endpoint + 'germplasm/' + str(germplasm_id) + 'attributes', params={'page': page})
             # print("from get_germplasm_attributes function: ", page, "total count:", len(r.json()['result']['data']))
             if r.status_code != requests.codes.ok:
                 raise RuntimeError("Non-200 status code")
@@ -155,7 +151,7 @@ class BrapiClient:
         # print("from function, nb obsunits:: ", len(all_germplasm_attributes))
         # url = SERVER+'germplasm-search?germplasmDbId='+str(germplasm_id)
         # print('GETing',url)
-        # r = self.session.get(url)
+        # r = requests.get(url)
         # if r.status_code != requests.codes.ok:
         #     raise RuntimeError("Non-200 status code")
         # germplasm = r.json()['result']['data'][0]
@@ -165,7 +161,7 @@ class BrapiClient:
     def get_brapi_study(self, study_identifier):
         """" Given a BRAPI study identifier,obtains a BRAPI study object """
         url = self.endpoint + 'studies/' + str(study_identifier)
-        r = self.session.get(url)
+        r = requests.get(url)
         if r.status_code != requests.codes.ok:
             raise RuntimeError("Non-200 status code")
         this_study = r.json()['result']
@@ -173,7 +169,7 @@ class BrapiClient:
 
     def get_study_observed_variables(self, brapi_study_id):
         """" Given a BRAPI study identifier, returns a list of BRAPI observation Variables objects """
-        r = self.session.get(self.endpoint + "studies/" + brapi_study_id + '/observationVariables')
+        r = requests.get(self.endpoint + "studies/" + brapi_study_id + '/observationVariables')
         if r.status_code != requests.codes.ok:
             raise RuntimeError("Non-200 status code")
         all_obsvars = r.json()['result']['data']
