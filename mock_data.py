@@ -25,6 +25,9 @@ mock_germplasms = [
     {
         "germplasmDbId": "1",
         "germplasmName": "Name001",
+        "subtaxa": "subtaxa",
+        "commonCropName": "crop1",
+        "accessionNumber": "accession1",
     },
     {
         "germplasmDbId": "2",

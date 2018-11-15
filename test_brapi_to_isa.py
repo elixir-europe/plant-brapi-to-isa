@@ -1,5 +1,7 @@
+import logging
 import os
 import unittest
+from functools import reduce
 
 import mock
 from isatools import isatab
@@ -7,15 +9,19 @@ from isatools.model import Investigation
 
 import brapi_to_isa
 import mock_data
+from brapi_converter import BrapiToIsaConverter
+import requests_mock
+
+logger = logging.getLogger()
+endpoint = 'http://foo.com/'
 
 
 class ConvertTest(unittest.TestCase):
     """Run BrAPI 2 ISA conversion test on mocked data (from http://test-server.brapi.org)"""
 
-    @mock.patch('brapi_to_isa.BrapiClient', autospec=True)
+    @mock.patch('brapi_converter.BrapiClient', autospec=True)
     def test_convert_study(self, client_mock):
         """Test conversion of BrAPI study to ISA study using mock data."""
-
         # Mock call to BrAPI study
         instance_mock = client_mock.return_value = mock.Mock()
         instance_mock.get_brapi_study.return_value = mock_data.mock_study
@@ -24,7 +30,8 @@ class ConvertTest(unittest.TestCase):
         investigation = Investigation()
 
         # Convert BrAPI study to ISA study
-        (study, _) = brapi_to_isa.create_isa_study(study_id, investigation)
+        converter = BrapiToIsaConverter(logger, endpoint)
+        (study, _) = converter.create_isa_study(study_id, investigation)
 
         assert instance_mock.get_brapi_study.called
 
@@ -32,6 +39,28 @@ class ConvertTest(unittest.TestCase):
         assert study.filename == f's_{study_id}.txt'
         assert len(study.assays) == 1
         assert study.assays[0].filename == f'a_{study_id}.txt'
+
+    @requests_mock.Mocker()
+    def test_convert_germplasm(self, request_mock):
+        """Test conversion of BrAPI germplasm to ISA characteristics"""
+        converter = BrapiToIsaConverter(logger, endpoint)
+        germplasm1 = mock_data.mock_germplasms[0]
+        request_mock.get(requests_mock.ANY, json=mock_data.mock_brapi_result(germplasm1))
+
+        characteristics = converter.create_germplasm_chars(germplasm1)
+        assert characteristics
+        assert len(characteristics) == 5
+
+        # List all characteristic terms
+        terms = dict(reduce(lambda acc, char: acc + [(char.category.term, char.value.term)],
+                            characteristics,
+                            []))
+
+        assert terms['germplasmDbId'] == germplasm1['germplasmDbId']
+        assert terms['germplasmName'] == germplasm1['germplasmName']
+        assert terms['Infraspecific Name'] == germplasm1['subtaxa']
+        assert terms['commonCropName'] == germplasm1['commonCropName']
+        assert terms['Material Source ID'] == germplasm1['accessionNumber']
 
     @mock.patch('brapi_to_isa.BrapiClient', autospec=True)
     def test_all_convert(self, client_mock):
