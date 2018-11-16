@@ -7,8 +7,8 @@ import os
 import sys
 
 from isatools import isatab
-from isatools.model import Investigation, OntologyAnnotation, OntologySource, Assay, Study, Characteristic, Source, \
-    Sample, Protocol, Process, StudyFactor, FactorValue, DataFile, ParameterValue, Comment, ProtocolParameter, plink
+from isatools.model import Investigation, OntologyAnnotation, Characteristic, Source, \
+    Sample, Protocol, Process, StudyFactor, FactorValue, DataFile, ParameterValue, ProtocolParameter, plink
 
 from brapi_client import BrapiClient
 from brapi_to_isa_converter import BrapiToIsaConverter
@@ -486,7 +486,7 @@ def main(arg):
                 logger.info('CONVERSION FAILED!...')
 
             try:
-                variable_records = converter.create_isa_tdf_from_obsvars(get_study_observed_variables(brapi_study_id))
+                variable_records = converter.create_isa_tdf_from_obsvars(client.get_study_observed_variables(brapi_study_id))
                 # Writing Trait Definition File:
                 # ------------------------------
                 write_records_to_file(this_study_id=str(brapi_study_id),
@@ -499,7 +499,7 @@ def main(arg):
             # Getting Variable Data and writing Measurement Data File
             # -------------------------------------------------------
             try:
-                data_readings = converter.create_isa_obs_data_from_obsvars(client.get_obs_units_in_study(brapi_study_id))
+                data_readings = converter.create_isa_obs_data_from_obsvars(client.get_study_observation_units(brapi_study_id))
                 write_records_to_file(this_study_id=str(brapi_study_id), this_directory=output_directory, records=data_readings,
                                       filetype="d_")
             except Exception as ioe:
