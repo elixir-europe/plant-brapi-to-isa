@@ -1,4 +1,4 @@
-import datetime
+import argparse
 import argparse
 import datetime
 import errno
@@ -7,8 +7,8 @@ import os
 import sys
 
 from isatools import isatab
-from isatools.model import Investigation, OntologyAnnotation, OntologySource, Assay, Study, Characteristic, Source, \
-    Sample, Protocol, Process, StudyFactor, FactorValue, DataFile, ParameterValue, Comment, ProtocolParameter, plink
+from isatools.model import Investigation, OntologyAnnotation, Characteristic, Source, \
+    Sample, Protocol, Process, StudyFactor, FactorValue, DataFile, ParameterValue, ProtocolParameter, plink
 
 from brapi_client import BrapiClient
 from brapi_to_isa_converter import BrapiToIsaConverter
@@ -245,7 +245,7 @@ def main(arg):
             this_assay = isa_study.assays[0]
 
             # Getting the list of all germplasms used in the BRAPI isa_study:
-            germplasms = client.get_germplasm_in_study(study_id)
+            germplasms = client.get_study_germplasms(study_id)
 
             germ_counter = 0
 
@@ -266,7 +266,7 @@ def main(arg):
                 germ_counter = germ_counter + 1
 
             # Now dealing with BRAPI observation units and attempting to create ISA samples
-            for obs_unit in client.get_obs_units_in_study(study_id):
+            for obs_unit in client.get_study_observation_units(study_id):
                 # Getting the relevant germplasm used for that observation event:
                 # ---------------------------------------------------------------
                 this_source = isa_study.get_source(obs_unit['germplasmName'])
@@ -473,7 +473,7 @@ def main(arg):
                 logger.info('CONVERSION FAILED!...')
 
             try:
-                variable_records = converter.create_isa_tdf_from_obsvars(get_study_observed_variables(study_id))
+                variable_records = converter.create_isa_tdf_from_obsvars(client.get_study_observed_variables(study_id))
                 # Writing Trait Definition File:
                 # ------------------------------
                 write_records_to_file(this_study_id=str(study_id),
@@ -486,7 +486,7 @@ def main(arg):
             # Getting Variable Data and writing Measurement Data File
             # -------------------------------------------------------
             try:
-                data_readings = converter.create_isa_obs_data_from_obsvars(client.get_obs_units_in_study(study_id))
+                data_readings = converter.create_isa_obs_data_from_obsvars(client.get_study_observation_units(study_id))
                 write_records_to_file(this_study_id=str(study_id), this_directory=output_directory, records=data_readings,
                                       filetype="d_")
             except Exception as ioe:

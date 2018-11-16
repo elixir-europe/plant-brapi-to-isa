@@ -1,8 +1,7 @@
-import requests
-from brapi_client import BrapiClient
-
 from isatools.model import Investigation, OntologyAnnotation, OntologySource, Assay, Study, Characteristic, Source, \
     Sample, Comment
+
+from brapi_client import BrapiClient
 
 
 class BrapiToIsaConverter:
@@ -26,12 +25,9 @@ class BrapiToIsaConverter:
 
         these_characteristics = []
 
+        client = BrapiClient(self.endpoint, self.logger)
         germplasm_id = germplasm['germplasmDbId']
-        r = requests.get(self.endpoint + "germplasm/" + germplasm_id)
-        if r.status_code != requests.codes.ok:
-            raise RuntimeError("Non-200 status code")
-
-        all_germplasm_attributes = r.json()['result']
+        all_germplasm_attributes = client.get_germplasm(germplasm_id)
 
         mapping_dictionnary = {
             "accessionNumber": "Material Source ID",
@@ -114,7 +110,7 @@ class BrapiToIsaConverter:
     def obtain_brapi_obs_levels(self, brapi_study_id):
         obs_levels_in_study = ["default"]
         client = BrapiClient(self.endpoint, self.logger)
-        for ou in client.get_obs_units_in_study(brapi_study_id):
+        for ou in client.get_study_observation_units(brapi_study_id):
             print(ou)
             if 'observationLevel' in ou.keys():
                 if ou['observationLevel'] not in obs_levels_in_study:
@@ -141,7 +137,7 @@ class BrapiToIsaConverter:
         """Returns an ISA study given a BrAPI endpoints and a BrAPI study identifier."""
 
         client = BrapiClient(self.endpoint, self.logger)
-        brapi_study = client.get_brapi_study(brapi_study_id)
+        brapi_study = client.get_study(brapi_study_id)
 
         this_study = Study(filename="s_" + str(brapi_study_id) + ".txt")
         this_study.identifier = brapi_study['studyDbId']
