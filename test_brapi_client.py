@@ -15,9 +15,40 @@ class BrapiClientTest(unittest.TestCase):
         self.endpoint = 'http://foo/'
 
     @requests_mock.Mocker()
-    def test_get_study_fail(self, mock_session):
+    def test_get_trial_fail_on_second_page(self, mock_requests):
+        """
+        Testing scenario when server error on second page
+        """
         # Mock
-        mock_session.get(requests_mock.ANY, status_code=500)
+        total_count = len(mock_data.mock_trials) + 1
+        total_pages = 2
+        page1 = mock_data.mock_brapi_results(mock_data.mock_trials, total_pages, total_count)
+        req = mock_requests.register_uri(
+            requests_mock.ANY, requests_mock.ANY,
+            # First page works with json response, second page fails with HTTP code
+            [{"json": page1}, {"status_code": 500}]
+        )
+
+        # Init
+        client = BrapiClient(self.endpoint, logger)
+
+        # Call
+        trial_it = iter(client.get_trials(None))
+
+        # Assert first page can be fetched
+        for i in range(total_count-1):
+            assert trial_it.__next__()
+
+        # Assert second page fails
+        self.assertRaises(RuntimeError, trial_it.__next__)
+
+        # Assert same request executed twice (for each page)
+        assert req.call_count == 2
+
+    @requests_mock.Mocker()
+    def test_get_study_fail(self, mock_requests):
+        # Mock
+        mock_requests.get(requests_mock.ANY, status_code=500)
 
         # Init
         client = BrapiClient(self.endpoint, logger)
@@ -26,10 +57,10 @@ class BrapiClientTest(unittest.TestCase):
         self.assertRaises(RuntimeError, client.get_study, 'bar')
 
     @requests_mock.Mocker()
-    def test_get_study_success(self, mock_session):
+    def test_get_study_success(self, mock_requests):
         # Mock
         result = mock_data.mock_brapi_result(mock_data.mock_study)
-        mock_session.get(requests_mock.ANY, json=result)
+        mock_requests.get(requests_mock.ANY, json=result)
 
         # Init
         client = BrapiClient(self.endpoint, logger)
@@ -40,14 +71,14 @@ class BrapiClientTest(unittest.TestCase):
         assert actual_study == mock_data.mock_study
 
     @requests_mock.Mocker()
-    def test_paging_get(self, mock_session):
+    def test_paging_get(self, mock_requests):
         # Mock
         url = f'{self.endpoint}/studies'
         params = None
         data = None
         method = 'GET'
-        results = mock_data.mock_brapi_results([mock_data.mock_study], 1)
-        mock_session.get(url, json=results)
+        results = mock_data.mock_brapi_results([mock_data.mock_study])
+        mock_requests.get(url, json=results)
 
         # Init
         client = BrapiClient(self.endpoint, logger)

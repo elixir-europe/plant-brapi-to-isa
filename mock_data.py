@@ -34,6 +34,7 @@ mock_germplasms = [
         "germplasmName": "Name002",
     },
 ]
+
 mock_variables = [
     {
         "observationVariableDbId": "MO_123:100002",
@@ -248,10 +249,25 @@ mock_observation_units = [
 ]
 
 
-def mock_brapi_results(results, total_pages):
-    return {"metadata": {"pagination": {"totalPages": total_pages}},
+def mock_brapi_results(results, total_pages=1, total_count=None, page=0, page_size=None):
+    """
+    Mock BrAPI list response with pagination
+    :param results a list of objects
+    :param total_pages number of pages in results (1 by default)
+    :param total_count number of objects in total (length of list of object by default)
+    :param page page number (0 by default)
+    :param page_size number of objects in page (length of list of object by default)
+    """
+    return {"metadata": {"pagination": {"totalPages": total_pages,
+                                        "totalCount": total_count or len(results),
+                                        "page": page,
+                                        "pageSize": page_size or len(results)}},
             "result": {"data": results}}
 
 
 def mock_brapi_result(result):
+    """
+    Mock BrAPI single object response
+    :param result a list of objects
+    """
     return {"metadata": {}, "result": result}

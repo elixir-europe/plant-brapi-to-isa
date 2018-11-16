@@ -19,6 +19,9 @@ endpoint = 'http://foo.com/'
 class ConvertTest(unittest.TestCase):
     """Run BrAPI 2 ISA conversion test on mocked data (from http://test-server.brapi.org)"""
 
+    def setUp(self):
+        self.converter = BrapiToIsaConverter(logger, endpoint)
+
     @mock.patch('brapi_converter.BrapiClient', autospec=True)
     def test_convert_study(self, client_mock):
         """Test conversion of BrAPI study to ISA study using mock data."""
@@ -30,8 +33,7 @@ class ConvertTest(unittest.TestCase):
         investigation = Investigation()
 
         # Convert BrAPI study to ISA study
-        converter = BrapiToIsaConverter(logger, endpoint)
-        (study, _) = converter.create_isa_study(study_id, investigation)
+        (study, _) = self.converter.create_isa_study(study_id, investigation)
 
         assert instance_mock.get_brapi_study.called
 
@@ -43,11 +45,11 @@ class ConvertTest(unittest.TestCase):
     @requests_mock.Mocker()
     def test_convert_germplasm(self, request_mock):
         """Test conversion of BrAPI germplasm to ISA characteristics"""
-        converter = BrapiToIsaConverter(logger, endpoint)
         germplasm1 = mock_data.mock_germplasms[0]
-        request_mock.get(requests_mock.ANY, json=mock_data.mock_brapi_result(germplasm1))
+        req = request_mock.get(requests_mock.ANY, json=mock_data.mock_brapi_result(germplasm1))
 
-        characteristics = converter.create_germplasm_chars(germplasm1)
+        characteristics = self.converter.create_germplasm_chars(germplasm1)
+        assert req.called
         assert characteristics
         assert len(characteristics) == 5
 
@@ -62,11 +64,51 @@ class ConvertTest(unittest.TestCase):
         assert terms['commonCropName'] == germplasm1['commonCropName']
         assert terms['Material Source ID'] == germplasm1['accessionNumber']
 
+    def test_create_isa_characteristic(self):
+        category = 'category'
+        value = 'value'
+
+        # Call
+        characteristic = self.converter.create_isa_characteristic(category, value)
+
+        # Assert
+        assert characteristic
+        assert characteristic.category.term == category
+        assert characteristic.value.term == value
+        assert characteristic.value.term_source == characteristic.value.term_accession == ''
+
+    def test_create_tdf_records(self):
+        variables = mock_data.mock_variables
+
+        # Call
+        tdf = self.converter.create_isa_tdf_from_obsvars(variables)
+
+        # Assert
+        assert tdf
+        assert len(tdf) == len(variables) + 1
+
+    def test_create_data_records(self):
+        observation_units = mock_data.mock_observation_units
+
+        # Call
+        data = self.converter.create_isa_obs_data_from_obsvars(observation_units)
+
+        # Assert
+        assert data
+        observation_count = reduce(
+            lambda acc, observation_unit: acc + len(observation_unit['observations']), observation_units, 0
+        )
+        assert len(data) == observation_count + 1
+
+    @requests_mock.Mocker()
     @mock.patch('brapi_to_isa.BrapiClient', autospec=True)
-    def test_all_convert(self, client_mock):
+    @mock.patch('brapi_converter.BrapiClient', autospec=True)
+    def test_all_convert(self, request_mock, client_mock1, client_mock2):
         """Test the full conversion from BrAPI to ISA using mock data and validating using ISA validator."""
         # Mock API calls
-        instance_mock = client_mock.return_value
+        germplasm1 = mock_data.mock_germplasms[0]
+        req = request_mock.get(requests_mock.ANY, json=mock_data.mock_brapi_result(germplasm1))
+        instance_mock = client_mock1.return_value = client_mock2.return_value
         instance_mock.get_trials.return_value = mock_data.mock_trials
         instance_mock.get_brapi_trials.return_value = mock_data.mock_trials
         instance_mock.get_study.return_value = mock_data.mock_study
@@ -80,6 +122,7 @@ class ConvertTest(unittest.TestCase):
 
         out_folder = brapi_to_isa.get_output_path(mock_data.mock_trials[0]['trialName'])
         assert os.path.exists(out_folder)
+        assert req.called
 
         # TODO: use MIAPPE ISA configuration for validation here
         investigation_file_path = os.path.join(out_folder, 'i_investigation.txt')
