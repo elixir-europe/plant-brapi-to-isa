@@ -8,10 +8,10 @@ from isatools.model import Investigation, OntologyAnnotation, OntologySource, As
 class BrapiToIsaConverter:
     """ Converter json coming out of the BRAPI to ISA object
 
-    ..warning: you may want to tweek this class name
+    ..warning: you may want to tweak this class name
     ..warning: some methods may never be called by the main:
         - create_isa_investigation()
-        - create_gerplasm_chars()
+        - create_germplasm_chars()
         - create_materials()
     """
 
@@ -63,7 +63,7 @@ class BrapiToIsaConverter:
                 miappeKey = "Donors"
                 donors = []
                 for item in range(len(all_germplasm_attributes["donors"])):
-                    donors.append( all_germplasm_attributes[key][item]["donorInstituteCode"] + ":" + all_germplasm_attributes[key][item]["donorAccessionNumber"])
+                    donors.append(all_germplasm_attributes[key][item]["donorInstituteCode"] + ":" + all_germplasm_attributes[key][item]["donorAccessionNumber"])
                 ontovalue = ";".join(donors)
                 c = self.create_isa_characteristic(miappeKey, ontovalue)
 
@@ -109,6 +109,33 @@ class BrapiToIsaConverter:
             this_sample = Sample(name=sample_name)
             that_source = Source(phenotype['germplasmName'], phenotype['germplasmDbId'])
             this_sample.derives_from = that_source
+
+    def create_isa_assay_types(self, brapi_study_id):
+        obs_levels_in_study = []
+        client = BrapiClient(self.endpoint, self.logger)
+        for ou in client.get_obs_units_in_study(brapi_study_id):
+            print(ou)
+            if 'observationLevel' in ou.keys():
+                if ou['observationLevel'] not in obs_levels_in_study:
+                    obs_levels_in_study.append(ou['observationLevel'])
+            else:
+                obs_levels_in_study.append("default")
+
+        # for level in obs_levels_in_study:
+        #     oref_mt = OntologySource(name="OBI", description="Ontology for Biomedical Investigation")
+        #     oa_mt = OntologyAnnotation(term="phenotyping", term_accession="", term_source=oref_mt)
+        #     oref_tt = OntologySource(name="OBI", description="Ontology for Biomedical Investigation")
+        #     oa_tt = OntologyAnnotation(term="multimodal technique", term_accession="", term_source=oref_tt)
+        #     isa_assay_file = "a_" + str(brapi_study_id) + "_" + level + ".txt"
+        #     new_assay = Assay(measurement_type=oa_mt, technology_type=oa_tt, filename=isa_assay_file)
+        #     isa_study.assays.append(new_assay)
+        #     if oref_mt not in isa_investigation.ontology_source_references:
+        #         isa_investigation.ontology_source_references.append(oref_mt)
+        #     if oref_tt not in isa_investigation.ontology_source_references:
+        #         isa_investigation.ontology_source_references.append(oref_tt)
+
+        # return isa_study, isa_investigation
+        return obs_levels_in_study
 
     def create_isa_study(self, brapi_study_id, investigation):
         """Returns an ISA study given a BrAPI endpoints and a BrAPI study identifier."""
@@ -175,17 +202,32 @@ class BrapiToIsaConverter:
         oa_st_design = OntologyAnnotation(term=study_design)
         this_study.design_descriptors = [oa_st_design]
 
-        oref_tt = OntologySource(name="OBI", description="Ontology for Biomedical Investigation")
-        oa_tt = OntologyAnnotation(term="genome sequencing", term_accession="", term_source=oref_tt)
-        oref_mt = OntologySource(name="OBI", description="Ontology for Biomedical Investigation")
-        oa_mt = OntologyAnnotation(term="nucleic acid sequencing", term_accession="", term_source=oref_mt)
-        isa_assay_file = "a_" + str(brapi_study_id) + ".txt"
-        new_assay = Assay(measurement_type=oa_tt, technology_type=oa_mt, filename=isa_assay_file)
-        this_study.assays.append(new_assay)
-        if oref_mt not in investigation.ontology_source_references:
-            investigation.ontology_source_references.append(oref_mt)
-        if oref_tt not in investigation.ontology_source_references:
-            investigation.ontology_source_references.append(oref_tt)
+        obs_levels_in_study = self.create_isa_assay_types(brapi_study_id)
+
+        for level in obs_levels_in_study:
+            oref_mt = OntologySource(name="OBI", description="Ontology for Biomedical Investigation")
+            oa_mt = OntologyAnnotation(term="phenotyping", term_accession="", term_source=oref_mt)
+            oref_tt = OntologySource(name="OBI", description="Ontology for Biomedical Investigation")
+            oa_tt = OntologyAnnotation(term="multimodal technique", term_accession="", term_source=oref_tt)
+            isa_assay_file = "a_" + str(brapi_study_id) + "_" + level + ".txt"
+            new_assay = Assay(measurement_type=oa_mt, technology_type=oa_tt, filename=isa_assay_file)
+            print(new_assay)
+            this_study.assays.append(new_assay)
+            if oref_mt not in investigation.ontology_source_references:
+                investigation.ontology_source_references.append(oref_mt)
+            if oref_tt not in investigation.ontology_source_references:
+                investigation.ontology_source_references.append(oref_tt)
+        # oref_tt = OntologySource(name="OBI", description="Ontology for Biomedical Investigation")
+        # oa_tt = OntologyAnnotation(term="genome sequencing", term_accession="", term_source=oref_tt)
+        # oref_mt = OntologySource(name="OBI", description="Ontology for Biomedical Investigation")
+        # oa_mt = OntologyAnnotation(term="nucleic acid sequencing", term_accession="", term_source=oref_mt)
+        # isa_assay_file = "a_" + str(brapi_study_id) + ".txt"
+        # new_assay = Assay(measurement_type=oa_tt, technology_type=oa_mt, filename=isa_assay_file)
+        # this_study.assays.append(new_assay)
+        # if oref_mt not in investigation.ontology_source_references:
+        #     investigation.ontology_source_references.append(oref_mt)
+        # if oref_tt not in investigation.ontology_source_references:
+        #     investigation.ontology_source_references.append(oref_tt)
         return this_study, investigation
 
     def create_isa_characteristic(self, my_category, my_value):

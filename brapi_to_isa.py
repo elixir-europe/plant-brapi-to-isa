@@ -178,8 +178,6 @@ logger.info("\n----------------\ntrials IDs to be exported : "
 #     return these_characteristics
 
 
-
-
 def write_records_to_file(this_study_id, records, this_directory, filetype):
     logger.info('Doing something')
     # tdf_file = 'out/' + this_study_id
@@ -188,6 +186,7 @@ def write_records_to_file(this_study_id, records, this_directory, filetype):
             # print(this_element)
             fh.write(this_element + '\n')
     fh.close()
+
 
 def get_output_path(path):
     path = "outputdir/" + path + "/"

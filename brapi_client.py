@@ -102,8 +102,8 @@ class BrapiClient:
         # return germplasm
 
     def get_obs_unit_call(self):
-        if self.obs_unit_call == " " :
-            r = requests.get(self.endpoint +"calls?pageSize=100")
+        if self.obs_unit_call == " ":
+            r = requests.get(self.endpoint + "calls?pageSize=100")
             if r.status_code != requests.codes.ok:
                 self.logger.debug("\n\nERROR in get_obs_units_in_study " + r.status_code + r.json)
                 raise RuntimeError("Non-200 status code")
@@ -114,15 +114,14 @@ class BrapiClient:
                 self.obs_unit_call = "/observationunits"
         return self.obs_unit_call
 
-
     def get_obs_units_in_study(self, study_identifier):
         """ Given a BRAPI study identifier, return an list of BRAPI observation units"""
-        for obs_unit in self.paging(self.endpoint + "studies/" + study_identifier + self.get_obs_unit_call(), None, None,  'GET'):
+        for obs_unit in self.paging(self.endpoint + "studies/" + study_identifier
+                                    + self.get_obs_unit_call(), None, None,  'GET'):
             yield obs_unit
 
-
     # def get_obs_units_in_study(self, study_identifier):
-    #     """ Given a BRAPI study identifier, return an list of BRAPI observation units"""
+    #     """ Given a BRAPI study identifier, returns a list of BRAPI observation units"""
     #     r = requests.get(self.endpoint + "studies/" + study_identifier + '/observationunits')
     #
     #     num_pages = r.json()['metadata']['pagination']['totalPages']
@@ -212,9 +211,8 @@ class BrapiClient:
                 print(r)
                 logging.error("problem with request: ", r)
                 raise RuntimeError("Non-200 status code")
-
             maxcount = int(r.json()['metadata']['pagination']['totalPages'])
-            #TODO: remove, hack to adress GnpIS bug, to be fixed in produciton by January 2019
+            # TODO: remove, hack to adress GnpIS bug, to be fixed in production by January 2019
             if '/observationUnits' in url:
                 page = 1000
 
