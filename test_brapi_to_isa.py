@@ -28,6 +28,7 @@ class ConvertTest(unittest.TestCase):
         # Mock call to BrAPI study
         instance_mock = client_mock.return_value = mock.Mock()
         instance_mock.get_brapi_study.return_value = mock_data.mock_study
+        instance_mock.get_obs_units_in_study.return_value = mock_data.mock_observation_units
 
         study_id = mock_data.mock_study['studyDbId']
         investigation = Investigation()
@@ -40,7 +41,7 @@ class ConvertTest(unittest.TestCase):
         assert study is not None
         assert study.filename == f's_{study_id}.txt'
         assert len(study.assays) == 1
-        assert study.assays[0].filename == f'a_{study_id}.txt'
+        assert study.assays[0].filename == f'a_{study_id}_default.txt'
 
     @requests_mock.Mocker()
     def test_convert_germplasm(self, request_mock):
