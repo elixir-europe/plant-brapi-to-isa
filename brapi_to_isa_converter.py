@@ -45,19 +45,20 @@ class BrapiToIsaConverter:
 
         for key in all_germplasm_attributes.keys():
 
-            print("key:", key, "value:", str(all_germplasm_attributes[key]))
+            #print("key:", key, "value:", str(all_germplasm_attributes[key]))
             miappeKey = ""
 
             if key in mapping_dictionnary.keys():
                 if isinstance(mapping_dictionnary[key], str):
                     c = self.create_isa_characteristic(mapping_dictionnary[key], str(all_germplasm_attributes[key]))
                 else:
-                    taxinfo = []
-                    for item in range(len(all_germplasm_attributes[key])):
-                        taxinfo.append(all_germplasm_attributes[key][item][mapping_dictionnary[key][1]] + ":" +
-                                       all_germplasm_attributes[key][item][mapping_dictionnary[key][2]])
-                    ontovalue = ";".join(taxinfo)
-                    c = self.create_isa_characteristic(mapping_dictionnary[key][0], ontovalue)
+                    if all_germplasm_attributes[key] and len(all_germplasm_attributes[key])>0:
+                        taxinfo = []
+                        for item in range(len(all_germplasm_attributes[key])):
+                            taxinfo.append(all_germplasm_attributes[key][item][mapping_dictionnary[key][1]] + ":" +
+                                           all_germplasm_attributes[key][item][mapping_dictionnary[key][2]])
+                        ontovalue = ";".join(taxinfo)
+                        c = self.create_isa_characteristic(mapping_dictionnary[key][0], ontovalue)
 
             elif key == "donors":
                 miappeKey = "Donors"
