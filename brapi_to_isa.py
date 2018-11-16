@@ -179,7 +179,7 @@ logger.info("\n----------------\ntrials IDs to be exported : "
 
 
 def create_study_sample_and_assay(client, brapi_study_id, isa_study,  sample_collection_protocol, phenotyping_protocol ):
-    for obs_unit in client.get_obs_units_in_study(brapi_study_id):
+    for obs_unit in client.get_study_observation_units(brapi_study_id):
         # Getting the relevant germplasm used for that observation event:
         # ---------------------------------------------------------------
         this_source = isa_study.get_source(obs_unit['germplasmName'])
@@ -448,9 +448,8 @@ def main(arg):
                                             protocol_type=OntologyAnnotation(term="nucleic acid sequencing"))
             isa_study.protocols.append(phenotyping_protocol)
 
-
             # Getting the list of all germplasms used in the BRAPI isa_study:
-            germplasms = client.get_germplasm_in_study(brapi_study_id)
+            germplasms = client.get_study_germplasms(brapi_study_id)
 
             germ_counter = 0
 

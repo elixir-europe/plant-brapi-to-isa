@@ -55,9 +55,9 @@ class BrapiClient:
         observation_unit_call = self._get_obs_unit_call()
         yield from self.fetch_objects('GET', f'/studies/{study_id}/{observation_unit_call}')
 
-    def get_germplasm(self, germplasm_id: str) -> Iterable:
+    def get_germplasm(self, germplasm_id: str) -> dict:
         """ Given a BRAPI germplasm identifiers, return an list of BRAPI germplasm attributes"""
-        yield from self.fetch_objects('GET', f'/germplasm/{germplasm_id}/attributes')
+        return self.fetch_object(f'/germplasm/{germplasm_id}')
 
     def get_study_observed_variables(self, study_id: str) -> Iterable:
         """" Given a BRAPI study identifier, returns a list of BRAPI observation Variables objects """
