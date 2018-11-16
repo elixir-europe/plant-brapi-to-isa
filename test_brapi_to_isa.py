@@ -22,7 +22,7 @@ class ConvertTest(unittest.TestCase):
     def setUp(self):
         self.converter = BrapiToIsaConverter(logger, endpoint)
 
-    @mock.patch('brapi_converter.BrapiClient', autospec=True)
+    @mock.patch('brapi_to_isa_converter.BrapiClient', autospec=True)
     def test_convert_study(self, client_mock):
         """Test conversion of BrAPI study to ISA study using mock data."""
         # Mock call to BrAPI study
@@ -102,7 +102,7 @@ class ConvertTest(unittest.TestCase):
 
     @requests_mock.Mocker()
     @mock.patch('brapi_to_isa.BrapiClient', autospec=True)
-    @mock.patch('brapi_converter.BrapiClient', autospec=True)
+    @mock.patch('brapi_to_isa_converter.BrapiClient', autospec=True)
     def test_all_convert(self, request_mock, client_mock1, client_mock2):
         """Test the full conversion from BrAPI to ISA using mock data and validating using ISA validator."""
         # Mock API calls
