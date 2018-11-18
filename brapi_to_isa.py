@@ -443,18 +443,37 @@ def main(arg):
                         phenotyping_process.performer = "none reported"
 
                     # Creating the ISA Raw Data Files associated with each ISA phenotyping assay:
-                    # -----------------------------------------------------------------------
-                    datafile = DataFile(filename="phenotyping-data.txt",
+                    # --------------------------------------------------------------------------
+                    if 'observationLevel' in obs_unit.keys():
+
+                        datafile = DataFile(filename="phenotyping-data" + obs_unit['observationLevel'] + ".txt",
+                                            label="Raw Data File",
+                                            generated_from=[this_sample])
+                        phenotyping_process.outputs.append(datafile)
+
+                        for this_assay in isa_study.assays:
+
+                            if obs_unit['observationLevel'] in this_assay.measurement_type.term:
+
+                                # Creating processes and linking
+                                this_assay.samples.append(this_sample)
+                                # this_assay.process_sequence.append(sample_collection_process)
+                                this_assay.process_sequence.append(phenotyping_process)
+                                this_assay.data_files.append(datafile)
+                                plink(sample_collection_process, phenotyping_process)
+                    else:
+                        datafile = DataFile(filename="phenotyping-data-uol.txt",
                                         label="Raw Data File",
                                         generated_from=[this_sample])
-                    phenotyping_process.outputs.append(datafile)
 
-                    # Creating processes and linking
-                    this_assay.samples.append(this_sample)
-                    # this_assay.process_sequence.append(sample_collection_process)
-                    this_assay.process_sequence.append(phenotyping_process)
-                    this_assay.data_files.append(datafile)
-                    plink(sample_collection_process, phenotyping_process)
+                        phenotyping_process.outputs.append(datafile)
+
+                        # Creating processes and linking
+                        this_assay.samples.append(this_sample)
+                        # this_assay.process_sequence.append(sample_collection_process)
+                        this_assay.process_sequence.append(phenotyping_process)
+                        this_assay.data_files.append(datafile)
+                        plink(sample_collection_process, phenotyping_process)
 
                     # For debugging purpose only, let's check it is fine:
                     # print("process:", this_assay.process_sequence[0].name)
