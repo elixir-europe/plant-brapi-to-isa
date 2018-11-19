@@ -33,7 +33,7 @@ class BrapiClientTest(unittest.TestCase):
         client = BrapiClient(self.endpoint, logger)
 
         # Call
-        trial_it = iter(client.get_trials(None))
+        trial_it = iter(client.get_trials())
 
         # Assert first page can be fetched
         for i in range(total_count-1):
@@ -71,20 +71,16 @@ class BrapiClientTest(unittest.TestCase):
         assert actual_study == mock_data.mock_study
 
     @requests_mock.Mocker()
-    def test_paging_get(self, mock_requests):
+    def test_fetch_objects(self, mock_requests):
         # Mock
-        url = f'{self.endpoint}/studies'
-        params = None
-        data = None
-        method = 'GET'
         results = mock_data.mock_brapi_results([mock_data.mock_study])
-        mock_requests.get(url, json=results)
+        mock_requests.get(requests_mock.ANY, json=results)
 
         # Init
         client = BrapiClient(self.endpoint, logger)
 
         # Call
-        actual_results = list(client.paging(url, params, data, method))
+        actual_results = list(client.fetch_objects('GET', f'/studies'))
 
         # Assert
         assert actual_results is not None
