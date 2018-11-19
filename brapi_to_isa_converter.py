@@ -171,7 +171,7 @@ class BrapiToIsaConverter:
         else:
             this_study.comments.append(Comment(name="geographical location (latitude)", value=""))
 
-        if brapi_study['location'] is not None and brapi_study['location']['latitude'] is not None:
+        if brapi_study['location'] is not None and brapi_study['location']['longitude'] is not None:
             this_study.comments.append(Comment(name="geographical location (longitude)",
                                                value=brapi_study['location']['longitude']))
         else:
