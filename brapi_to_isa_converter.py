@@ -199,12 +199,14 @@ class BrapiToIsaConverter:
 
         obs_levels_in_study = self.obtain_brapi_obs_levels(brapi_study_id)
 
+        # Declaring as many ISA Assay Types as there are BRAPI Observation Levels
+        ###########################################################################
         for level in obs_levels_in_study:
 
             oref_mt = OntologySource(name="OBI", description="Ontology for Biomedical Investigation")
             oa_mt = OntologyAnnotation(term="phenotyping", term_accession="", term_source=oref_mt)
             oref_tt = OntologySource(name="OBI", description="Ontology for Biomedical Investigation")
-            oa_tt = OntologyAnnotation(term=level + "multimodal technique", term_accession="", term_source=oref_tt)
+            oa_tt = OntologyAnnotation(term=level + " multimodal technique", term_accession="", term_source=oref_tt)
             isa_assay_file = "a_" + str(brapi_study_id) + "_" + level + ".txt"
             new_assay = Assay(measurement_type=oa_mt, technology_type=oa_tt, filename=isa_assay_file)
 
