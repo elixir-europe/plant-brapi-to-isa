@@ -1,3 +1,7 @@
+# BRANCHES
+**Current HEAD: elixir-europe/plant-brapi-to-isa**
+**WARNING** : Frozen Reposotory, the reference/working repository is : https://github.com/ISA-tools/plant-brapi-to-isa
+
 # plant-brapi-to-isa
 
 Code to pull data from BrAPI endpoints and create an [ISA](http://isa-tools.org) representation of the experiments. 
