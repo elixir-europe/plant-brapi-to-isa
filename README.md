@@ -1,6 +1,6 @@
 # BRANCHES
 **Current HEAD: elixir-europe/plant-brapi-to-isa**
-**WARNING** : Frozen Reposotory, the reference/working repository is : https://github.com/ISA-tools/plant-brapi-to-isa
+**WARNING** : Frozen Repository, the reference/working repository is : https://github.com/ISA-tools/plant-brapi-to-isa
 
 # plant-brapi-to-isa
 
