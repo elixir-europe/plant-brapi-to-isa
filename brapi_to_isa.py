@@ -35,7 +35,7 @@ logger.addHandler(file4log)
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-e', '--endpoint', help="a BrAPi server endpoint", type=str)
-parser.add_argument('-t', '--trials', help="comma separated list of trial Ids", type=str, action='append')
+parser.add_argument('-t', '--trials', help="comma separated list of trial Ids. 'all' to get all trials (not recomended)", type=str, action='append')
 parser.add_argument('-s', '--studies', help="comma separated list of study Ids", type=str, action='append')
 SERVER = 'https://test-server.brapi.org/brapi/v1/'
 
@@ -432,6 +432,24 @@ def get_output_path(path):
             raise
     return path
 
+def get_trials_ids( brapi_client : BrapiClient):
+    global TRIAL_IDS
+    global STUDY_IDS
+    if TRIAL_IDS:
+       return brapi_client.get_trials(TRIAL_IDS)
+    elif STUDY_IDS:
+        logger.debug("Got Study IDS : " + ','.join(STUDY_IDS))
+        TRIAL_IDS = []
+        for my_study_id in STUDY_IDS:
+            my_study = brapi_client.get_study(my_study_id)
+            TRIAL_IDS += my_study["trialDbIds"]
+        logger.debug("Got the Following trial ids for the Study IDS : " + str(TRIAL_IDS))
+        return brapi_client.get_trials(TRIAL_IDS)
+    else:
+        logger.info("Not enough parameters, provide TRIAL or STUDY IDs")
+        exit (1)
+
+
 
 def main(arg):
     """ Given a SERVER value (and BRAPI isa_study identifier), generates an ISA-Tab document"""
@@ -449,7 +467,8 @@ def main(arg):
     }
 
     # iterating through the trials held in a BRAPI server:
-    for trial in client.get_trials(TRIAL_IDS):
+    # for trial in client.get_trials(TRIAL_IDS):
+    for trial in get_trials_ids(client):
         logger.info('we start from a set of Trials')
         investigation = Investigation()
 
@@ -504,6 +523,7 @@ def main(arg):
                 germ_counter = germ_counter + 1
 
             # Now dealing with BRAPI observation units and attempting to create ISA samples
+            Should we really deal with obs unit here ?
 
             for obs_unit in client.get_study_observation_units(brapi_study_id):
                 # Getting the relevant germplasm used for that observation event:

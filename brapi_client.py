@@ -45,9 +45,9 @@ class BrapiClient:
                 raise RuntimeError("Non-200 status code")
             if any(el['call'] == 'studies/{studyDbId}/observationUnits' for el in r.json()['result']['data']):
                 self.logger.debug(" GOT OBSERVATIONUNIT THE 1.1 WAY")
-                self.obs_unit_call = "/observationUnits"
+                self.obs_unit_call = "observationUnits"
             else:
-                self.obs_unit_call = "/observationunits"
+                self.obs_unit_call = "observationunits"
         return self.obs_unit_call
 
     def get_study_observation_units(self, study_id: str) -> Iterable:
@@ -70,6 +70,9 @@ class BrapiClient:
         :return iterable of BrAPI trials (pared from JSON as python dict)
         """
         if not trial_ids:
+            self.logger.info("Not enough parameters, provide TRIAL or STUDY IDs")
+            exit (1)
+        elif trial_ids == "all":
             self.logger.info("Return all trials")
             yield from self.fetch_objects('GET', '/trials')
         else:
@@ -109,32 +112,31 @@ class BrapiClient:
         while maxcount is None or page < maxcount:
             params['page'] = page
             params['pageSize'] = pagesize
-            self.logger.debug('retrieving page', page, 'of', maxcount, 'from', url)
-            self.logger.info("paging params:", params)
+            self.logger.debug('retrieving page' + str(page)+ 'of'+ str(maxcount)+ 'from'+ str(url))
+            self.logger.info("paging params:" + str(params))
 
             if method == 'GET':
-                print("GETting", url)
+                self.logger.debug("GETting" + url)
                 r = requests.get(url, params=params, data=data)
             elif method == 'PUT':
-                print("PUTting", url)
+                self.logger.debug("PUTting"+  url)
                 r = requests.put(url, params=params, data=data)
             elif method == 'POST':
                 # params['User-Agent'] = "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko)
                 # Chrome/41.0.2272.101 Safari/537.36"
                 params['Accept'] = "application/json"
                 params['Content-Type'] = "application/json"
-                print("POSTing", url)
-                print("POSTing", params, data)
+                self.logger.debug("POSTing" + url)
+                self.logger.debug("POSTing" + params + data)
                 headers = {}
                 r = requests.post(url, params=json.dumps(params).encode('utf-8'), json=data,
                                   headers=headers)
-                print(r)
+                self.logger.debug(r)
             else:
                 raise RuntimeError(f"Unknown method: {method}")
 
             if r.status_code != requests.codes.ok:
-                print(r)
-                logging.error("problem with request: ", r)
+                self.logger.error("problem with request: " + r)
                 raise RuntimeError("Non-200 status code")
             maxcount = int(r.json()['metadata']['pagination']['totalPages'])
             # TODO: remove, hack to adress GnpIS bug, to be fixed in production by January 2019
