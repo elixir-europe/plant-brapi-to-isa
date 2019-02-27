@@ -193,7 +193,7 @@ def create_study_sample_and_assay(client, brapi_study_id, isa_study,  sample_col
         # Getting the relevant germplasm used for that observation event:
         # ---------------------------------------------------------------
         this_source = isa_study.get_source(obs_unit['germplasmName'])
-        logger.debug("testing for the source reference: ", this_source)
+        logger.debug("testing for the source reference: ", str(this_source))
 
         # Assumed one assay by study. Will need to move to one assay by level/datalink
         this_assay = isa_study.assays[0]
@@ -412,7 +412,7 @@ def create_data_file(obs_unit, this_assay, sample_collection_process, this_isa_s
 
 
 def write_records_to_file(this_study_id, records, this_directory, filetype):
-    logger.info('Doing something')
+    logger.info('Writing to file')
     # tdf_file = 'out/' + this_study_id
     with open(this_directory + filetype + this_study_id + '.txt', 'w') as fh:
         for this_element in records:
@@ -523,13 +523,12 @@ def main(arg):
                 germ_counter = germ_counter + 1
 
             # Now dealing with BRAPI observation units and attempting to create ISA samples
-            Should we really deal with obs unit here ?
 
             for obs_unit in client.get_study_observation_units(brapi_study_id):
                 # Getting the relevant germplasm used for that observation event:
                 # ---------------------------------------------------------------
                 this_source = isa_study.get_source(obs_unit['germplasmName'])
-                logger.debug("testing for the source reference: ", this_source)
+                logger.debug("testing for the source reference: "+ str(this_source))
                 # print("SOURCE:", this_source)
                 if this_source is not None:
                     this_isa_sample = Sample(

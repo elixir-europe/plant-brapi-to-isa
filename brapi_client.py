@@ -43,10 +43,14 @@ class BrapiClient:
             if r.status_code != requests.codes.ok:
                 self.logger.debug("\n\nERROR in get_obs_units_in_study " + r.status_code + r.json())
                 raise RuntimeError("Non-200 status code")
-            if any(el['call'] == 'studies/{studyDbId}/observationUnits' for el in r.json()['result']['data']):
+            elif r.json()['metadata']['pagination']['totalCount'] == 0:
+                self.logger.debug(" EMPTY CALLS Call, assume OBSERVATIONUNIT THE 1.1 WAY")
+                self.obs_unit_call = "observationUnits"
+            elif any(el['call'] == 'studies/{studyDbId}/observationUnits' for el in r.json()['result']['data']):
                 self.logger.debug(" GOT OBSERVATIONUNIT THE 1.1 WAY")
                 self.obs_unit_call = "observationUnits"
             else:
+                self.logger.debug(" GOT OBSERVATIONUNIT THE 1.2+ WAY")
                 self.obs_unit_call = "observationunits"
         return self.obs_unit_call
 
@@ -127,7 +131,7 @@ class BrapiClient:
                 params['Accept'] = "application/json"
                 params['Content-Type'] = "application/json"
                 self.logger.debug("POSTing" + url)
-                self.logger.debug("POSTing" + params + data)
+                self.logger.debug("POSTing" + str(params) + str(data))
                 headers = {}
                 r = requests.post(url, params=json.dumps(params).encode('utf-8'), json=data,
                                   headers=headers)
@@ -136,7 +140,7 @@ class BrapiClient:
                 raise RuntimeError(f"Unknown method: {method}")
 
             if r.status_code != requests.codes.ok:
-                self.logger.error("problem with request: " + r)
+                self.logger.error("problem with request: " + str(r))
                 raise RuntimeError("Non-200 status code")
             maxcount = int(r.json()['metadata']['pagination']['totalPages'])
             # TODO: remove, hack to adress GnpIS bug, to be fixed in production by January 2019
