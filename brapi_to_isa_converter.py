@@ -17,6 +17,14 @@ class BrapiToIsaConverter:
     def __init__(self, logger, endpoint):
         self.logger = logger
         self.endpoint = endpoint
+        self._brapi_client = BrapiClient(self.endpoint, self.logger)
+
+    # _brapi_client
+    #
+    # def get_brapi_client(self) -> BrapiClient:
+    #     if self._brapi_client is None:
+    #
+    #     return self._brapi_client
 
     def create_germplasm_chars(self, germplasm):
         """" Given a BRAPI Germplasm ID, retrieve the list of all attributes from BRAPI and returns a list of ISA
@@ -25,13 +33,12 @@ class BrapiToIsaConverter:
 
         these_characteristics = []
 
-        client = BrapiClient(self.endpoint, self.logger)
         germplasm_id = germplasm['germplasmDbId']
-        all_germplasm_attributes = client.get_germplasm(germplasm_id)
+        all_germplasm_attributes = self._brapi_client.get_germplasm(germplasm_id)
 
         mapping_dictionnary = {
             "accessionNumber": "Material Source ID",
-            "commonCropName":  "commonCropName",
+            "commonCropName": "commonCropName",
             "genus": "Genus",
             "species": "Species",
             "subtaxa": "Infraspecific Name",
@@ -41,14 +48,14 @@ class BrapiToIsaConverter:
 
         for key in all_germplasm_attributes.keys():
 
-            #print("key:", key, "value:", str(all_germplasm_attributes[key]))
+            # print("key:", key, "value:", str(all_germplasm_attributes[key]))
             miappeKey = ""
 
             if key in mapping_dictionnary.keys():
                 if isinstance(mapping_dictionnary[key], str):
                     c = self.create_isa_characteristic(mapping_dictionnary[key], str(all_germplasm_attributes[key]))
                 else:
-                    if all_germplasm_attributes[key] and len(all_germplasm_attributes[key])>0:
+                    if all_germplasm_attributes[key] and len(all_germplasm_attributes[key]) > 0:
                         taxinfo = []
                         for item in range(len(all_germplasm_attributes[key])):
                             taxinfo.append(all_germplasm_attributes[key][item][mapping_dictionnary[key][1]] + ":" +
@@ -60,7 +67,8 @@ class BrapiToIsaConverter:
                 miappeKey = "Donors"
                 donors = []
                 for item in range(len(all_germplasm_attributes["donors"])):
-                    donors.append(all_germplasm_attributes[key][item]["donorInstituteCode"] + ":" + all_germplasm_attributes[key][item]["donorAccessionNumber"])
+                    donors.append(all_germplasm_attributes[key][item]["donorInstituteCode"] + ":" +
+                                  all_germplasm_attributes[key][item]["donorAccessionNumber"])
                 ontovalue = ";".join(donors)
                 c = self.create_isa_characteristic(miappeKey, ontovalue)
 
@@ -79,9 +87,9 @@ class BrapiToIsaConverter:
 
     def create_isa_investigations(self, endpoint):
         """Create ISA investigations from a BrAPI endpoint, starting from the trials information"""
-        client = BrapiClient(endpoint, self.logger)
+
         endpoint_investigations = []
-        for this_trial in client.get_brapi_trials():
+        for this_trial in self._brapi_client.get_brapi_trials():
             this_investigation = Investigation()
             this_investigation.identifier = this_trial['trialDbId']
             this_investigation.title = this_trial['trialName']
@@ -97,8 +105,8 @@ class BrapiToIsaConverter:
 
     def create_materials(self, endpoint):
         """Create ISA studies from a BrAPI endpoint, starting from the studies, where there is no trial information."""
-        client = BrapiClient(endpoint, self.logger)
-        for phenotype in client.get_phenotypes():
+
+        for phenotype in self._brapi_client.get_phenotypes():
             print(phenotype)
             # for now, creating the sample name combining studyDbId and potDbId -
             # eventually this should be observationUnitDbId
@@ -109,8 +117,8 @@ class BrapiToIsaConverter:
 
     def obtain_brapi_obs_levels(self, brapi_study_id):
         obs_levels_in_study = ["default"]
-        client = BrapiClient(self.endpoint, self.logger)
-        for ou in client.get_study_observation_units(brapi_study_id):
+
+        for ou in self._brapi_client.get_study_observation_units(brapi_study_id):
             print(ou)
             if 'observationLevel' in ou.keys():
                 if ou['observationLevel'] not in obs_levels_in_study:
@@ -135,8 +143,7 @@ class BrapiToIsaConverter:
     def create_isa_study(self, brapi_study_id, investigation):
         """Returns an ISA study given a BrAPI endpoints and a BrAPI study identifier."""
 
-        client = BrapiClient(self.endpoint, self.logger)
-        brapi_study = client.get_study(brapi_study_id)
+        brapi_study = self._brapi_client.get_study(brapi_study_id)
 
         this_study = Study(filename="s_" + str(brapi_study_id) + ".txt")
         this_study.identifier = brapi_study['studyDbId']

@@ -94,7 +94,7 @@ class BrapiClient:
         self.logger.debug('GET ' + url)
         r = requests.get(url)
         if r.status_code != requests.codes.ok:
-            logging.error("problem with request: ", r)
+            logging.error("problem with request: ", str(r))
             raise RuntimeError("Non-200 status code")
         return r.json()["result"]
 

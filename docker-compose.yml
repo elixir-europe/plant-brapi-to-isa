@@ -12,7 +12,7 @@ services:
          - ./out:/outputdir
     test_study:
         build: ./
-        command: ["python","/brapi_to_isa.py", "-e https://urgi.versailles.inra.fr/gnpis-core-srv/brapi/v1/",  "-sRIGW1"]
+        command: ["python","/brapi_to_isa.py", "-e https://urgi.versailles.inra.fr/rc/gnpis-core-srv/brapi/v1/",  "-sRIGW1"]
         volumes:
          - ./out:/outputdir
     test_studies:
