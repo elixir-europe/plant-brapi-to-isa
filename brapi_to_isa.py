@@ -5,6 +5,7 @@ import errno
 import logging
 import os
 import sys
+import json
 
 from isatools import isatab
 from isatools.model import Investigation, OntologyAnnotation, Characteristic, Source, \
@@ -198,6 +199,7 @@ def create_study_sample_and_assay(client, brapi_study_id, isa_study,  sample_col
         "observationLevel": "Observation unit type"
     }
 
+    allready_converted_obs_unit = [] # Allow to handle multiyear observation units
     for obs_unit in client.get_study_observation_units(brapi_study_id):
         # Getting the relevant germplasm used for that observation event:
         # ---------------------------------------------------------------
@@ -207,16 +209,18 @@ def create_study_sample_and_assay(client, brapi_study_id, isa_study,  sample_col
         # TODO Assumed one assay by study. Will need to move to one assay by level/datalink
         this_assay = isa_study.assays[0]
 
-        # print("SOURCE:", this_source)
-        if this_source is not None:
+        # Sample == Observation Unit
+        if this_source is not None and obs_unit['observationUnitName'] not in allready_converted_obs_unit:
+            #The observationUnitName is the buisness ID of the Observation unit (ie plot number) while the ID is the PK
             this_isa_sample = Sample(
-                name=obs_unit['observationUnitDbId'] + "_" + obs_unit['observationUnitName'],
+                name= obs_unit['observationUnitName'],
+                #name=obs_unit['observationUnitDbId'] + "_" + obs_unit['observationUnitName'],
                 derives_from=[this_source])
-
+            allready_converted_obs_unit.append(obs_unit['observationUnitName'])
 
             for key in obs_unit.keys():
                 if key in obsunit_to_isasample_mapping_dictionary.keys():
-                    if isinstance(obsunit_to_isasample_mapping_dictionary[key], str):
+                    if isinstance(obsunit_to_isasample_mapping_dictionary[key], str) and str(obs_unit[key]) is not None :
                         c = Characteristic(category=OntologyAnnotation(term=obsunit_to_isasample_mapping_dictionary[key]),
                                            value=OntologyAnnotation(term=str(obs_unit[key]),
                                                                     term_source="",
@@ -262,38 +266,24 @@ def create_study_sample_and_assay(client, brapi_study_id, isa_study,  sample_col
 
             # TODO: Add Comment[Factor Values] : iterate through BRAPI treatments to obtain all possible values for a given Factor
 
-        # else:
-        #     # print("normal: ", germ[key])
-        #     c = Characteristic(category=OntologyAnnotation(term=str(key)),
-        #                        value=OntologyAnnotation(term=str(germ[key]),
-        #                                                 term_source="",
-        #                                                 term_accession=""))
-        # if key == 'accessionNumber':
-        #     c = Characteristic(category=OntologyAnnotation(term="Material Source ID"),
-        #                        value=OntologyAnnotation(term=str(germ[key]),
-        #                                                 term_source="",
-        #                                                 term_accession=""))
-        #
-        #
-        # if c not in source.characteristics:
-        #     source.characteristics.append(c)
-
-        # Creating the corresponding ISA sample entity for structure the document:
-        # ------------------------------------------------------------------------
-        sample_collection_process = Process(executes_protocol=sample_collection_protocol)
-        sample_collection_process.performer = "bob"
-        sample_collection_process.date = datetime.datetime.today().isoformat()
-        sample_collection_process.inputs.append(this_source)
-        sample_collection_process.outputs.append(this_isa_sample)
-        isa_study.process_sequence.append(sample_collection_process)
+            # Creating the corresponding ISA sample entity for structure the document:
+            # ------------------------------------------------------------------------
+            sample_collection_process = Process(executes_protocol=sample_collection_protocol)
+            sample_collection_process.performer = "n.a."
+            sample_collection_process.date = datetime.datetime.today().isoformat()
+            sample_collection_process.inputs.append(this_source)
+            sample_collection_process.outputs.append(this_isa_sample)
+            isa_study.process_sequence.append(sample_collection_process)
 
         #logger.debug(str(this_assay))
         # Creating the relevant ISA protocol application / Assay from BRAPI Observation Events:
         # -------------------------------------------------------------------------------------
+
     create_data_file(obs_unit, this_assay, sample_collection_process, this_isa_sample, phenotyping_protocol)
 
 
 def create_data_file(obs_unit, this_assay, sample_collection_process, this_isa_sample, phenotyping_protocol):
+    #TODO : reactivate data file generation, one by assay
     # Creating the relevant ISA protocol application / Assay from BRAPI Observation Events:
     # -------------------------------------------------------------------------------------
     # Getting the ISA assay table generated by the 'create_isa_study' method by default
@@ -322,30 +312,45 @@ def create_data_file(obs_unit, this_assay, sample_collection_process, this_isa_s
 
         phenotyping_process.parameter_values.append(pv)
 
+        # Creating relevant protocol parameter values associated with the protocol application:
+        # -------------------------------------------------------------------------------------
+        if 'season' in obs_unit['observations'][j].keys():
+            pv = ParameterValue(
+                category=ProtocolParameter(parameter_name=OntologyAnnotation(term="season")),
+                value=OntologyAnnotation(term=str(obs_unit['observations'][j]['season']),
+                                         term_source="",
+                                         term_accession=""))
+        else:
+            pv = ParameterValue(
+                category=ProtocolParameter(parameter_name=OntologyAnnotation(term="season")),
+                value=OntologyAnnotation(term="none reported", term_source="", term_accession=""))
+
+        phenotyping_process.parameter_values.append(pv)
+
         # Getting and setting values for performer and date of the protocol application:
         # -------------------------------------------------------------------------------------
-        if obs_unit['observations'][j]['observationTimeStamp'] is not None:
-            phenotyping_process.date = str(obs_unit['observations'][j]['observationTimeStamp'])
-        else:
-            # TODO: implement testing and use of datetime.datetime.today().isoformat()
-            phenotyping_process.date = "not available"
-        if obs_unit['observations'][j]['collector'] is not None:
-            phenotyping_process.performer = str(obs_unit['observations'][j]['collector'])
-        else:
-            phenotyping_process.performer = "none reported"
+        # if obs_unit['observations'][j]['observationTimeStamp'] is not None:
+        #     phenotyping_process.date = str(obs_unit['observations'][j]['observationTimeStamp'])
+        # else:
+        #     # TODO: implement testing and use of datetime.datetime.today().isoformat()
+        #     phenotyping_process.date = "not available"
+        # if obs_unit['observations'][j]['collector'] is not None:
+        #     phenotyping_process.performer = str(obs_unit['observations'][j]['collector'])
+        # else:
+        #     phenotyping_process.performer = "none reported"
 
         # Creating the ISA Raw Data Files associated with each ISA phenotyping assay:
         # -----------------------------------------------------------------------
-        datafile = DataFile(filename="phenotyping-data.txt",
-                            label="Raw Data File",
-                            generated_from=[this_isa_sample])
-        phenotyping_process.outputs.append(datafile)
+        # datafile = DataFile(filename="phenotyping-data.txt",
+        #                     label="Raw Data File",
+        #                     generated_from=[this_isa_sample])
+        # phenotyping_process.outputs.append(datafile)
 
         # Creating processes and linking
         this_assay.samples.append(this_isa_sample)
         # this_assay.process_sequence.append(sample_collection_process)
         this_assay.process_sequence.append(phenotyping_process)
-        this_assay.data_files.append(datafile)
+        #this_assay.data_files.append(datafile)
         plink(sample_collection_process, phenotyping_process)
 
         # For debugging purpose only, let's check it is fine:
@@ -374,7 +379,7 @@ def get_output_path(path):
             raise
     return path
 
-def get_trials_ids( brapi_client : BrapiClient):
+def get_trials( brapi_client : BrapiClient):
     global TRIAL_IDS
     global STUDY_IDS
     if TRIAL_IDS:
@@ -386,11 +391,30 @@ def get_trials_ids( brapi_client : BrapiClient):
             my_study = brapi_client.get_study(my_study_id)
             TRIAL_IDS += my_study["trialDbIds"]
         logger.debug("Got the Following trial ids for the Study IDS : " + str(TRIAL_IDS))
-        return brapi_client.get_trials(TRIAL_IDS)
+        if len(TRIAL_IDS) > 0:
+            return brapi_client.get_trials(TRIAL_IDS)
+        else:
+            return get_empty_trial()
     else:
         logger.info("Not enough parameters, provide TRIAL or STUDY IDs")
         exit (1)
 
+
+def get_empty_trial():
+    empty_trial = {
+        "trialDbId": "trial_less_study_"+STUDY_IDS[0],
+        "trialName": "N.A.",
+        "trialType": "Project",
+        "endDate": "",
+        "startDate": "",
+        "datasetAuthorship": {
+        },
+        "studies":[]
+    }
+    #empty_trial_json = json.loads(empty_trial)
+    for my_study_id in STUDY_IDS:
+        empty_trial["studies"].append({"studyDbId": my_study_id})
+    yield from [empty_trial]
 
 
 def main(arg):
@@ -399,18 +423,9 @@ def main(arg):
     client = BrapiClient(SERVER, logger)
     converter = BrapiToIsaConverter(logger, SERVER)
 
-    mapping_dictionary = {
-        "X": "X",
-        "Y": "Y",
-        "blockNumber": "Block Number",
-        "plotNumber": "Plot Number",
-        "plantNumber": "Plant Number",
-        "observationLevel": "Observation unit type"
-    }
-
     # iterating through the trials held in a BRAPI server:
     # for trial in client.get_trials(TRIAL_IDS):
-    for trial in get_trials_ids(client):
+    for trial in get_trials(client):
         logger.info('we start from a set of Trials')
         investigation = Investigation()
 
@@ -419,13 +434,6 @@ def main(arg):
 
         # iterating through the BRAPI studies associated to a given BRAPI trial:
         for brapi_study in trial['studies']:
-
-            # NOTA BENE: ugent doesnt have trials
-            # GNPIS endpoint exemplar studies ['BTH_Dijon_2000_SetA1'.
-            # 'BTH_Chaux_des_Prés_2007_SetA1','BTH_Rennes_2003_TECH']
-            # TRITI endpoint exemplar studies ['1', '35' ,'1558']
-            # CASSAVA endpoint exemaple studies ['3638']
-            # BRAPI TEST SERVER = 'https://test-server.brapi.org/brapi/v1/'
 
             brapi_study_id = brapi_study['studyDbId']
             # NB: this method always create an ISA Assay Type
@@ -467,92 +475,7 @@ def main(arg):
             # Now dealing with BRAPI observation units and attempting to create ISA samples
             create_study_sample_and_assay(client, brapi_study_id, isa_study,  sample_collection_protocol, phenotyping_protocol)
 
-            # for obs_unit in client.get_study_observation_units(brapi_study_id):
-            #     # Getting the relevant germplasm used for that observation event:
-            #     # ---------------------------------------------------------------
-            #     this_source = isa_study.get_source(obs_unit['germplasmName'])
-            #     #logger.debug("testing for the source reference: "+ str(this_source))
-            #     # print("SOURCE:", this_source)
-            #     if this_source is not None:
-            #         this_isa_sample = Sample(
-            #             name=obs_unit['observationUnitDbId'] + "_" + obs_unit['observationUnitName'],
-            #             derives_from=[this_source])
-            #         # --------------------------
-            #         # print("ou: ", ou)
-            #         for key in obs_unit.keys():
-            #             if key in mapping_dictionary.keys():
-            #                 if isinstance(mapping_dictionary[key], str):
-            #                     c = Characteristic(category=OntologyAnnotation(term=mapping_dictionary[key]),
-            #                                        value=OntologyAnnotation(term=str(obs_unit[key]),
-            #                                                                 term_source="",
-            #                                                                 term_accession=""))
-            #                     this_isa_sample.characteristics.append(c)
-            #             else:
-            #                 c = Characteristic(category=OntologyAnnotation(term=key),
-            #                                    value=OntologyAnnotation(term=str(obs_unit[key]),
-            #                                                             term_source="",
-            #                                                             term_accession=""))
-            #                 this_isa_sample.characteristics.append(c)
-            #
-            #         # if 'X' in obs_unit.keys():
-            #         #     # print('KEY:', obs_unit['X'])
-            #         #     c = Characteristic(category=OntologyAnnotation(term="X"),
-            #         #                        value=OntologyAnnotation(term=str(obs_unit['X']),
-            #         #                                                 term_source="",
-            #         #                                                 term_accession=""))
-            #         #     this_sample.characteristics.append(c)
-            #         #
-            #         # if 'Y' in obs_unit.keys():
-            #         #     # print('KEY:', obs_unit['X'])
-            #         #     c = Characteristic(category=OntologyAnnotation(term="Y"),
-            #         #                        value=OntologyAnnotation(term=str(obs_unit['Y']),
-            #         #                                                 term_source="",
-            #         #                                                 term_accession=""))
-            #         #     this_sample.characteristics.append(c)
-            #         #
-            #         # if 'blockNumber' in obs_unit.keys():
-            #         #     # print('KEY:', obs_unit['X'])
-            #         #     c = Characteristic(category=OntologyAnnotation(term="Block Number"),
-            #         #                        value=OntologyAnnotation(term=str(obs_unit['blockNumber']),
-            #         #                                                 term_source="",
-            #         #                                                 term_accession=""))
-            #         #     this_sample.characteristics.append(c)
-            #         #
-            #         # if 'plotNumber' in obs_unit.keys():
-            #         #     c = Characteristic(category=OntologyAnnotation(term="Plot Number"),
-            #         #                        value=OntologyAnnotation(term=str(obs_unit['plotNumber']),
-            #         #                                                 term_source="",
-            #         #                                                 term_accession=""))
-            #         #     this_sample.characteristics.append(c)
-            #         #
-            #         # if 'plantNumber' in obs_unit.keys():
-            #         #     c = Characteristic(category=OntologyAnnotation(term="Plant Number"),
-            #         #                        value=OntologyAnnotation(term=str(obs_unit['plantNumber']),
-            #         #                                                 term_source="",
-            #         #                                                 term_accession=""))
-            #         #     this_sample.characteristics.append(c)
-            #         #
-            #         # if 'replicate' in obs_unit.keys():
-            #         #     c = Characteristic(category=OntologyAnnotation(term="replicate"),
-            #         #                        value=OntologyAnnotation(term=str(obs_unit['replicate']),
-            #         #                                                 term_source="",
-            #         #                                                 term_accession=""))
-            #         #     this_sample.characteristics.append(c)
-            #         #
-            #         # if 'observationUnitDbId' in obs_unit.keys():
-            #         #     c = Characteristic(category=OntologyAnnotation(term="observationUnitDbId"),
-            #         #                        value=OntologyAnnotation(term=str(obs_unit['observationUnitDbId']),
-            #         #                                                 term_source="",
-            #         #                                                 term_accession=""))
-            #         #     this_sample.characteristics.append(c)
-            #         #
-            #         # if 'observationUnitName' in obs_unit.keys():
-            #         #     c = Characteristic(category=OntologyAnnotation(term="observationUnitName"),
-            #         #                        value=OntologyAnnotation(term=str(obs_unit['observationUnitName']),
-            #         #                                                 term_source="",
-            #         #                                                 term_accession=""))
-            #         #     this_sample.characteristics.append(c)
-            #
+
             #         # if 'observationLevel' in obs_unit.keys():
             #         #     # TODO: if absent, a warning should be logged as this is a MIAPPE requirement
             #         #     c = Characteristic(category=OntologyAnnotation(term="Observation unit type"),
@@ -561,66 +484,11 @@ def main(arg):
             #         #                                                 term_accession=""))
             #         #     this_sample.characteristics.append(c)
             #         #
-            #         # if 'observationLevels' in obs_unit.keys():
-            #         #     c = Characteristic(category=OntologyAnnotation(term="observationLevels"),
-            #         #                        value=OntologyAnnotation(term=str(obs_unit['observationLevels']),
-            #         #                                                 term_source="",
-            #         #                                                 term_accession=""))
-            #         #     this_sample.characteristics.append(c)
-            #         #
-            #         # if 'germplasmName' in obs_unit.keys():
-            #         #     c = Characteristic(category=OntologyAnnotation(term="germplasmName"),
-            #         #                        value=OntologyAnnotation(term=str(obs_unit['germplasmName']),
-            #         #                                                 term_source="",
-            #         #                                                 term_accession=""))
-            #         #     this_sample.characteristics.append(c)
-            #
-            #         # Looking for treatment in BRAPI and mapping to ISA Study Factor Value
-            #         # --------------------------------------------------------------------
-            #         if 'treatments' in obs_unit.keys():
-            #             for element in obs_unit['treatments']:
-            #                 for key in element.keys():
-            #                     f = StudyFactor(name=key, factor_type=OntologyAnnotation(term=key))
-            #                     if f not in isa_study.factors:
-            #                         isa_study.factors.append(f)
-            #
-            #                     fv = FactorValue(factor_name=f,
-            #                                      value=OntologyAnnotation(term=str(element[key]),
-            #                                                               term_source="",
-            #                                                               term_accession=""))
-            #                     this_isa_sample.factor_values.append(fv)
-            #         isa_study.samples.append(this_isa_sample)
-            #         # print("counting observations: ", i, "before: ", this_source.name)
+
             #
             #         # TODO: Add Comment[Factor Values] : iterate through BRAPI treatments to obtain all possible values for a given Factor
             #
-            #     # else:
-            #     #     # print("normal: ", germ[key])
-            #     #     c = Characteristic(category=OntologyAnnotation(term=str(key)),
-            #     #                        value=OntologyAnnotation(term=str(germ[key]),
-            #     #                                                 term_source="",
-            #     #                                                 term_accession=""))
-            #     # if key == 'accessionNumber':
-            #     #     c = Characteristic(category=OntologyAnnotation(term="Material Source ID"),
-            #     #                        value=OntologyAnnotation(term=str(germ[key]),
-            #     #                                                 term_source="",
-            #     #                                                 term_accession=""))
-            #     #
-            #     #
-            #     # if c not in source.characteristics:
-            #     #     source.characteristics.append(c)
-            #
-            #     # Creating the corresponding ISA sample entity for structure the document:
-            #     # ------------------------------------------------------------------------
-            #     sample_collection_process = Process(executes_protocol=sample_collection_protocol)
-            #     sample_collection_process.performer = "bob"
-            #     sample_collection_process.date = datetime.datetime.today().isoformat()
-            #     sample_collection_process.inputs.append(this_source)
-            #     sample_collection_process.outputs.append(this_isa_sample)
-            #     isa_study.process_sequence.append(sample_collection_process)
-            # ------------------------
-            # END  create_study_sample_and_assay
-            # -----------------------
+
 
             #     # Creating the relevant ISA protocol application / Assay from BRAPI Observation Events:
             #     # -------------------------------------------------------------------------------------

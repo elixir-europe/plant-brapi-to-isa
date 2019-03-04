@@ -31,7 +31,7 @@ class BrapiToIsaConverter:
         characteristics using MIAPPE tags for compliance + X-check against ISAconfiguration"""
         # TODO: switch BRAPI tags to MIAPPE Tags
 
-        these_characteristics = []
+        returned_characteristics = []
 
         germplasm_id = germplasm['germplasmDbId']
         all_germplasm_attributes = self._brapi_client.get_germplasm(germplasm_id)
@@ -48,9 +48,6 @@ class BrapiToIsaConverter:
 
         for key in all_germplasm_attributes.keys():
 
-            # print("key:", key, "value:", str(all_germplasm_attributes[key]))
-            miappeKey = ""
-
             if key in mapping_dictionnary.keys():
                 if isinstance(mapping_dictionnary[key], str):
                     c = self.create_isa_characteristic(mapping_dictionnary[key], str(all_germplasm_attributes[key]))
@@ -62,6 +59,8 @@ class BrapiToIsaConverter:
                                            all_germplasm_attributes[key][item][mapping_dictionnary[key][2]])
                         ontovalue = ";".join(taxinfo)
                         c = self.create_isa_characteristic(mapping_dictionnary[key][0], ontovalue)
+                        if c not in returned_characteristics:
+                            returned_characteristics.append(c)
 
             elif key == "donors":
                 miappeKey = "Donors"
@@ -80,10 +79,10 @@ class BrapiToIsaConverter:
             else:
                 c = self.create_isa_characteristic(key, str(all_germplasm_attributes[key]))
 
-            if c not in these_characteristics:
-                these_characteristics.append(c)
+            if c not in returned_characteristics:
+                returned_characteristics.append(c)
 
-        return these_characteristics
+        return returned_characteristics
 
     def create_isa_investigations(self, endpoint):
         """Create ISA investigations from a BrAPI endpoint, starting from the trials information"""
