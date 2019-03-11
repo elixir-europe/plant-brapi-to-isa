@@ -9,7 +9,7 @@ import json
 
 from isatools import isatab
 from isatools.model import Investigation, OntologyAnnotation, Characteristic, Source, \
-    Sample, Protocol, Process, StudyFactor, FactorValue, DataFile, ParameterValue, ProtocolParameter, plink
+    Sample, Protocol, Process, StudyFactor, FactorValue, DataFile, ParameterValue, ProtocolParameter, plink, Person, Publication
 
 from brapi_client import BrapiClient
 from brapi_to_isa_converter import BrapiToIsaConverter
@@ -389,7 +389,7 @@ def get_trials( brapi_client : BrapiClient):
         TRIAL_IDS = []
         for my_study_id in STUDY_IDS:
             my_study = brapi_client.get_study(my_study_id)
-            TRIAL_IDS += my_study["trialDbIds"]
+            TRIAL_IDS += my_study["trialDbId"]
         logger.debug("Got the Following trial ids for the Study IDS : " + str(TRIAL_IDS))
         if len(TRIAL_IDS) > 0:
             return brapi_client.get_trials(TRIAL_IDS)
@@ -431,6 +431,13 @@ def main(arg):
 
         output_directory = get_output_path( trial['trialName'])
         logger.info("Generating output in : "+ output_directory)
+        
+        for brapicontact in trial['contacts']:
+            #NOTE: brapi has just name atribute -> no seperate first/last name
+            ContactName = brapicontact['name'].split(' ')
+            contact = Person(first_name=ContactName[0], last_name=ContactName[1],
+            affiliation=brapicontact['institutionName'], email=brapicontact['email'])
+            investigation.contacts.append(contact)
 
         # iterating through the BRAPI studies associated to a given BRAPI trial:
         for brapi_study in trial['studies']:

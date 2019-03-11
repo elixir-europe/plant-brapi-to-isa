@@ -19,6 +19,7 @@ class BrapiClient:
         self.endpoint = endpoint
         self.logger = logger
         self.obs_unit_call = " "
+        self.obs_var_call = " "
 
     def get_phenotypes(self) -> Iterable:
         """Returns a phenotype information from a BrAPI endpoint."""
@@ -54,6 +55,24 @@ class BrapiClient:
                 self.obs_unit_call = "observationunits"
         return self.obs_unit_call
 
+    def _get_obs_var_call(self) -> str:
+        """Choose which BrAPI call to use in order to fetch observation variables by study"""
+        if self.obs_var_call == " ":
+            r = requests.get(self.endpoint + "calls?pageSize=100")
+            if r.status_code != requests.codes.ok:
+                self.logger.debug("\n\nERROR in get_obs_var_in_study " + r.status_code + r.json())
+                raise RuntimeError("Non-200 status code")
+            elif r.json()['metadata']['pagination']['totalCount'] == 0:
+                self.logger.debug(" EMPTY CALLS Call, assume OBSERVATIONVARIABLE THE 1.0 WAY")
+                self.obs_var_call = "observationVariables"
+            elif any(el['call'] == 'studies/{studyDbId}/observationVariables' for el in r.json()['result']['data']):
+                self.logger.debug(" GOT OBSERVATIONVARIABLE THE 1.0 WAY")
+                self.obs_var_call = "observationVariables"
+            else:
+                self.logger.debug(" GOT OBSERVATIONVARIABLE THE 1.1+ WAY")
+                self.obs_var_call = "observationvariables"
+        return self.obs_var_call
+
     def get_study_observation_units(self, study_id: str) -> Iterable:
         """ Given a BRAPI study identifier, return an list of BRAPI observation units"""
         observation_unit_call = self._get_obs_unit_call()
@@ -65,7 +84,8 @@ class BrapiClient:
 
     def get_study_observed_variables(self, study_id: str) -> Iterable:
         """" Given a BRAPI study identifier, returns a list of BRAPI observation Variables objects """
-        yield from self.fetch_objects('GET', f'/studies/{study_id}/observationVariables')
+        observation_var_call = self._get_obs_var_call()
+        yield from self.fetch_objects('GET', f'/studies/{study_id}/{observation_var_call}')
 
     def get_trials(self, trial_ids: List[str]=None) -> Iterable:
         """"
@@ -76,7 +96,7 @@ class BrapiClient:
         if not trial_ids:
             self.logger.info("Not enough parameters, provide TRIAL or STUDY IDs")
             exit (1)
-        elif trial_ids == "all":
+        elif trial_ids == ["all"]:
             self.logger.info("Return all trials")
             yield from self.fetch_objects('GET', '/trials')
         else:
@@ -94,7 +114,7 @@ class BrapiClient:
         self.logger.debug('GET ' + url)
         r = requests.get(url)
         if r.status_code != requests.codes.ok:
-            logging.error("problem with request: ", str(r))
+            logging.error("problem with request: " + str(r))
             raise RuntimeError("Non-200 status code")
         return r.json()["result"]
 
@@ -108,7 +128,7 @@ class BrapiClient:
         :return iterable of BrAPI objects parsed from JSON to python dict
         """
         page = 0
-        pagesize = 1000
+        pagesize = 100
         maxcount = None
         # set a default dict for parameters
         params = params or {}
