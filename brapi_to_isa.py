@@ -434,6 +434,7 @@ def main(arg):
 
         output_directory = get_output_path( trial['trialName'])
         logger.info("Generating output in : "+ output_directory)
+
         if 'contacts' in trial.keys():
             for brapicontact in trial['contacts']:
                 #NOTE: brapi has just name atribute -> no seperate first/last name
