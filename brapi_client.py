@@ -19,6 +19,7 @@ class BrapiClient:
         self.endpoint = endpoint
         self.logger = logger
         self.obs_unit_call = " "
+        self.obs_var_call = " "
 
     def get_phenotypes(self) -> Iterable:
         """Returns a phenotype information from a BrAPI endpoint."""
@@ -41,7 +42,7 @@ class BrapiClient:
         if self.obs_unit_call == " ":
             r = requests.get(self.endpoint + "calls?pageSize=100")
             if r.status_code != requests.codes.ok:
-                self.logger.debug("\n\nERROR in get_obs_units_in_study " + r.status_code + r.json())
+                self.logger.debug("\n\nERROR in get_obs_units_in_study " + str(r.status_code) + str(r.json()))
                 raise RuntimeError("Non-200 status code")
             elif r.json()['metadata']['pagination']['totalCount'] == 0:
                 self.logger.debug(" EMPTY CALLS Call, assume OBSERVATIONUNIT THE 1.1 WAY")
@@ -54,6 +55,24 @@ class BrapiClient:
                 self.obs_unit_call = "observationunits"
         return self.obs_unit_call
 
+    def _get_obs_var_call(self) -> str:
+        """Choose which BrAPI call to use in order to fetch observation variables by study"""
+        if self.obs_var_call == " ":
+            r = requests.get(self.endpoint + "calls?pageSize=100")
+            if r.status_code != requests.codes.ok:
+                self.logger.debug("\n\nERROR in get_obs_var_in_study " + r.status_code + r.json())
+                raise RuntimeError("Non-200 status code")
+            elif r.json()['metadata']['pagination']['totalCount'] == 0:
+                self.logger.debug(" EMPTY CALLS Call, assume OBSERVATIONVARIABLE THE 1.0 WAY")
+                self.obs_var_call = "observationVariables"
+            elif any(el['call'] == 'studies/{studyDbId}/observationVariables' for el in r.json()['result']['data']):
+                self.logger.debug(" GOT OBSERVATIONVARIABLE THE 1.0 WAY")
+                self.obs_var_call = "observationVariables"
+            else:
+                self.logger.debug(" GOT OBSERVATIONVARIABLE THE 1.1+ WAY")
+                self.obs_var_call = "observationvariables"
+        return self.obs_var_call
+
     def get_study_observation_units(self, study_id: str) -> Iterable:
         """ Given a BRAPI study identifier, return an list of BRAPI observation units"""
         observation_unit_call = self._get_obs_unit_call()
@@ -65,7 +84,8 @@ class BrapiClient:
 
     def get_study_observed_variables(self, study_id: str) -> Iterable:
         """" Given a BRAPI study identifier, returns a list of BRAPI observation Variables objects """
-        yield from self.fetch_objects('GET', f'/studies/{study_id}/observationVariables')
+        observation_var_call = self._get_obs_var_call()
+        yield from self.fetch_objects('GET', f'/studies/{study_id}/{observation_var_call}')
 
     def get_trials(self, trial_ids: List[str]=None) -> Iterable:
         """"
@@ -76,7 +96,7 @@ class BrapiClient:
         if not trial_ids:
             self.logger.info("Not enough parameters, provide TRIAL or STUDY IDs")
             exit (1)
-        elif trial_ids == "all":
+        elif trial_ids == ["all"]:
             self.logger.info("Return all trials")
             yield from self.fetch_objects('GET', '/trials')
         else:
@@ -94,7 +114,7 @@ class BrapiClient:
         self.logger.debug('GET ' + url)
         r = requests.get(url)
         if r.status_code != requests.codes.ok:
-            logging.error("problem with request: ", str(r))
+            logging.error("problem with request: " + str(r))
             raise RuntimeError("Non-200 status code")
         return r.json()["result"]
 
@@ -116,30 +136,33 @@ class BrapiClient:
         while maxcount is None or page < maxcount:
             params['page'] = page
             params['pageSize'] = pagesize
-            self.logger.debug('retrieving page' + str(page)+ 'of'+ str(maxcount)+ 'from'+ str(url))
+            self.logger.debug('retrieving page ' + str(page)+ ' of '+ str(maxcount)+ ' from '+ str(url))
             self.logger.info("paging params:" + str(params))
 
             if method == 'GET':
-                self.logger.debug("GETting" + url)
+                self.logger.debug("GETting " + url)
                 r = requests.get(url, params=params, data=data)
             elif method == 'PUT':
-                self.logger.debug("PUTting"+  url)
+                self.logger.debug("PUTting "+  url)
                 r = requests.put(url, params=params, data=data)
             elif method == 'POST':
                 # params['User-Agent'] = "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko)
                 # Chrome/41.0.2272.101 Safari/537.36"
                 params['Accept'] = "application/json"
                 params['Content-Type'] = "application/json"
-                self.logger.debug("POSTing" + url)
-                self.logger.debug("POSTing" + str(params) + str(data))
+                self.logger.debug("POSTing " + url)
+                self.logger.debug("POSTing " + str(params) + str(data))
                 headers = {}
                 r = requests.post(url, params=json.dumps(params).encode('utf-8'), json=data,
                                   headers=headers)
                 self.logger.debug(r)
             else:
                 raise RuntimeError(f"Unknown method: {method}")
-
-            if r.status_code != requests.codes.ok:
+            if r.status_code == 504 and pagesize != 100:
+                pagesize = 100
+                self.logger.info("504 Gateway Timeout Error, testing with pagesize = 100") 
+                continue
+            elif r.status_code != requests.codes.ok:
                 self.logger.error("problem with request: " + str(r))
                 raise RuntimeError("Non-200 status code")
             maxcount = int(r.json()['metadata']['pagination']['totalPages'])

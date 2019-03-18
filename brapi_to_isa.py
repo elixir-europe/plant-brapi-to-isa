@@ -9,7 +9,7 @@ import json
 
 from isatools import isatab
 from isatools.model import Investigation, OntologyAnnotation, Characteristic, Source, \
-    Sample, Protocol, Process, StudyFactor, FactorValue, DataFile, ParameterValue, ProtocolParameter, plink
+    Sample, Protocol, Process, StudyFactor, FactorValue, DataFile, ParameterValue, ProtocolParameter, plink, Person, Publication
 
 from brapi_client import BrapiClient
 from brapi_to_isa_converter import BrapiToIsaConverter
@@ -389,7 +389,10 @@ def get_trials( brapi_client : BrapiClient):
         TRIAL_IDS = []
         for my_study_id in STUDY_IDS:
             my_study = brapi_client.get_study(my_study_id)
-            TRIAL_IDS += my_study["trialDbIds"]
+            if "trialDbId" in my_study.keys():
+              TRIAL_IDS += my_study["trialDbId"]
+            elif "trialDbIds" in my_study.keys():
+               TRIAL_IDS += my_study["trialDbIds"]
         logger.debug("Got the Following trial ids for the Study IDS : " + str(TRIAL_IDS))
         if len(TRIAL_IDS) > 0:
             return brapi_client.get_trials(TRIAL_IDS)
@@ -431,6 +434,14 @@ def main(arg):
 
         output_directory = get_output_path( trial['trialName'])
         logger.info("Generating output in : "+ output_directory)
+
+        if 'contacts' in trial.keys():
+            for brapicontact in trial['contacts']:
+                #NOTE: brapi has just name atribute -> no seperate first/last name
+                ContactName = brapicontact['name'].split(' ')
+                contact = Person(first_name=ContactName[0], last_name=ContactName[1],
+                affiliation=brapicontact['institutionName'], email=brapicontact['email'])
+                investigation.contacts.append(contact)
 
         # iterating through the BRAPI studies associated to a given BRAPI trial:
         for brapi_study in trial['studies']:
@@ -594,8 +605,11 @@ def main(arg):
             # Getting Variable Data and writing Measurement Data File
             # -------------------------------------------------------
             try:
+                obsvarlist = []
+                for i in client.get_study_observation_units(brapi_study_id):
+                    obsvarlist.append(i)
+                data_readings = converter.create_isa_obs_data_from_obsvars(obsvarlist)
                 logger.debug("Generating data files")
-                data_readings = converter.create_isa_obs_data_from_obsvars(client.get_study_observation_units(brapi_study_id))
                 write_records_to_file(this_study_id=str(brapi_study_id), this_directory=output_directory, records=data_readings,
                                       filetype="d_")
             except Exception as ioe:

@@ -84,35 +84,35 @@ class BrapiToIsaConverter:
 
         return returned_characteristics
 
-    def create_isa_investigations(self, endpoint):
-        """Create ISA investigations from a BrAPI endpoint, starting from the trials information"""
+    # def create_isa_investigations(self, endpoint):
+    #     """Create ISA investigations from a BrAPI endpoint, starting from the trials information"""
 
-        endpoint_investigations = []
-        for this_trial in self._brapi_client.get_brapi_trials():
-            this_investigation = Investigation()
-            this_investigation.identifier = this_trial['trialDbId']
-            this_investigation.title = this_trial['trialName']
-            # investigation.comments.append(Comment("Investigation Start Date", trial['startDate']))
-            # investigation.comments.append(Comment("Investigation End Date", trial['endDate']))
-            # investigation.comments.append(Comment("Active", trial['active']))
+    #     endpoint_investigations = []
+    #     for this_trial in self._brapi_client.get_brapi_trials():
+    #         this_investigation = Investigation()
+    #         this_investigation.identifier = this_trial['trialDbId']
+    #         this_investigation.title = this_trial['trialName']
+    #         # investigation.comments.append(Comment("Investigation Start Date", trial['startDate']))
+    #         # investigation.comments.append(Comment("Investigation End Date", trial['endDate']))
+    #         # investigation.comments.append(Comment("Active", trial['active']))
 
-            for this_study in this_trial['studies']:
-                this_study = self.create_isa_study(this_study['studyDbId'])
-                this_investigation.studies.append(this_study)
-                endpoint_investigations.append(this_investigation)
-        return endpoint_investigations
+    #         for this_study in this_trial['studies']:
+    #             this_study = self.create_isa_study(this_study['studyDbId'])
+    #             this_investigation.studies.append(this_study)
+    #             endpoint_investigations.append(this_investigation)
+    #     return endpoint_investigations
 
-    def create_materials(self, endpoint):
-        """Create ISA studies from a BrAPI endpoint, starting from the studies, where there is no trial information."""
+    # def create_materials(self, endpoint):
+    #     """Create ISA studies from a BrAPI endpoint, starting from the studies, where there is no trial information."""
 
-        for phenotype in self._brapi_client.get_phenotypes():
-            print(phenotype)
-            # for now, creating the sample name combining studyDbId and potDbId -
-            # eventually this should be observationUnitDbId
-            sample_name = phenotype['studyDbId'] + "_" + phenotype['plotNumber']
-            this_sample = Sample(name=sample_name)
-            that_source = Source(phenotype['germplasmName'], phenotype['germplasmDbId'])
-            this_sample.derives_from = that_source
+    #     for phenotype in self._brapi_client.get_phenotypes():
+    #         print(phenotype)
+    #         # for now, creating the sample name combining studyDbId and potDbId -
+    #         # eventually this should be observationUnitDbId
+    #         sample_name = phenotype['studyDbId'] + "_" + phenotype['plotNumber']
+    #         this_sample = Sample(name=sample_name)
+    #         that_source = Source(phenotype['germplasmName'], phenotype['germplasmDbId'])
+    #         this_sample.derives_from = that_source
 
     def obtain_brapi_obs_levels(self, brapi_study_id):
         obs_levels_in_study = ["default"]
