@@ -1,6 +1,8 @@
 from isatools.model import Investigation, OntologyAnnotation, OntologySource, Assay, Study, Characteristic, Source, \
     Sample, Comment
 
+import copy
+from collections import defaultdict
 from brapi_client import BrapiClient
 
 
@@ -25,6 +27,20 @@ class BrapiToIsaConverter:
     #     if self._brapi_client is None:
     #
     #     return self._brapi_client
+    def obtain_brapi_obs_levels_and_var(self, brapi_study_id):
+        # because not every obs level has the same variables, and this is not yet supported by brapi to filter on /
+        # every observation will be checked for 
+        obs_levels_in_study = defaultdict(set)
+
+        for ou in self._brapi_client.get_study_observation_units(brapi_study_id):
+            for obs in ou['observations']:
+                if ou['observationLevel']:
+                    obs_levels_in_study[ou['observationLevel']].add(obs['observationVariableName'])
+                else:
+                    obs_levels_in_study['study'].add(obs['observationVariableName'])
+        
+        self.logger.info("Observation Levels in study: " + ",".join(obs_levels_in_study.keys()))
+        return obs_levels_in_study
 
     def create_germplasm_chars(self, germplasm):
         """" Given a BRAPI Germplasm ID, retrieve the list of all attributes from BRAPI and returns a list of ISA
@@ -114,14 +130,7 @@ class BrapiToIsaConverter:
     #         that_source = Source(phenotype['germplasmName'], phenotype['germplasmDbId'])
     #         this_sample.derives_from = that_source
 
-    def obtain_brapi_obs_levels(self, brapi_study_id):
-        obs_levels_in_study = ["default"]
 
-        for ou in self._brapi_client.get_study_observation_units(brapi_study_id):
-            print(ou)
-            if 'observationLevel' in ou.keys():
-                if ou['observationLevel'] not in obs_levels_in_study:
-                    obs_levels_in_study.append(ou['observationLevel'])
 
         # for level in obs_levels_in_study:
         #     oref_mt = OntologySource(name="OBI", description="Ontology for Biomedical Investigation")
@@ -137,9 +146,9 @@ class BrapiToIsaConverter:
         #         isa_investigation.ontology_source_references.append(oref_tt)
 
         # return isa_study, isa_investigation
-        return obs_levels_in_study
+        
 
-    def create_isa_study(self, brapi_study_id, investigation):
+    def create_isa_study(self, brapi_study_id, investigation, obs_levels_in_study):
         """Returns an ISA study given a BrAPI endpoints and a BrAPI study identifier."""
 
         brapi_study = self._brapi_client.get_study(brapi_study_id)
@@ -203,7 +212,6 @@ class BrapiToIsaConverter:
         oa_st_design = OntologyAnnotation(term=study_design)
         this_study.design_descriptors = [oa_st_design]
 
-        obs_levels_in_study = self.obtain_brapi_obs_levels(brapi_study_id)
 
         # Declaring as many ISA Assay Types as there are BRAPI Observation Levels
         ###########################################################################
@@ -275,26 +283,47 @@ class BrapiToIsaConverter:
 
         return records
 
-    def create_isa_obs_data_from_obsvars(self, all_obs_units):
+    def create_isa_obs_data_from_obsvars(self, obs_units, obs_variables, level):
         # TODO: BH2018 - discussion with Cyril and Guillaume: Observation Values should be grouped by Observation Level {plot,block,plant,individual,replicate}
         # TODO: create as many ISA assays as there as declared ObservationLevel in the BRAPI message
         data_records = []
-        header_elements = ["Assay Name", "Observation Identifier", "Trait Name", "Trait Value", "Performer", "Date",
-                           "Comment[season]"]
-        datafile_header = '\t'.join(header_elements)
-        # print(datafile_header)
+        # headers belonging observation unit
+        obs_unit_header = ["observationUnitDbId", "germplasmDbId", "replicate", "X", "Y"]
+        # headers belonging observation
+        obs_header = ["observationDbId","observationTimeStamp"]
+        # adding variables headers
+        head = obs_unit_header + obs_header + obs_variables
+        
+        datafile_header = '\t'.join(head)
         data_records.append(datafile_header)
-        # print("number of observation units: ", len(all_obs_units))
-        for index in range(len(all_obs_units)):
 
-            for item in range(len(all_obs_units[index]['observations'])):
-                data_record = ("assay-name_(" + str(all_obs_units[index]["observationUnitName"]) + ")_" +
-                               str(item) + "\t" +
-                               str(all_obs_units[index]['observations'][item]['observationVariableDbId']) + "\t" +
-                               str(all_obs_units[index]['observations'][item]['value']) + "\t" +
-                               str(all_obs_units[index]['observations'][item]['observationTimeStamp']) + "\t" +
-                               str(all_obs_units[index]['observations'][item]['collector']))
-                # print("data_record # ", index, data_record)
-                data_records.append(data_record)
+        emptyRow = [] #Empty row that is later filled in with values -> fixed row size
+        for i in range(len(head)):
+            emptyRow.append("")
+
+        for obsUnit in obs_units:
+            if obsUnit['observationLevel'] == level:
+                row = copy.deepcopy(emptyRow)
+                #Get data from observationUnit
+                for obsdet in obs_unit_header:
+                    if obsUnit[obsdet]:
+                        row[head.index(obsdet)] = obsUnit[obsdet]
+                    else:
+                        self.logger.info(obsdet + " does not exist in observationUnit " + obsUnit['observationUnitDbId'])
+                rowbuffer = copy.deepcopy(row)
+                
+                for measurement in obsUnit["observations"]:
+                    #Get data from observation
+                    for mesdet in obs_header:
+                        if measurement[mesdet]:
+                            row[head.index(mesdet)] = measurement[mesdet]
+                        else:
+                            self.logger.info(mesdet + " does not exist in observation in observationUnit " + obsUnit['observationUnitDbId'])
+                    if measurement["observationVariableName"] in head:
+                        row[head.index(measurement["observationVariableName"])] = measurement["value"]
+                        data_records.append('\t'.join(row))
+                        row = copy.deepcopy(rowbuffer)
+                    else:
+                        self.logger.info(measurement["observationVariableName"] + " does not exist in observationVariable list ")
 
         return data_records

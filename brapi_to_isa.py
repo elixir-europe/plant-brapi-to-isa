@@ -358,10 +358,12 @@ def create_data_file(obs_unit, this_assay, sample_collection_process, this_isa_s
         # print("Assay Post addition", this_assay)
 
 
-def write_records_to_file(this_study_id, records, this_directory, filetype):
+def write_records_to_file(this_study_id, records, this_directory, filetype, ObservationLevel=''):
     logger.info('Writing to file')
     # tdf_file = 'out/' + this_study_id
-    with open(this_directory + filetype + this_study_id + '.txt', 'w') as fh:
+    if ObservationLevel:
+        ObservationLevel = '_' + ObservationLevel
+    with open(this_directory + filetype + this_study_id + ObservationLevel + '.txt', 'w') as fh:
         for this_element in records:
             # print(this_element)
             fh.write(this_element + '\n')
@@ -445,10 +447,10 @@ def main(arg):
 
         # iterating through the BRAPI studies associated to a given BRAPI trial:
         for brapi_study in trial['studies']:
-
             brapi_study_id = brapi_study['studyDbId']
+            obs_levels_in_study_and_var = converter.obtain_brapi_obs_levels_and_var(brapi_study_id)
             # NB: this method always create an ISA Assay Type
-            isa_study, investigation = converter.create_isa_study(brapi_study_id, investigation)
+            isa_study, investigation = converter.create_isa_study(brapi_study_id, investigation, obs_levels_in_study_and_var.keys())
             investigation.studies.append(isa_study)
 
             # creating the main ISA protocols:
@@ -498,7 +500,6 @@ def main(arg):
 
             #
             #         # TODO: Add Comment[Factor Values] : iterate through BRAPI treatments to obtain all possible values for a given Factor
-            #
 
 
             #     # Creating the relevant ISA protocol application / Assay from BRAPI Observation Events:
@@ -604,16 +605,17 @@ def main(arg):
 
             # Getting Variable Data and writing Measurement Data File
             # -------------------------------------------------------
-            try:
-                obsvarlist = []
-                for i in client.get_study_observation_units(brapi_study_id):
-                    obsvarlist.append(i)
-                data_readings = converter.create_isa_obs_data_from_obsvars(obsvarlist)
-                logger.debug("Generating data files")
-                write_records_to_file(this_study_id=str(brapi_study_id), this_directory=output_directory, records=data_readings,
-                                      filetype="d_")
-            except Exception as ioe:
-                print(ioe)
+            for level, variables in obs_levels_in_study_and_var.items():
+                try:
+                    obsvarlist = []
+                    for i in client.get_study_observation_units(brapi_study_id):
+                        obsvarlist.append(i)
+                    data_readings = converter.create_isa_obs_data_from_obsvars(obsvarlist, list(variables) ,level)
+                    logger.debug("Generating data files")
+                    write_records_to_file(this_study_id=str(brapi_study_id), this_directory=output_directory, records=data_readings,
+                                        filetype="d_", ObservationLevel=level)
+                except Exception as ioe:
+                    print(ioe)
 
 
 #############################################
