@@ -72,11 +72,29 @@ class BrapiClient:
                 self.logger.debug(" GOT OBSERVATIONVARIABLE THE 1.1+ WAY")
                 self.obs_var_call = "observationvariables"
         return self.obs_var_call
+    
+    # #NOTE: if phenotype search is needed in the future
+    # def _get_observation_call(self) -> str:
+    #     """ Given a BRAPI study identifier, return an list of BRAPI observation units"""
+    #     r = requests.get(self.endpoint + "calls?pageSize=100")
+    #     if any(el['call'] == 'phenotypes-search' for el in r.json()['result']['data']):
+    #         self.logger.debug(" GOT PHENOTYPESEARCH THE 1.1/1.2 WAY")
+    #         self.obs_call = "phenotypes-search"
+    #     elif any(el['call'] == 'observationunits' for el in r.json()['result']['data']):
+    #         self.logger.debug(" GOT OBSERVATIONUNITS THE 1.3 WAY")
+    #         self.obs_call = "observationunits"
+    #     return self.obs_call
 
     def get_study_observation_units(self, study_id: str) -> Iterable:
         """ Given a BRAPI study identifier, return an list of BRAPI observation units"""
         observation_unit_call = self._get_obs_unit_call()
         yield from self.fetch_objects('GET', f'/studies/{study_id}/{observation_unit_call}')
+    
+    # #NOTE: if phenotype search is needed in the future
+    # def get_observations_units(self, study_id: str, ) -> Iterable:
+    #     """ Given a BRAPI study identifier, return an list of observationUnits"""
+    #     observation_call = self._get_observation_call()
+    #     yield from self.fetch_objects('GET', f'/{observation_call}', params={'studyDbIds':study_id})
 
     def get_germplasm(self, germplasm_id: str) -> dict:
         """ Given a BRAPI germplasm identifiers, return an list of BRAPI germplasm attributes"""
