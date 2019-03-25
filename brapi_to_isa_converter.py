@@ -283,16 +283,18 @@ class BrapiToIsaConverter:
 
         return records
 
-    def create_isa_obs_data_from_obsvars(self, obs_units, obs_variables, level):
+    def create_isa_obs_data_from_obsvars(self, obs_units, obs_variables, level, germplasminfo):
         # TODO: BH2018 - discussion with Cyril and Guillaume: Observation Values should be grouped by Observation Level {plot,block,plant,individual,replicate}
         # TODO: create as many ISA assays as there as declared ObservationLevel in the BRAPI message
         data_records = []
         # headers belonging observation unit
-        obs_unit_header = ["observationUnitDbId", "germplasmDbId", "replicate", "X", "Y"]
+        obs_unit_header = ["observationUnitDbId", "replicate", "X", "Y", "observationUnitXref", "germplasmDbId", "germplasmName"]
+        # headers belonging germplasm
+        germpl_header = ["accessionNumber"]
         # headers belonging observation
-        obs_header = ["observationDbId","observationTimeStamp"]
+        obs_header = ["observationTimeStamp"]
         # adding variables headers
-        head = obs_unit_header + obs_header + obs_variables
+        head = obs_unit_header + germpl_header + obs_header + obs_variables
         
         datafile_header = '\t'.join(head)
         data_records.append(datafile_header)
@@ -305,11 +307,11 @@ class BrapiToIsaConverter:
             if obsUnit['observationLevel'] == level:
                 row = copy.deepcopy(emptyRow)
                 #Get data from observationUnit
-                for obsdet in obs_unit_header:
-                    if obsUnit[obsdet]:
+                for obsdet in obsUnit.keys():
+                    if obsdet in obs_unit_header and obsUnit[obsdet]:
                         row[head.index(obsdet)] = obsUnit[obsdet]
-                    else:
-                        self.logger.info(obsdet + " does not exist in observationUnit " + obsUnit['observationUnitDbId'])
+                        if obsdet == "germplasmDbId":
+                            row[head.index("accessionNumber")] = germplasminfo[obsUnit[obsdet]][0]
                 rowbuffer = copy.deepcopy(row)
                 
                 for measurement in obsUnit["observations"]:
