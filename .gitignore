@@ -1,0 +1,7 @@
+outputdir/
+.idea
+.DS_Store
+*.log
+# output folder for python notebook in BrAPI_to_BioSamples
+BrAPI_to_BioSamples/BioSamplesData
+__pycache__
