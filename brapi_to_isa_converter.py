@@ -30,17 +30,22 @@ class BrapiToIsaConverter:
     def obtain_brapi_obs_levels_and_var(self, brapi_study_id):
         # because not every obs level has the same variables, and this is not yet supported by brapi to filter on /
         # every observation will be checked for 
-        obs_levels_in_study = defaultdict(set)
-
+        obs_level_in_study = defaultdict(set)
+        obs_levels = defaultdict(set)
         for ou in self._brapi_client.get_study_observation_units(brapi_study_id):
             for obs in ou['observations']:
                 if ou['observationLevel']:
-                    obs_levels_in_study[ou['observationLevel']].add(obs['observationVariableName'])
+                    obs_level_in_study[ou['observationLevel']].add(obs['observationVariableName'])
+                    if 'observationLevels' in ou.keys() and ou['observationLevels']:
+                        for obslvl in ou['observationLevels'].split(","):
+                            a,b = obslvl.split(":")
+                            obs_levels[ou['observationLevel']].add(a)
                 else:
-                    obs_levels_in_study['study'].add(obs['observationVariableName'])
-        
-        self.logger.info("Observation Levels in study: " + ",".join(obs_levels_in_study.keys()))
-        return obs_levels_in_study
+                    obs_level_in_study['study'].add(obs['observationVariableName'])
+            
+
+        self.logger.info("Observation Levels in study: " + ",".join(obs_level_in_study.keys()))
+        return obs_level_in_study, obs_levels
 
     def create_germplasm_chars(self, germplasm):
         """" Given a BRAPI Germplasm ID, retrieve the list of all attributes from BRAPI and returns a list of ISA
@@ -283,18 +288,21 @@ class BrapiToIsaConverter:
 
         return records
 
-    def create_isa_obs_data_from_obsvars(self, obs_units, obs_variables, level, germplasminfo):
+    def create_isa_obs_data_from_obsvars(self, obs_units, obs_variables, level, germplasminfo, obs_levels):
         # TODO: BH2018 - discussion with Cyril and Guillaume: Observation Values should be grouped by Observation Level {plot,block,plant,individual,replicate}
         # TODO: create as many ISA assays as there as declared ObservationLevel in the BRAPI message
         data_records = []
+        obs_levels_header = []
+        for obslvl in obs_levels[level]:
+            obs_levels_header.append("observationLevels[{}]".format(obslvl))
         # headers belonging observation unit
-        obs_unit_header = ["observationUnitDbId", "replicate", "X", "Y", "observationUnitXref", "germplasmDbId", "germplasmName"]
+        obs_unit_header = ["observationUnitDbId", "observationUnitXref", "germplasmDbId", "germplasmName", "X", "Y"]
         # headers belonging germplasm
         germpl_header = ["accessionNumber"]
         # headers belonging observation
         obs_header = ["observationTimeStamp"]
         # adding variables headers
-        head = obs_unit_header + germpl_header + obs_header + obs_variables
+        head = obs_levels_header + obs_unit_header + germpl_header + obs_header + obs_variables
         
         datafile_header = '\t'.join(head)
         data_records.append(datafile_header)
@@ -308,10 +316,22 @@ class BrapiToIsaConverter:
                 row = copy.deepcopy(emptyRow)
                 #Get data from observationUnit
                 for obsdet in obsUnit.keys():
+                    if obsdet == "observationLevels":
+                        for obslvls in obsUnit['observationLevels'].split(","):
+                            a,b = obslvls.split(":")
+                            row[head.index("observationLevels[{}]".format(a))] = b
                     if obsdet in obs_unit_header and obsUnit[obsdet]:
-                        row[head.index(obsdet)] = obsUnit[obsdet]
+                        outp = []
+                        if obsdet == "observationUnitXref":
+                            for item in obsUnit[obsdet]:
+                                if item["id"]:
+                                    outp.append("{!s}:{!r}".format(item["source"],item["id"]))
+                            row[head.index("observationUnitXref")] =  ';'.join(outp)
+                        else:
+                            row[head.index(obsdet)] = obsUnit[obsdet]
                         if obsdet == "germplasmDbId":
                             row[head.index("accessionNumber")] = germplasminfo[obsUnit[obsdet]][0]
+
                 rowbuffer = copy.deepcopy(row)
                 
                 for measurement in obsUnit["observations"]:
@@ -322,7 +342,7 @@ class BrapiToIsaConverter:
                         else:
                             self.logger.info(mesdet + " does not exist in observation in observationUnit " + obsUnit['observationUnitDbId'])
                     if measurement["observationVariableName"] in head:
-                        row[head.index(measurement["observationVariableName"])] = measurement["value"]
+                        row[head.index(measurement["observationVariableName"])] = str(measurement["value"])
                         data_records.append('\t'.join(row))
                         row = copy.deepcopy(rowbuffer)
                     else:

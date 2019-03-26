@@ -450,7 +450,7 @@ def main(arg):
             germplasminfo = {}
             #NOTE keeping track of germplasm info for data file generation
             brapi_study_id = brapi_study['studyDbId']
-            obs_levels_in_study_and_var = converter.obtain_brapi_obs_levels_and_var(brapi_study_id)
+            obs_levels_in_study_and_var, obs_levels = converter.obtain_brapi_obs_levels_and_var(brapi_study_id)
             # NB: this method always create an ISA Assay Type
             isa_study, investigation = converter.create_isa_study(brapi_study_id, investigation, obs_levels_in_study_and_var.keys())
             investigation.studies.append(isa_study)
@@ -523,7 +523,7 @@ def main(arg):
                     obsvarlist = []
                     for i in client.get_study_observation_units(brapi_study_id):
                         obsvarlist.append(i)
-                    data_readings = converter.create_isa_obs_data_from_obsvars(obsvarlist, list(variables) ,level, germplasminfo)
+                    data_readings = converter.create_isa_obs_data_from_obsvars(obsvarlist, list(variables) ,level, germplasminfo, obs_levels)
                     logger.debug("Generating data files")
                     write_records_to_file(this_study_id=str(brapi_study_id), this_directory=output_directory, records=data_readings,
                                         filetype="d_", ObservationLevel=level)
