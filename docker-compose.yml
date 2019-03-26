@@ -1,0 +1,37 @@
+version: "2"
+services:
+    conv:
+        build: ./
+        command: ["python","/brapi_to_isa.py"]
+        volumes:
+         - ./out:/outputdir
+    test_trial:
+        build: ./
+        command: ["python","/brapi_to_isa.py", "-e https://urgi.versailles.inra.fr/gnpis-core-srv/brapi/v1/", "-t24"]
+        volumes:
+         - ./out:/outputdir
+    test_study:
+        build: ./
+        command: ["python","/brapi_to_isa.py", "-e https://urgi.versailles.inra.fr/rc/gnpis-core-srv/brapi/v1/",  "-sRIGW1"]
+        volumes:
+         - ./out:/outputdir
+    test_studies:
+        build: ./
+        command: ["python","/brapi_to_isa.py", "-e https://urgi.versailles.inra.fr/gnpis-core-srv/brapi/v1/",  "-sRIGW1,SxG-DoligezEtAl2013"]
+        volumes:
+         - ./out:/outputdir
+    test_studies_notrial:
+        build: ./
+        command: ["python","/brapi_to_isa.py", "-e https://urgi.versailles.inra.fr/gnpis-core-srv/brapi/v1/",  "-sGWAS_Tomato_Solcap_Avignon"]
+        volumes:
+         - ./out:/outputdir
+    test_test_serv:
+        build: ./
+        command: ["python","/brapi_to_isa.py", "-e https://test-server.brapi.org/brapi/v1/"]
+        volumes:
+         - ./out:/outputdir
+    test_pippa:
+         build: ./
+         command: ["python","/brapi_to_isa.py", "-e https://pippa.psb.ugent.be/pippa_experiments/brapi/v1/", "-sVIB_study___55"]
+         volumes:
+          - ./out:/outputdir

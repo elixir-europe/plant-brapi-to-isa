@@ -1,0 +1,6 @@
+isatools
+requests
+
+# tests dependencies
+mock
+requests-mock
