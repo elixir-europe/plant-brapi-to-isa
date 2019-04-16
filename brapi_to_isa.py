@@ -7,6 +7,9 @@ import os
 import sys
 import json
 
+import json
+from isatools.isajson import ISAJSONEncoder
+
 from isatools import isatab
 from isatools.model import Investigation, OntologyAnnotation, Characteristic, Source, \
     Sample, Protocol, Process, StudyFactor, FactorValue, DataFile, ParameterValue, ProtocolParameter, plink, Person, Publication
@@ -450,9 +453,9 @@ def main(arg):
             germplasminfo = {}
             #NOTE keeping track of germplasm info for data file generation
             brapi_study_id = brapi_study['studyDbId']
-            obs_levels_in_study_and_var, obs_levels = converter.obtain_brapi_obs_levels_and_var(brapi_study_id)
+            obs_level, obs_levels = converter.obs_level_s(brapi_study_id)
             # NB: this method always create an ISA Assay Type
-            isa_study, investigation = converter.create_isa_study(brapi_study_id, investigation, obs_levels_in_study_and_var.keys())
+            isa_study, investigation = converter.create_isa_study(brapi_study_id, investigation, obs_level.keys())
             investigation.studies.append(isa_study)
 
             # creating the main ISA protocols:
@@ -518,12 +521,12 @@ def main(arg):
 
             # Getting Variable Data and writing Measurement Data File
             # -------------------------------------------------------
-            for level, variables in obs_levels_in_study_and_var.items():
+            for level, variables in obs_level.items():
                 try:
-                    obsvarlist = []
+                    obsUnitList = []
                     for i in client.get_study_observation_units(brapi_study_id):
-                        obsvarlist.append(i)
-                    data_readings = converter.create_isa_obs_data_from_obsvars(obsvarlist, list(variables) ,level, germplasminfo, obs_levels)
+                        obsUnitList.append(i)
+                    data_readings = converter.create_isa_obs_data_from_obsvars(obsUnitList, list(variables), level, germplasminfo, obs_levels)
                     logger.debug("Generating data files")
                     write_records_to_file(this_study_id=str(brapi_study_id), this_directory=output_directory, records=data_readings,
                                         filetype="d_", ObservationLevel=level)

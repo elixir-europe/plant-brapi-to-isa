@@ -27,7 +27,7 @@ class BrapiToIsaConverter:
     #     if self._brapi_client is None:
     #
     #     return self._brapi_client
-    def obtain_brapi_obs_levels_and_var(self, brapi_study_id):
+    def obs_level_s(self, brapi_study_id):
         # because not every obs level has the same variables, and this is not yet supported by brapi to filter on /
         # every observation will be checked for 
         obs_level_in_study = defaultdict(set)
@@ -296,11 +296,11 @@ class BrapiToIsaConverter:
         for obslvl in obs_levels[level]:
             obs_levels_header.append("observationLevels[{}]".format(obslvl))
         # headers belonging observation unit
-        obs_unit_header = ["observationUnitDbId", "observationUnitXref", "germplasmDbId", "germplasmName", "X", "Y"]
+        obs_unit_header = ["observationUnitDbId", "observationUnitXref", "X", "Y", "germplasmDbId", "germplasmName"]
         # headers belonging germplasm
         germpl_header = ["accessionNumber"]
         # headers belonging observation
-        obs_header = ["observationTimeStamp"]
+        obs_header = ["season", "observationTimeStamp"]
         # adding variables headers
         head = obs_levels_header + obs_unit_header + germpl_header + obs_header + obs_variables
         
@@ -311,36 +311,38 @@ class BrapiToIsaConverter:
         for i in range(len(head)):
             emptyRow.append("")
 
-        for obsUnit in obs_units:
-            if obsUnit['observationLevel'] == level:
+        for obs_unit in obs_units:
+            if obs_unit['observationLevel'] == level:
                 row = copy.deepcopy(emptyRow)
                 #Get data from observationUnit
-                for obsdet in obsUnit.keys():
-                    if obsdet == "observationLevels":
-                        for obslvls in obsUnit['observationLevels'].split(","):
+                for obs_unit_attribute in obs_unit.keys():
+                    if obs_unit_attribute == "observationLevels" and obs_unit['observationLevels']:
+                        # NOTE: INRA specific
+                        for obslvls in obs_unit['observationLevels'].split(","):
                             a,b = obslvls.split(":")
                             row[head.index("observationLevels[{}]".format(a))] = b
-                    if obsdet in obs_unit_header and obsUnit[obsdet]:
+                    if obs_unit_attribute in obs_unit_header and obs_unit[obs_unit_attribute]:
                         outp = []
-                        if obsdet == "observationUnitXref":
-                            for item in obsUnit[obsdet]:
+                        if obs_unit_attribute == "observationUnitXref":
+                            # NOTE: INRA specific
+                            for item in obs_unit[obs_unit_attribute]:
                                 if item["id"]:
                                     outp.append("{!s}:{!r}".format(item["source"],item["id"]))
                             row[head.index("observationUnitXref")] =  ';'.join(outp)
                         else:
-                            row[head.index(obsdet)] = obsUnit[obsdet]
-                        if obsdet == "germplasmDbId":
-                            row[head.index("accessionNumber")] = germplasminfo[obsUnit[obsdet]][0]
+                            row[head.index(obs_unit_attribute)] = obs_unit[obs_unit_attribute]
+                        if obs_unit_attribute == "germplasmDbId":
+                            row[head.index("accessionNumber")] = germplasminfo[obs_unit[obs_unit_attribute]][0]
 
                 rowbuffer = copy.deepcopy(row)
                 
-                for measurement in obsUnit["observations"]:
+                for measurement in obs_unit['observations']:
                     #Get data from observation
-                    for mesdet in obs_header:
-                        if measurement[mesdet]:
-                            row[head.index(mesdet)] = measurement[mesdet]
+                    for obs_attribute in obs_header:
+                        if obs_attribute in measurement and measurement[obs_attribute]:
+                            row[head.index(obs_attribute)] = measurement[obs_attribute]
                         else:
-                            self.logger.info(mesdet + " does not exist in observation in observationUnit " + obsUnit['observationUnitDbId'])
+                            self.logger.info(obs_attribute + " does not exist in observation in observationUnit " + obs_unit['observationUnitDbId'])
                     if measurement["observationVariableName"] in head:
                         row[head.index(measurement["observationVariableName"])] = str(measurement["value"])
                         data_records.append('\t'.join(row))
