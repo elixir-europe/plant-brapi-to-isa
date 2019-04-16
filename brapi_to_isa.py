@@ -520,10 +520,10 @@ def main(arg):
             # -------------------------------------------------------
             for level, variables in obs_levels_in_study_and_var.items():
                 try:
-                    obsUnitList = []
+                    obsvarlist = []
                     for i in client.get_study_observation_units(brapi_study_id):
-                        obsUnitList.append(i)
-                    data_readings = converter.create_isa_obs_data_from_obsvars(obsUnitList, list(variables), level, germplasminfo, obs_levels)
+                        obsvarlist.append(i)
+                    data_readings = converter.create_isa_obs_data_from_obsvars(obsvarlist, list(variables) ,level, germplasminfo, obs_levels)
                     logger.debug("Generating data files")
                     write_records_to_file(this_study_id=str(brapi_study_id), this_directory=output_directory, records=data_readings,
                                         filetype="d_", ObservationLevel=level)
