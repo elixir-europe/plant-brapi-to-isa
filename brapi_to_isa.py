@@ -381,6 +381,7 @@ def main(arg):
             obs_level, obs_levels = converter.obs_level_s(brapi_study_id)
             # NB: this method always create an ISA Assay Type
             isa_study, investigation = converter.create_isa_study(brapi_study_id, investigation, obs_level.keys())
+
             investigation.studies.append(isa_study)
 
             # creating the main ISA protocols:
