@@ -27,7 +27,7 @@ class BrapiToIsaConverter:
     #     if self._brapi_client is None:
     #
     #     return self._brapi_client
-    def obs_level_s(self, brapi_study_id):
+    def get_obs_levels(self, brapi_study_id):
         # because not every obs level has the same variables, and this is not yet supported by brapi to filter on /
         # every observation will be checked for 
         obs_level_in_study = defaultdict(set)

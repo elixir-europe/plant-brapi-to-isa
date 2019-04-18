@@ -6,7 +6,6 @@ import logging
 import os
 import sys
 import json
-import copy
 
 from isatools import isatab
 from isatools.model import Investigation, OntologyAnnotation, Characteristic, Source, \
@@ -199,92 +198,98 @@ def create_study_sample_and_assay(client, brapi_study_id, isa_study,  sample_col
         "plantNumber": "Plant Number",
         "observationLevel": "Observation unit type"
     }
-    for i in range(len(isa_study.assays)):
-        allready_converted_obs_unit = [] # Allow to handle multiyear observation units
-        for obs_unit in client.get_study_observation_units(brapi_study_id):
-            if isa_study.assays[i].characteristic_categories[0] == obs_unit['observationLevel']:
-                # Getting the relevant germplasm used for that observation event:
-                # ---------------------------------------------------------------
-                this_source = isa_study.get_source(obs_unit['germplasmName'])
-                if this_source is not None and obs_unit['observationUnitName'] not in allready_converted_obs_unit:
-                    this_isa_sample = Sample(
-                        name= obs_unit['observationUnitName'],
-                        derives_from=[this_source])
-                    allready_converted_obs_unit.append(obs_unit['observationUnitName'])
-                    for key in obs_unit.keys():
-                        if key in obsunit_to_isasample_mapping_dictionary.keys():
-                            if isinstance(obsunit_to_isasample_mapping_dictionary[key], str) and str(obs_unit[key]) is not None :
-                                c = Characteristic(category=OntologyAnnotation(term=obsunit_to_isasample_mapping_dictionary[key]),
-                                                value=OntologyAnnotation(term=str(obs_unit[key]),
-                                                                            term_source="",
-                                                                            term_accession=""))
-                                this_isa_sample.characteristics.append(c)
-                        if key in obsunit_to_isaassay_mapping_dictionary.keys():
-                            if isinstance(obsunit_to_isaassay_mapping_dictionary[key], str):
-                                c = Characteristic(category=OntologyAnnotation(term=obsunit_to_isaassay_mapping_dictionary[key]),
-                                                value=OntologyAnnotation(term=str(obs_unit[key]),
-                                                                            term_source="",
-                                                                            term_accession=""))
-                                #TODO: quick workaround used to store observation units characteristics
-                                isa_study.assays[i].comments.append(c)
+    
+    # connecting the correct observation level to the correct assayobject
+    # NOTE observation level is temporarily stored inside isa_study.assays[i].characteristic_categories[0] better field available?
+    obs_level_to_assay = {}
+    for k,assay in enumerate(isa_study.assays):
+        obs_level_to_assay[assay.characteristic_categories[0]] = k
 
-                    # Looking for treatment in BRAPI and mapping to ISA Study Factor Value
-                    # --------------------------------------------------------------------
-                    if 'treatments' in obs_unit.keys():
-                        for element in obs_unit['treatments']:
-                            for key in element.keys():
-                                f = StudyFactor(name=key, factor_type=OntologyAnnotation(term=key))
-                                if f not in isa_study.factors:
-                                    isa_study.factors.append(f)
+    allready_converted_obs_unit = [] # Allow to handle multiyear observation units
+    for obs_unit in client.get_study_observation_units(brapi_study_id):
+        i = obs_level_to_assay[obs_unit['observationLevel']]
+        # Getting the relevant germplasm used for that observation event:
+        # ---------------------------------------------------------------
+        this_source = isa_study.get_source(obs_unit['germplasmName'])
+        if this_source is not None and obs_unit['observationUnitName'] not in allready_converted_obs_unit:
+            this_isa_sample = Sample(
+                name= obs_unit['observationUnitName'],
+                derives_from=[this_source])
+            allready_converted_obs_unit.append(obs_unit['observationUnitName'])
+            for key in obs_unit.keys():
+                if key in obsunit_to_isasample_mapping_dictionary.keys():
+                    if isinstance(obsunit_to_isasample_mapping_dictionary[key], str) and str(obs_unit[key]) is not None :
+                        c = Characteristic(category=OntologyAnnotation(term=obsunit_to_isasample_mapping_dictionary[key]),
+                                        value=OntologyAnnotation(term=str(obs_unit[key]),
+                                                                    term_source="",
+                                                                    term_accession=""))
+                        this_isa_sample.characteristics.append(c)
+                if key in obsunit_to_isaassay_mapping_dictionary.keys():
+                    if isinstance(obsunit_to_isaassay_mapping_dictionary[key], str):
+                        c = Characteristic(category=OntologyAnnotation(term=obsunit_to_isaassay_mapping_dictionary[key]),
+                                        value=OntologyAnnotation(term=str(obs_unit[key]),
+                                                                    term_source="",
+                                                                    term_accession=""))
+                        #TODO: quick workaround used to store observation units characteristics
+                        isa_study.assays[i].comments.append(c)
 
-                                fv = FactorValue(factor_name=f,
-                                                value=OntologyAnnotation(term=str(element[key]),
-                                                                        term_source="",
-                                                                        term_accession=""))
-                                this_isa_sample.factor_values.append(fv)
-                    isa_study.samples.append(this_isa_sample)
+            # Looking for treatment in BRAPI and mapping to ISA Study Factor Value
+            # --------------------------------------------------------------------
+            if 'treatments' in obs_unit.keys():
+                for element in obs_unit['treatments']:
+                    for key in element.keys():
+                        f = StudyFactor(name=key, factor_type=OntologyAnnotation(term=key))
+                        if f not in isa_study.factors:
+                            isa_study.factors.append(f)
 
-                    # Creating the corresponding ISA sample entity for structure the document:
-                    # ------------------------------------------------------------------------
-                    sample_collection_process = Process(executes_protocol=sample_collection_protocol)
-                    sample_collection_process.performer = "n.a."
-                    sample_collection_process.date = datetime.datetime.today().isoformat()
-                    sample_collection_process.inputs.append(this_source)
-                    sample_collection_process.outputs.append(this_isa_sample)
-                    isa_study.process_sequence.append(sample_collection_process)
+                        fv = FactorValue(factor_name=f,
+                                        value=OntologyAnnotation(term=str(element[key]),
+                                                                term_source="",
+                                                                term_accession=""))
+                        this_isa_sample.factor_values.append(fv)
+            isa_study.samples.append(this_isa_sample)
 
-            seasons = {}
-            for j in range(len((obs_unit['observations']))):
-                # !!!: fix isatab.py to access other protocol_type values to enable Assay Tab serialization
-                phenotyping_process = Process(executes_protocol=phenotyping_protocol)
-                phenotyping_process.inputs.append(this_isa_sample)
+            # Creating the corresponding ISA sample entity for structure the document:
+            # ------------------------------------------------------------------------
+            sample_collection_process = Process(executes_protocol=sample_collection_protocol)
+            sample_collection_process.performer = "n.a."
+            sample_collection_process.date = datetime.datetime.today().isoformat()
+            sample_collection_process.inputs.append(this_source)
+            sample_collection_process.outputs.append(this_isa_sample)
+            isa_study.process_sequence.append(sample_collection_process)
 
-                # Creating relevant protocol parameter values associated with the protocol application:
-                # -------------------------------------------------------------------------------------
-                if 'season' in obs_unit['observations'][j]:
-                    season = str(obs_unit['observations'][j]['season'])
-                    if season and season not in seasons:
-                        seasons[season] = str(obs_unit["observationUnitDbId"])
-            if seasons:    
-                for unique_season, DbId in seasons.items():
-                    pv = ParameterValue(
-                                category=ProtocolParameter(parameter_name=OntologyAnnotation(term="season")),
-                                value=OntologyAnnotation(term=str(unique_season),
-                                                        term_source="",
-                                                        term_accession=""))
-                    phenotyping_process.parameter_values.append(pv)
-                    phenotyping_process.name = "assay-name_(" + DbId + ")" 
-            else:
+        seasons = {}
+        for j in range(len((obs_unit['observations']))):
+            # !!!: fix isatab.py to access other protocol_type values to enable Assay Tab serialization
+            phenotyping_process = Process(executes_protocol=phenotyping_protocol)
+            phenotyping_process.inputs.append(this_isa_sample)
+
+            # Creating relevant protocol parameter values associated with the protocol application:
+            # -------------------------------------------------------------------------------------
+            if 'season' in obs_unit['observations'][j]:
+                season = str(obs_unit['observations'][j]['season'])
+                if season and season not in seasons:
+                    seasons[season] = str(obs_unit["observationUnitDbId"])
+        if seasons:    
+            for unique_season, DbId in seasons.items():
                 pv = ParameterValue(
                             category=ProtocolParameter(parameter_name=OntologyAnnotation(term="season")),
-                            value=OntologyAnnotation(term="none reported", term_source="", term_accession=""))
+                            value=OntologyAnnotation(term=str(unique_season),
+                                                    term_source="",
+                                                    term_accession=""))
                 phenotyping_process.parameter_values.append(pv)
-                phenotyping_process.name = "assay-name_(" + obs_unit["observationUnitDbId"] + ")" 
-            
-            
-            isa_study.assays[i].samples.append(this_isa_sample)
-            isa_study.assays[i].process_sequence.append(phenotyping_process)
-            plink(sample_collection_process, phenotyping_process)
+                phenotyping_process.name = "assay-name_(" + DbId + ")" 
+        else:
+            pv = ParameterValue(
+                        category=ProtocolParameter(parameter_name=OntologyAnnotation(term="season")),
+                        value=OntologyAnnotation(term="none reported", term_source="", term_accession=""))
+            phenotyping_process.parameter_values.append(pv)
+            phenotyping_process.name = "assay-name_(" + obs_unit["observationUnitDbId"] + ")" 
+        
+        
+        isa_study.assays[i].samples.append(this_isa_sample)
+        isa_study.assays[i].process_sequence.append(phenotyping_process)
+        plink(sample_collection_process, phenotyping_process)
 
 def write_records_to_file(this_study_id, records, this_directory, filetype, ObservationLevel=''):
     logger.info('Writing to file')
@@ -378,7 +383,7 @@ def main(arg):
             germplasminfo = {}
             #NOTE keeping track of germplasm info for data file generation
             brapi_study_id = brapi_study['studyDbId']
-            obs_level, obs_levels = converter.obs_level_s(brapi_study_id)
+            obs_level, obs_levels = converter.get_obs_levels(brapi_study_id)
             # NB: this method always create an ISA Assay Type
             isa_study, investigation = converter.create_isa_study(brapi_study_id, investigation, obs_level.keys())
 
