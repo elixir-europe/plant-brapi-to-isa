@@ -1,7 +1,13 @@
 # BRANCHES
-**Current HEAD: elixir-europe/plant-brapi-to-isa/reactor**
+**Current HEAD: elixir-europe/plant-brapi-to-isa/refactor**
 
 **WARNING** :  Repository about to be frozen, the reference/working repository will be : https://github.com/ISA-tools/plant-brapi-to-isa
+
+**NB**:the mapping from BrAPI to MIAPPE is fully documented here : 
+https://github.com/MIAPPE/ISA-Tab-for-plant-phenotyping/blob/v1.1/README.md 
+
+**Unavailable values**
+In BrAPI, unavailable value are treated the REST way, with null. In ISA MIAPPE, we must handle missing values in a R analysis environment friendly way. Therefore  all null value must be converted to "na".
 
 # plant-brapi-to-isa
 
