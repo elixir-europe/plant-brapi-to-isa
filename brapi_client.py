@@ -21,13 +21,13 @@ class BrapiClient:
         self.obs_unit_call = " "
         self.obs_var_call = " "
 
-    def get_phenotypes(self) -> Iterable:
-        """Returns a phenotype information from a BrAPI endpoint."""
-        yield from self.fetch_objects('GET', '/phenotype-search')
+    # def get_phenotypes(self) -> Iterable:
+    #     """Returns a phenotype information from a BrAPI endpoint."""
+    #     yield from self.fetch_objects('GET', '/phenotype-search')
 
-    def get_germplasms(self) -> Iterable:
-        """Returns germplasm information from a BrAPI endpoint."""
-        yield from self.fetch_objects('GET', '/germplasm-search')
+    # def get_germplasms(self) -> Iterable:
+    #     """Returns germplasm information from a BrAPI endpoint."""
+    #     yield from self.fetch_objects('GET', '/germplasm-search')
 
     def get_study(self, study_id: str) -> dict:
         """"Given a BRAPI study object from a BRAPI endpoint server"""

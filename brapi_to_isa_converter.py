@@ -1,6 +1,7 @@
 from isatools.model import Investigation, OntologyAnnotation, OntologySource, Assay, Study, Characteristic, Source, \
     Sample, Comment
 
+from pycountry_convert import country_alpha3_to_country_alpha2 as a3a2
 import copy
 from collections import defaultdict
 from brapi_client import BrapiClient
@@ -159,6 +160,7 @@ class BrapiToIsaConverter:
         brapi_study = self._brapi_client.get_study(brapi_study_id)
 
         this_study = Study(filename="s_" + str(brapi_study_id) + ".txt")
+        
         this_study.identifier = brapi_study['studyDbId']
 
         if 'name' in brapi_study:
@@ -166,42 +168,51 @@ class BrapiToIsaConverter:
         elif 'studyName' in brapi_study:
             this_study.title = brapi_study['studyName']
 
+        if 'studyDescription' in brapi_study and brapi_study['studyDescription']:
+            this_study.description = brapi_study['studyDescription']
+        else:
+            this_study.description = "NA"
+
         this_study.comments.append(Comment(name="Study Start Date", value=brapi_study['startDate']))
         this_study.comments.append(Comment(name="Study End Date", value=brapi_study['endDate']))
 
-        if brapi_study['location'] is not None and brapi_study['location']['name'] is not None:
+        if brapi_study['location'] and brapi_study['location']['name']:
             this_study.comments.append(Comment(name="Experimental site name",
                                                value=brapi_study['location']['name']))
         else:
-            this_study.comments.append(Comment(name="Experimental site name", value=""))
+            this_study.comments.append(Comment(name="Experimental site name", value="NA"))
 
-        if brapi_study['location'] is not None and brapi_study['location']['countryCode'] is not None:
-            this_study.comments.append(Comment(name="geographical location (country)",
-                                               value=brapi_study['location']['countryCode']))
+        if brapi_study['location'] and brapi_study['location']['countryCode']:
+            if len(brapi_study['location']['countryCode']) == 3:
+                this_study.comments.append(Comment(name="geographical location (country)",
+                                                value=a3a2(brapi_study['location']['countryCode'])))
+            elif len(brapi_study['location']['countryCode']) == 2:
+                this_study.comments.append(Comment(name="geographical location (country)",
+                                                value=brapi_study['location']['countryCode']))
 
-        elif brapi_study['location'] is not None and brapi_study['location']['countryName'] is not None:
+        elif brapi_study['location'] and brapi_study['location']['countryName']:
             this_study.comments.append(Comment(name="geographical location (country)",
                                                value=brapi_study['location']['countryName']))
         else:
-            this_study.comments.append(Comment(name="geographical location (country)", value=""))
+            this_study.comments.append(Comment(name="geographical location (country)", value="NA"))
 
-        if brapi_study['location'] is not None and brapi_study['location']['latitude'] is not None:
+        if brapi_study['location'] and brapi_study['location']['latitude']:
             this_study.comments.append(Comment(name="geographical location (latitude)",
                                                value=brapi_study['location']['latitude']))
         else:
-            this_study.comments.append(Comment(name="geographical location (latitude)", value=""))
+            this_study.comments.append(Comment(name="geographical location (latitude)", value="NA"))
 
-        if brapi_study['location'] is not None and brapi_study['location']['longitude'] is not None:
+        if brapi_study['location'] and brapi_study['location']['longitude']:
             this_study.comments.append(Comment(name="geographical location (longitude)",
                                                value=brapi_study['location']['longitude']))
         else:
-            this_study.comments.append(Comment(name="geographical location (longitude)", value=""))
+            this_study.comments.append(Comment(name="geographical location (longitude)", value="NA"))
 
-        if brapi_study['location'] is not None and brapi_study['location']['altitude'] is not None:
+        if brapi_study['location'] and brapi_study['location']['altitude']:
             this_study.comments.append(Comment(name="geographical location (altitude)",
                                                value=brapi_study['location']['altitude']))
         else:
-            this_study.comments.append(Comment(name="geographical location (altitude)", value=""))
+            this_study.comments.append(Comment(name="geographical location (altitude)", value="NA"))
 
         # TODO: look at the brapi call https://app.swaggerhub.com/apis/PlantBreedingAPI/BrAPI/1.2#/Studies/get_studies__studyDbId__layout
         # mapping into ISA Comment [Observation unit level hierarchy] MIAPPE DM24 [BRAPI mapping:  Layout/obvservationLevel || Layout/observationReplicate ||Layout/blockNumber
@@ -290,8 +301,6 @@ class BrapiToIsaConverter:
         return records
 
     def create_isa_obs_data_from_obsvars(self, obs_units, obs_variables, level, germplasminfo, obs_levels):
-        # TODO: BH2018 - discussion with Cyril and Guillaume: Observation Values should be grouped by Observation Level {plot,block,plant,individual,replicate}
-        # TODO: create as many ISA assays as there as declared ObservationLevel in the BRAPI message
         data_records = []
         obs_levels_header = []
         for obslvl in obs_levels[level]:

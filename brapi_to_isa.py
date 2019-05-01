@@ -9,7 +9,7 @@ import json
 
 from isatools import isatab
 from isatools.model import Investigation, OntologyAnnotation, Characteristic, Source, \
-    Sample, Protocol, Process, StudyFactor, FactorValue, DataFile, ParameterValue, ProtocolParameter, plink, Person, Publication
+    Sample, Protocol, Process, StudyFactor, FactorValue, DataFile, ParameterValue, ProtocolParameter, plink, Person, Publication, Comment
 
 from brapi_client import BrapiClient
 from brapi_to_isa_converter import BrapiToIsaConverter
@@ -65,48 +65,6 @@ logger.info("\n----------------\ntrials IDs to be exported : "
 # CASSAVA_BRAPI_V1 = 'https://cassavabase.org/brapi/v1/'
 
 
-#
-# def get_brapi_study_by_endpoint(endpoint, study_identifier):
-#     """Returns a study from an endpoint, given its id."""
-#     # dealing with differences in the endpoints
-#     url = ''
-#     if endpoint == GNPIS_BRAPI_V1:
-#         url = endpoint + 'studies/' + str(study_identifier)
-#     elif endpoint == PIPPA_BRAPI_V1:
-#         url = endpoint + 'studies-search/' + str(study_identifier)
-#     elif endpoint == EU_SOL_BRAPI_V1:
-#         url = endpoint + 'studies-search/' + str(study_identifier)
-#     elif endpoint == CASSAVA_BRAPI_V1 :
-#         url = endpoint + 'studies-search/' + str(study_identifier)
-#     elif endpoint == TRITI_BRAPI_V1:
-#         url = endpoint + 'studies/' + str(study_identifier)
-#
-#     r = requests.get(url)
-#     if r.status_code != requests.codes.ok:
-#         raise RuntimeError("Non-200 status code")
-#     this_study = r.json()['result']
-#     return this_study
-
-
-# def get_germplasm_by_endpoint(endpoint, germplasm_id):
-#     url = endpoint + "germplasm-search" + str(germplasm_id)
-#     r = requests.get(url)
-#     if r.status_code != requests.codes.ok:
-#         raise RuntimeError("Non-200 status code")
-#         logging.error(e)
-#         logging.fatal('Could not decode response from server!')
-#     this_germplasm = r.json()['result']
-#     return this_germplasm
-
-# def load_germplasms(study_identifier):
-#     for germplasms in paging(SERVER + 'studies/' + study_identifier + '/germplasm', None, None, 'GET'):
-#         yield germplasms
-
-# def load_obsunits(study_identifier):
-#     for obsunits in paging(SERVER + 'studies/' + study_identifier + '/observationUnits', None, None, 'GET'):
-#         yield obsunits
-
-#
 # def get_germplasm_chars(germplasm):
 #     """" Given a BRAPI Germplasm ID, retrieve the list of all attributes from BRAPI and returns a list of ISA
 #      characteristics using MIAPPE tags for compliance + X-check against ISAconfiguration"""
@@ -252,7 +210,7 @@ def create_study_sample_and_assay(client, brapi_study_id, isa_study,  sample_col
             # Creating the corresponding ISA sample entity for structure the document:
             # ------------------------------------------------------------------------
             sample_collection_process = Process(executes_protocol=sample_collection_protocol)
-            sample_collection_process.performer = "n.a."
+            sample_collection_process.performer = "NA"
             sample_collection_process.date = datetime.datetime.today().isoformat()
             sample_collection_process.inputs.append(this_source)
             sample_collection_process.outputs.append(this_isa_sample)
@@ -340,8 +298,8 @@ def get_trials( brapi_client : BrapiClient):
 
 def get_empty_trial():
     empty_trial = {
-        "trialDbId": "trial_less_study_"+STUDY_IDS[0],
-        "trialName": "N.A.",
+        "trialDbId": "trial_less_study_" + STUDY_IDS[0],
+        "trialName": "NA",
         "trialType": "Project",
         "endDate": "",
         "startDate": "",
@@ -370,6 +328,9 @@ def main(arg):
         output_directory = get_output_path( trial['trialName'])
         logger.info("Generating output in : "+ output_directory)
 
+        # FILL IN TRIAL INFORMATION
+        investigation.identifier = trial['trialDbId']
+        investigation.title = trial['trialName']
         if 'contacts' in trial.keys():
             for brapicontact in trial['contacts']:
                 #NOTE: brapi has just name atribute -> no seperate first/last name
@@ -377,6 +338,7 @@ def main(arg):
                 contact = Person(first_name=ContactName[0], last_name=ContactName[1],
                 affiliation=brapicontact['institutionName'], email=brapicontact['email'])
                 investigation.contacts.append(contact)
+        investigation.comments.append(Comment(name="MIAPPE version", value="1.1"))
 
         # iterating through the BRAPI studies associated to a given BRAPI trial:
         for brapi_study in trial['studies']:
@@ -408,10 +370,6 @@ def main(arg):
             # Iterating through the germplasm considered as biosource,
             # For each of them, we retrieve their attributes and create isa characteristics
             for germ in germplasms:
-                # print("GERM:", germ['germplasmName']) # germplasmDbId
-                # WARNING: BRAPIv1 endpoints are not consistently using these
-                # depending on endpoints, attributes may have to swapped
-                # get_germplasm_chars(germ)
                 # Creating corresponding ISA biosources with is Creating isa characteristics from germplasm attributes.
                 # ------------------------------------------------------
                 source = Source(name=germ['germplasmName'], characteristics=converter.create_germplasm_chars(germ))
