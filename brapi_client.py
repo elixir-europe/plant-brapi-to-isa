@@ -6,6 +6,7 @@ import requests
 from requests.adapters import HTTPAdapter
 from requests.packages.urllib3.util.retry import Retry
 import time
+from cachetools import cached, LRUCache, TTLCache
 
 
 def url_path_join(*args):
@@ -35,9 +36,11 @@ class BrapiClient:
         """"Given a BRAPI study object from a BRAPI endpoint server"""
         return self.fetch_object(f'/studies/{study_id}')
 
+
     def get_study_germplasms(self, study_id: str) -> Iterable:
         """"Given a BRAPI study identifier returns an array of germplasm objects"""
         yield from self.fetch_objects('GET', f'/studies/{study_id}/germplasm')
+
 
     def _get_obs_unit_call(self) -> str:
         """Choose which BrAPI call to use in order to fetch observation unit by study"""
@@ -87,6 +90,8 @@ class BrapiClient:
     #         self.obs_call = "observationunits"
     #     return self.obs_call
 
+
+
     def get_study_observation_units(self, study_id: str) -> Iterable:
         """ Given a BRAPI study identifier, return an list of BRAPI observation units"""
         observation_unit_call = self._get_obs_unit_call()
@@ -98,6 +103,7 @@ class BrapiClient:
     #     observation_call = self._get_observation_call()
     #     yield from self.fetch_objects('GET', f'/{observation_call}', params={'studyDbIds':study_id})
 
+    @cached(cache=TTLCache(maxsize=4096, ttl=900))
     def get_germplasm(self, germplasm_id: str) -> dict:
         """ Given a BRAPI germplasm identifiers, return an list of BRAPI germplasm attributes"""
         return self.fetch_object(f'/germplasm/{germplasm_id}')

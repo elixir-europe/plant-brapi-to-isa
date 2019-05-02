@@ -15,6 +15,10 @@ from brapi_client import BrapiClient
 from brapi_to_isa_converter import BrapiToIsaConverter
 
 __author__ = 'proccaserra (Philippe Rocca-Serra)'
+__author__ = 'cpommier (Cyril Pommier)'
+__author__ = 'gcornut (Guillaume Cornut)'
+__author__ = 'bedroesb  (Bert Droesbeke)'
+__author__ = 'terazus (Dominique Batista)'
 
 log_file = "brapilog.log"
 # logging.basicConfig(filename=log_file,
