@@ -193,15 +193,15 @@ def create_study_sample_and_assay(client, brapi_study_id, isa_study,  sample_col
 
             # Looking for treatment in BRAPI and mapping to ISA Study Factor Value
             # --------------------------------------------------------------------
-            if 'treatments' in obs_unit.keys():
-                for element in obs_unit['treatments']:
-                    for key in element.keys():
-                        f = StudyFactor(name=key, factor_type=OntologyAnnotation(term=key))
+            if 'treatments' in obs_unit:
+                for treatment in obs_unit['treatments']:
+                    if 'Factor' in treatment:
+                        f = StudyFactor(name=treatment['factor'], factor_type=OntologyAnnotation(term=treatment['factor']), comments=treatment['modality'])
                         if f not in isa_study.factors:
                             isa_study.factors.append(f)
 
                         fv = FactorValue(factor_name=f,
-                                        value=OntologyAnnotation(term=str(element[key]),
+                                        value=OntologyAnnotation(term=str(treatment['factor']),
                                                                 term_source="",
                                                                 term_accession=""))
                         this_isa_sample.factor_values.append(fv)
@@ -331,7 +331,7 @@ def main(arg):
         # FILL IN TRIAL INFORMATION
         investigation.identifier = trial['trialDbId']
         investigation.title = trial['trialName']
-        if 'contacts' in trial.keys():
+        if 'contacts' in trial:
             for brapicontact in trial['contacts']:
                 #NOTE: brapi has just name atribute -> no seperate first/last name
                 ContactName = brapicontact['name'].split(' ')
@@ -343,84 +343,91 @@ def main(arg):
         # iterating through the BRAPI studies associated to a given BRAPI trial:
         for brapi_study in trial['studies']:
             germplasminfo = {}
-            #NOTE keeping track of germplasm info for data file generation
-            brapi_study_id = brapi_study['studyDbId']
-            obs_level, obs_levels = converter.get_obs_levels(brapi_study_id)
-            # NB: this method always create an ISA Assay Type
-            isa_study, investigation = converter.create_isa_study(brapi_study_id, investigation, obs_level.keys())
-
-            investigation.studies.append(isa_study)
-
-            # creating the main ISA protocols:
-            sample_collection_protocol = Protocol(name="sample collection",
-                                                  protocol_type=OntologyAnnotation(term="sample collection"))
-            isa_study.protocols.append(sample_collection_protocol)
-
-            # !!!: fix isatab.py to access other protocol_type values to enable Assay Tab serialization
-            # TODO: see https://github.com/ISA-tools/isa-api/blob/master/isatools/isatab.py#L886
-            phenotyping_protocol = Protocol(name="phenotyping",
-                                            protocol_type=OntologyAnnotation(term="nucleic acid sequencing"))
-            isa_study.protocols.append(phenotyping_protocol)
-
-            # Getting the list of all germplasms used in the BRAPI isa_study:
-            germplasms = client.get_study_germplasms(brapi_study_id)
-
-            germ_counter = 0
             
-            # Iterating through the germplasm considered as biosource,
-            # For each of them, we retrieve their attributes and create isa characteristics
-            for germ in germplasms:
-                # Creating corresponding ISA biosources with is Creating isa characteristics from germplasm attributes.
-                # ------------------------------------------------------
-                source = Source(name=germ['germplasmName'], characteristics=converter.create_germplasm_chars(germ))
-                
-                if germ['germplasmDbId'] not in germplasminfo:
-                    germplasminfo[germ['germplasmDbId']] = [germ['accessionNumber']]
-
-                # Associating ISA sources to ISA isa_study object
-                isa_study.sources.append(source)
-
-                germ_counter = germ_counter + 1
-
-            # Now dealing with BRAPI observation units and attempting to create ISA samples
-            create_study_sample_and_assay(client, brapi_study_id, isa_study,  sample_collection_protocol, phenotyping_protocol)
-
-            # Writing isa_study to ISA-Tab format:
-            # --------------------------------
+            brapi_study_id = brapi_study['studyDbId']
             try:
-                # isatools.isatab.dumps(investigation)  # dumps() writes out the ISA
+                brapi_study['studyDbId'].encode('ascii')
+            except:
+                logger.debug("Study " + brapi_study['studyDbId'] + " containes a non ascii character and will be skipped.")
+                continue
+            else:
+                #NOTE keeping track of germplasm info for data file generation
+                obs_level, obs_levels = converter.get_obs_levels(brapi_study_id)
+                # NB: this method always create an ISA Assay Type
+                isa_study, investigation = converter.create_isa_study(brapi_study_id, investigation, obs_level.keys())
+
+                investigation.studies.append(isa_study)
+
+                # creating the main ISA protocols:
+                sample_collection_protocol = Protocol(name="sample collection",
+                                                    protocol_type=OntologyAnnotation(term="sample collection"))
+                isa_study.protocols.append(sample_collection_protocol)
+
                 # !!!: fix isatab.py to access other protocol_type values to enable Assay Tab serialization
-                # !!!: if Assay Table is missing the 'Assay Name' field, remember to check protocol_type used !!!
-                isatab.dump(isa_obj=investigation, output_path=output_directory)
-                logger.info('DONE!...')
-            except IOError as ioe:
-                logger.info('CONVERSION FAILED!...')
-                logger.info(str(ioe))
+                # TODO: see https://github.com/ISA-tools/isa-api/blob/master/isatools/isatab.py#L886
+                phenotyping_protocol = Protocol(name="phenotyping",
+                                                protocol_type=OntologyAnnotation(term="nucleic acid sequencing"))
+                isa_study.protocols.append(phenotyping_protocol)
 
-            try:
-                variable_records = converter.create_isa_tdf_from_obsvars(client.get_study_observed_variables(brapi_study_id))
-                # Writing Trait Definition File:
-                # ------------------------------
-                write_records_to_file(this_study_id=str(brapi_study_id),
-                                      this_directory=output_directory,
-                                      records=variable_records,
-                                      filetype="t_")
-            except Exception as ioe:
-                print(ioe)
+                # Getting the list of all germplasms used in the BRAPI isa_study:
+                germplasms = client.get_study_germplasms(brapi_study_id)
 
-            # Getting Variable Data and writing Measurement Data File
-            # -------------------------------------------------------
-            for level, variables in obs_level.items():
+                germ_counter = 0
+                
+                # Iterating through the germplasm considered as biosource,
+                # For each of them, we retrieve their attributes and create isa characteristics
+                for germ in germplasms:
+                    # Creating corresponding ISA biosources with is Creating isa characteristics from germplasm attributes.
+                    # ------------------------------------------------------
+                    source = Source(name=germ['germplasmName'], characteristics=converter.create_germplasm_chars(germ))
+                    
+                    if germ['germplasmDbId'] not in germplasminfo:
+                        germplasminfo[germ['germplasmDbId']] = [germ['accessionNumber']]
+
+                    # Associating ISA sources to ISA isa_study object
+                    isa_study.sources.append(source)
+
+                    germ_counter = germ_counter + 1
+
+                # Now dealing with BRAPI observation units and attempting to create ISA samples
+                create_study_sample_and_assay(client, brapi_study_id, isa_study,  sample_collection_protocol, phenotyping_protocol)
+
+                # Writing isa_study to ISA-Tab format:
+                # --------------------------------
                 try:
-                    obsUnitList = []
-                    for i in client.get_study_observation_units(brapi_study_id):
-                        obsUnitList.append(i)
-                    data_readings = converter.create_isa_obs_data_from_obsvars(obsUnitList, list(variables), level, germplasminfo, obs_levels)
-                    logger.debug("Generating data files")
-                    write_records_to_file(this_study_id=str(brapi_study_id), this_directory=output_directory, records=data_readings,
-                                        filetype="d_", ObservationLevel=level)
+                    # isatools.isatab.dumps(investigation)  # dumps() writes out the ISA
+                    # !!!: fix isatab.py to access other protocol_type values to enable Assay Tab serialization
+                    # !!!: if Assay Table is missing the 'Assay Name' field, remember to check protocol_type used !!!
+                    isatab.dump(isa_obj=investigation, output_path=output_directory)
+                    logger.info('DONE!...')
+                except IOError as ioe:
+                    logger.info('CONVERSION FAILED!...')
+                    logger.info(str(ioe))
+
+                try:
+                    variable_records = converter.create_isa_tdf_from_obsvars(client.get_study_observed_variables(brapi_study_id))
+                    # Writing Trait Definition File:
+                    # ------------------------------
+                    write_records_to_file(this_study_id=str(brapi_study_id),
+                                        this_directory=output_directory,
+                                        records=variable_records,
+                                        filetype="t_")
                 except Exception as ioe:
                     print(ioe)
+
+                # Getting Variable Data and writing Measurement Data File
+                # -------------------------------------------------------
+                for level, variables in obs_level.items():
+                    try:
+                        obsUnitList = []
+                        for i in client.get_study_observation_units(brapi_study_id):
+                            obsUnitList.append(i)
+                        data_readings = converter.create_isa_obs_data_from_obsvars(obsUnitList, list(variables), level, germplasminfo, obs_levels)
+                        logger.debug("Generating data files")
+                        write_records_to_file(this_study_id=str(brapi_study_id), this_directory=output_directory, records=data_readings,
+                                            filetype="d_", ObservationLevel=level)
+                    except Exception as ioe:
+                        print(ioe)
 
 
 #############################################
