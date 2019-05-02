@@ -2,8 +2,10 @@ import json
 import logging
 from collections import Iterable
 from typing import List
-
 import requests
+from requests.adapters import HTTPAdapter
+from requests.packages.urllib3.util.retry import Retry
+import time
 
 
 def url_path_join(*args):
@@ -21,13 +23,13 @@ class BrapiClient:
         self.obs_unit_call = " "
         self.obs_var_call = " "
 
-    def get_phenotypes(self) -> Iterable:
-        """Returns a phenotype information from a BrAPI endpoint."""
-        yield from self.fetch_objects('GET', '/phenotype-search')
+    # def get_phenotypes(self) -> Iterable:
+    #     """Returns a phenotype information from a BrAPI endpoint."""
+    #     yield from self.fetch_objects('GET', '/phenotype-search')
 
-    def get_germplasms(self) -> Iterable:
-        """Returns germplasm information from a BrAPI endpoint."""
-        yield from self.fetch_objects('GET', '/germplasm-search')
+    # def get_germplasms(self) -> Iterable:
+    #     """Returns germplasm information from a BrAPI endpoint."""
+    #     yield from self.fetch_objects('GET', '/germplasm-search')
 
     def get_study(self, study_id: str) -> dict:
         """"Given a BRAPI study object from a BRAPI endpoint server"""
@@ -130,8 +132,17 @@ class BrapiClient:
         """
         url = url_path_join(self.endpoint, path)
         self.logger.debug('GET ' + url)
-        r = requests.get(url)
-        if r.status_code != requests.codes.ok:
+        session = requests.Session()
+        retry = Retry(connect=3, backoff_factor=15)
+        adapter = HTTPAdapter(max_retries=retry)
+        session.mount('http://', adapter)
+        session.mount('https://', adapter)
+        r = session.get(url)
+        # Covering internal server errors by retrying one more time
+        if r.status_code == 500:
+            time.sleep(5)
+            r = requests.get(url)
+        elif r.status_code != requests.codes.ok:
             logging.error("problem with request: " + str(r))
             raise RuntimeError("Non-200 status code")
         return r.json()["result"]
@@ -151,6 +162,11 @@ class BrapiClient:
         # set a default dict for parameters
         params = params or {}
         url = url_path_join(self.endpoint, path)
+        session = requests.Session()
+        retry = Retry(connect=3, backoff_factor=15)
+        adapter = HTTPAdapter(max_retries=retry)
+        session.mount('http://', adapter)
+        session.mount('https://', adapter)
         while maxcount is None or page < maxcount:
             params['page'] = page
             params['pageSize'] = pagesize
@@ -159,10 +175,10 @@ class BrapiClient:
 
             if method == 'GET':
                 self.logger.debug("GETting " + url)
-                r = requests.get(url, params=params, data=data)
+                r = session.get(url, params=params, data=data)
             elif method == 'PUT':
                 self.logger.debug("PUTting "+  url)
-                r = requests.put(url, params=params, data=data)
+                r = session.put(url, params=params, data=data)
             elif method == 'POST':
                 # params['User-Agent'] = "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko)
                 # Chrome/41.0.2272.101 Safari/537.36"
@@ -171,7 +187,7 @@ class BrapiClient:
                 self.logger.debug("POSTing " + url)
                 self.logger.debug("POSTing " + str(params) + str(data))
                 headers = {}
-                r = requests.post(url, params=json.dumps(params).encode('utf-8'), json=data,
+                r = session.post(url, params=json.dumps(params).encode('utf-8'), json=data,
                                   headers=headers)
                 self.logger.debug(r)
             else:
