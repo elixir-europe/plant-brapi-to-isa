@@ -35,7 +35,7 @@ class BrapiToIsaConverter:
     #     return self._brapi_client
     def get_obs_levels(self, brapi_study_id):
         # because not every obs level has the same variables, and this is not yet supported by brapi to filter on /
-        # every observation will be checked for
+        # every observation will be checked for its variables and be linked to the obeservation level
         obs_level_in_study = defaultdict(set)
         obs_levels = defaultdict(set)
         for ou in self._brapi_client.get_study_observation_units(brapi_study_id):
@@ -121,9 +121,12 @@ class BrapiToIsaConverter:
         """Returns an ISA study given a BrAPI endpoints and a BrAPI study identifier."""
 
         brapi_study = self._brapi_client.get_study(brapi_study_id)
-
+        
+        # Adding study inforamtion on investigation level
+        ###########################################################################
         this_study = Study(filename="s_" + str(brapi_study_id) + ".txt")
 
+        # Adding general study information
         this_study.identifier = brapi_study.get('studyDbId', "NA")
 
         if 'name' in brapi_study:
@@ -137,7 +140,12 @@ class BrapiToIsaConverter:
         this_study.comments.append(Comment(name="Study Start Date", value=att_test(brapi_study.get('startDate', "NA"))))
         this_study.comments.append(Comment(name="Study End Date", value=att_test(brapi_study.get('endDate', "NA"))))
         this_study.comments.append(Comment(name="Study Experimental Site", value=att_test(brapi_study['location'].get('name', "NA"))))
-
+        study_design = att_test(brapi_study.get('studyType', "NA"))
+        oa_st_design = OntologyAnnotation(term=study_design)
+        this_study.design_descriptors = [oa_st_design]
+        this_study.comments.append(Comment(name="Trait Definition File", value="t_" + str(brapi_study_id) + ".txt"))
+        
+        # Adding Location information 
         if 'countryCode' in brapi_study['location'] and brapi_study['location']['countryCode']:
             if len(brapi_study['location']['countryCode']) == 3:
                 this_study.comments.append(Comment(name="Study Country",
@@ -156,11 +164,7 @@ class BrapiToIsaConverter:
         this_study.comments.append(Comment(name="Study Longitude", value=att_test(brapi_study['location'].get('longitude', "NA"))))
         this_study.comments.append(Comment(name="Study Altitude",value=att_test(brapi_study['location'].get('altitude', "NA"))))
 
-        study_design = att_test(brapi_study.get('studyType', "NA"))
-        oa_st_design = OntologyAnnotation(term=study_design)
-        this_study.design_descriptors = [oa_st_design]
-
-
+        # Adding Contacts information
         if 'contacts' in brapi_study:
             for brapicontact in brapi_study['contacts']:
                 #NOTE: brapi has just name atribute -> no seperate first/last name
@@ -169,8 +173,7 @@ class BrapiToIsaConverter:
                 affiliation=brapicontact['institutionName'], email=brapicontact['email'])
                 this_study.contacts.append(contact)
 
-        this_study.comments.append(Comment(name="Trait Definition File", value="t_" + str(brapi_study_id) + ".txt"))
-        
+        # Adding dataLinks inforamtion
         if 'dataLinks' in brapi_study:
             for brapidata in brapi_study['dataLinks']:
                 this_study.comments.append(Comment(name="Study Data File Link",value=brapidata['url']))
