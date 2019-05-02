@@ -117,51 +117,6 @@ class BrapiToIsaConverter:
 
         return returned_characteristics
 
-    # def create_isa_investigations(self, endpoint):
-    #     """Create ISA investigations from a BrAPI endpoint, starting from the trials information"""
-
-    #     endpoint_investigations = []
-    #     for this_trial in self._brapi_client.get_brapi_trials():
-    #         this_investigation = Investigation()
-    #         this_investigation.identifier = this_trial['trialDbId']
-    #         this_investigation.title = this_trial['trialName']
-    #         # investigation.comments.append(Comment("Investigation Start Date", trial['startDate']))
-    #         # investigation.comments.append(Comment("Investigation End Date", trial['endDate']))
-    #         # investigation.comments.append(Comment("Active", trial['active']))
-
-    #         for this_study in this_trial['studies']:
-    #             this_study = self.create_isa_study(this_study['studyDbId'])
-    #             this_investigation.studies.append(this_study)
-    #             endpoint_investigations.append(this_investigation)
-    #     return endpoint_investigations
-
-    # def create_materials(self, endpoint):
-    #     """Create ISA studies from a BrAPI endpoint, starting from the studies, where there is no trial information."""
-
-    #     for phenotype in self._brapi_client.get_phenotypes():
-    #         print(phenotype)
-    #         # for now, creating the sample name combining studyDbId and potDbId -
-    #         # eventually this should be observationUnitDbId
-    #         sample_name = phenotype['studyDbId'] + "_" + phenotype['plotNumber']
-    #         this_sample = Sample(name=sample_name)
-    #         that_source = Source(phenotype['germplasmName'], phenotype['germplasmDbId'])
-    #         this_sample.derives_from = that_source
-
-        # for level in obs_levels_in_study:
-        #     oref_mt = OntologySource(name="OBI", description="Ontology for Biomedical Investigation")
-        #     oa_mt = OntologyAnnotation(term="phenotyping", term_accession="", term_source=oref_mt)
-        #     oref_tt = OntologySource(name="OBI", description="Ontology for Biomedical Investigation")
-        #     oa_tt = OntologyAnnotation(term="multimodal technique", term_accession="", term_source=oref_tt)
-        #     isa_assay_file = "a_" + str(brapi_study_id) + "_" + level + ".txt"
-        #     new_assay = Assay(measurement_type=oa_mt, technology_type=oa_tt, filename=isa_assay_file)
-        #     isa_study.assays.append(new_assay)
-        #     if oref_mt not in isa_investigation.ontology_source_references:
-        #         isa_investigation.ontology_source_references.append(oref_mt)
-        #     if oref_tt not in isa_investigation.ontology_source_references:
-        #         isa_investigation.ontology_source_references.append(oref_tt)
-
-        # return isa_study, isa_investigation
-
     def create_isa_study(self, brapi_study_id, investigation, obs_levels_in_study):
         """Returns an ISA study given a BrAPI endpoints and a BrAPI study identifier."""
 

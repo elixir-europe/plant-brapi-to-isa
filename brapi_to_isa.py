@@ -65,78 +65,6 @@ logger.info("\n----------------\ntrials IDs to be exported : "
 # CASSAVA_BRAPI_V1 = 'https://cassavabase.org/brapi/v1/'
 
 
-# def get_germplasm_chars(germplasm):
-#     """" Given a BRAPI Germplasm ID, retrieve the list of all attributes from BRAPI and returns a list of ISA
-#      characteristics using MIAPPE tags for compliance + X-check against ISAconfiguration"""
-#     # TODO: switch BRAPI tags to MIAPPE Tags
-#
-#     these_characteristics = []
-#
-#     germplasm_id = germplasm['germplasmDbId']
-#     r = requests.get(SERVER + "germplasm/" + germplasm_id)
-#     if r.status_code != requests.codes.ok:
-#         raise RuntimeError("Non-200 status code")
-#
-#     all_germplasm_attributes = r.json()['result']
-#
-#     for key in all_germplasm_attributes.keys():
-#
-#         print("key:", key, "value:", str(all_germplasm_attributes[key]))
-#         miappeKey = ""
-#
-#         if key == "accessionNumber":
-#             miappeKey = "Material Source ID"
-#             # print("key", key, "value", all_germplasm_attributes[key])
-#             c = create_isa_characteristic(miappeKey, str(all_germplasm_attributes[key]))
-#
-#         elif key == "commonCropName":
-#             miappeKey = "Material Source ID"
-#             # print("key", key, "value", all_germplasm_attributes[key])
-#             c =create_isa_characteristic(key, str(all_germplasm_attributes[key]))
-#
-#         elif key == "genus":
-#             miappeKey = "Genus"
-#             # print("key", key, "value", all_germplasm_attributes[key])
-#             c = create_isa_characteristic(miappeKey, str(all_germplasm_attributes[key]))
-#
-#         elif key == "species":
-#             miappeKey = "Species"
-#             c = create_isa_characteristic(miappeKey, str(all_germplasm_attributes[key]))
-#
-#         elif key == "subtaxa":
-#             miappeKey = "Infraspecific Name"
-#             c = create_isa_characteristic(miappeKey, str(all_germplasm_attributes[key]))
-#
-#         elif key == "taxonIds":
-#             miappeKey = "Organism"
-#             taxinfo = []
-#             for item in range(len(all_germplasm_attributes["taxonIds"])):
-#                 taxinfo.append( all_germplasm_attributes[key][item]["sourceName"] + ":" + all_germplasm_attributes[key][item]["taxonId"])
-#             ontovalue = ";".join(taxinfo)
-#             c = create_isa_characteristic(miappeKey, ontovalue)
-#
-#         elif key == "donors":
-#             miappeKey = "Donors"
-#             donors = []
-#             for item in range(len(all_germplasm_attributes["donors"])):
-#                 donors.append( all_germplasm_attributes[key][item]["donorInstituteCode"] + ":" + all_germplasm_attributes[key][item]["donorAccessionNumber"])
-#             ontovalue = ";".join(donors)
-#             c = create_isa_characteristic(miappeKey, ontovalue)
-#
-#         elif key == "synonyms":
-#             if isinstance(all_germplasm_attributes[key], list):
-#                 ontovalue = ";".join(all_germplasm_attributes[key])
-#                 c = create_isa_characteristic(key, ontovalue)
-#
-#         else:
-#             c = create_isa_characteristic(key, str(all_germplasm_attributes[key]))
-#
-#         if c not in these_characteristics:
-#                 these_characteristics.append(c)
-#
-#     return these_characteristics
-
-
 def create_study_sample_and_assay(client, brapi_study_id, isa_study,  sample_collection_protocol, phenotyping_protocol):
 
     obsunit_to_isasample_mapping_dictionary = {
@@ -440,27 +368,3 @@ if __name__ == '__main__':
     except Exception as e:
         logging.exception(e)
         sys.exit(1)
-
-#################################################################################
-# Creating ISA-Tab from GNPIS_BRAPI_V1 date [old call was EU_SOL_BRAPI_V1 data ]
-#################################################################################
-
-# investigations = create_isa_investigations(GNPIS_BRAPI_V1)
-# EU_SOL_BRAPI_V1
-
-# if not os.path.exists("output"):
-#     os.makedirs("output")
-#
-# if not os.path.exists("output/eu_sol"):
-#     os.makedirs("output/eu_sol")
-#
-#
-# for investigation in investigations:
-#     directory = "output/eu_sol/trial_"+str(investigation.identifier)
-#     if not os.path.exists(directory):
-#         os.makedirs(directory)
-#     isatools.isatab.dump(investigation, directory)
-#
-# ## Creating ISA-Tab from EU_SOL_BRAPI_V1 endpoint data [old call was on PIPPA endpoint data]
-#
-# create_materials(GNPIS_BRAPI_V1) #PIPPA_BRAPI_V1
