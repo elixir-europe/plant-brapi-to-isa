@@ -91,7 +91,6 @@ class BrapiClient:
     #     return self.obs_call
 
 
-
     def get_study_observation_units(self, study_id: str) -> Iterable:
         """ Given a BRAPI study identifier, return an list of BRAPI observation units"""
         observation_unit_call = self._get_obs_unit_call()
