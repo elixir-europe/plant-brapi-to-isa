@@ -69,7 +69,7 @@ logger.info("\n----------------\ntrials IDs to be exported : "
 # CASSAVA_BRAPI_V1 = 'https://cassavabase.org/brapi/v1/'
 
 
-def create_study_sample_and_assay(client, brapi_study_id, isa_study,  sample_collection_protocol, phenotyping_protocol):
+def create_study_sample_and_assay(client, brapi_study_id, isa_study,  sample_collection_protocol, phenotyping_protocol, OBSERVATIONUNITLIST):
 
     obsunit_to_isasample_mapping_dictionary = {
         "X": "X",
@@ -96,7 +96,7 @@ def create_study_sample_and_assay(client, brapi_study_id, isa_study,  sample_col
         obs_level_to_assay[assay.characteristic_categories[0]] = k
 
     allready_converted_obs_unit = [] # Allow to handle multiyear observation units
-    for obs_unit in client.get_study_observation_units(brapi_study_id):
+    for obs_unit in OBSERVATIONUNITLIST:
         i = obs_level_to_assay[obs_unit['observationLevel']]
         # Getting the relevant germplasm used for that observation event:
         # ---------------------------------------------------------------
@@ -283,8 +283,12 @@ def main(arg):
                 logger.debug("Study " + brapi_study['studyDbId'] + " containes a non ascii character and will be skipped.")
                 continue
             else:
-                #NOTE keeping track of germplasm info for data file generation
-                obs_level, obs_levels = converter.get_obs_levels(brapi_study_id)
+                #NOTE NEW: holding observationUnits in OBSERVATIONUNITLIST
+                OBSERVATIONUNITLIST = []
+                for i in client.get_study_observation_units(brapi_study_id):
+                    OBSERVATIONUNITLIST.append(i)
+                
+                obs_level, obs_levels = converter.get_obs_levels(brapi_study_id, OBSERVATIONUNITLIST)
                 # NB: this method always create an ISA Assay Type
                 isa_study, investigation = converter.create_isa_study(brapi_study_id, investigation, obs_level.keys())
 
@@ -322,7 +326,7 @@ def main(arg):
                     germ_counter = germ_counter + 1
 
                 # Now dealing with BRAPI observation units and attempting to create ISA samples
-                create_study_sample_and_assay(client, brapi_study_id, isa_study,  sample_collection_protocol, phenotyping_protocol)
+                create_study_sample_and_assay(client, brapi_study_id, isa_study,  sample_collection_protocol, phenotyping_protocol, OBSERVATIONUNITLIST)
 
                 # Writing isa_study to ISA-Tab format:
                 # --------------------------------
@@ -351,10 +355,7 @@ def main(arg):
                 # -------------------------------------------------------
                 for level, variables in obs_level.items():
                     try:
-                        obsUnitList = []
-                        for i in client.get_study_observation_units(brapi_study_id):
-                            obsUnitList.append(i)
-                        data_readings = converter.create_isa_obs_data_from_obsvars(obsUnitList, list(variables), level, germplasminfo, obs_levels)
+                        data_readings = converter.create_isa_obs_data_from_obsvars(OBSERVATIONUNITLIST, list(variables), level, germplasminfo, obs_levels)
                         logger.debug("Generating data files")
                         write_records_to_file(this_study_id=str(brapi_study_id), this_directory=output_directory, records=data_readings,
                                             filetype="d_", ObservationLevel=level)

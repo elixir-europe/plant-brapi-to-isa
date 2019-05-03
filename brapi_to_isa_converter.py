@@ -33,12 +33,12 @@ class BrapiToIsaConverter:
     #     if self._brapi_client is None:
     #
     #     return self._brapi_client
-    def get_obs_levels(self, brapi_study_id):
+    def get_obs_levels(self, brapi_study_id, OBSERVATIONUNITLIST):
         # because not every obs level has the same variables, and this is not yet supported by brapi to filter on /
         # every observation will be checked for its variables and be linked to the obeservation level
         obs_level_in_study = defaultdict(set)
         obs_levels = defaultdict(set)
-        for ou in self._brapi_client.get_study_observation_units(brapi_study_id):
+        for ou in OBSERVATIONUNITLIST:
             for obs in ou['observations']:
                 if ou['observationLevel']:
                     obs_level_in_study[ou['observationLevel']].add(
@@ -76,9 +76,9 @@ class BrapiToIsaConverter:
 
         }
 
-        for key in all_germplasm_attributes.keys():
-
-            if key in mapping_dictionnary.keys():
+        c = None
+        for key in all_germplasm_attributes:
+            if key in mapping_dictionnary:
                 if isinstance(mapping_dictionnary[key], str):
                     c = self.create_isa_characteristic(
                         mapping_dictionnary[key], str(all_germplasm_attributes[key]))
@@ -112,7 +112,7 @@ class BrapiToIsaConverter:
                 c = self.create_isa_characteristic(
                     key, str(all_germplasm_attributes[key]))
 
-            if c not in returned_characteristics:
+            if c and c not in returned_characteristics:
                 returned_characteristics.append(c)
 
         return returned_characteristics
@@ -309,16 +309,14 @@ class BrapiToIsaConverter:
                         if obs_attribute in measurement and measurement[obs_attribute]:
                             row[head.index(obs_attribute)
                                 ] = measurement[obs_attribute]
-                        else:
-                            self.logger.info(
-                                obs_attribute + " does not exist in observation in observationUnit " + obs_unit['observationUnitDbId'])
+                        #else:
+                            # DEBUG self.logger.info(obs_attribute + " does not exist in observation in observationUnit " + obs_unit['observationUnitDbId'])
                     if measurement["observationVariableName"] in head:
                         row[head.index(measurement["observationVariableName"])] = str(
                             measurement["value"])
                         data_records.append('\t'.join(row))
                         row = copy.deepcopy(rowbuffer)
-                    else:
-                        self.logger.info(
-                            measurement["observationVariableName"] + " does not exist in observationVariable list ")
+                    #else:
+                        # DEBUG self.logger.info(measurement["observationVariableName"] + " does not exist in observationVariable list ")
 
         return data_records
