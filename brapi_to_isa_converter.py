@@ -27,12 +27,7 @@ class BrapiToIsaConverter:
         self.endpoint = endpoint
         self._brapi_client = BrapiClient(self.endpoint, self.logger)
 
-    # _brapi_client
-    #
-    # def get_brapi_client(self) -> BrapiClient:
-    #     if self._brapi_client is None:
-    #
-    #     return self._brapi_client
+
     def get_obs_levels(self, brapi_study_id, OBSERVATIONUNITLIST):
         # because not every obs level has the same variables, and this is not yet supported by brapi to filter on /
         # every observation will be checked for its variables and be linked to the obeservation level

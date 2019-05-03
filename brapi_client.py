@@ -55,9 +55,16 @@ class BrapiClient:
             elif any(el['call'] == 'studies/{studyDbId}/observationUnits' for el in r.json()['result']['data']):
                 self.logger.debug(" GOT OBSERVATIONUNIT THE 1.1 WAY")
                 self.obs_unit_call = "observationUnits"
-            else:
+            elif any(el['call'] == 'studies/{studyDbId}/observationunits' for el in r.json()['result']['data']):
                 self.logger.debug(" GOT OBSERVATIONUNIT THE 1.2+ WAY")
-                self.obs_unit_call = "observationunits"
+                self.obs_unit_call = "observationUnits"        
+            else:
+                if any(el['call'] == 'phenotypes-search' for el in r.json()['result']['data']):
+                    self.logger.debug(" GOT NO STUDY OBSERVATIONUNIT CALL, TAKING PHENOTYPESEARCH INSTEAD")
+                    self.obs_unit_call = "phenotypes-search"
+                else:
+                    self.logger.debug(" GOT NO STUDY OBSERVATIONUNIT CALL, QUITTING PROCESS")
+
         return self.obs_unit_call
 
     def _get_obs_var_call(self) -> str:
@@ -94,7 +101,10 @@ class BrapiClient:
     def get_study_observation_units(self, study_id: str) -> Iterable:
         """ Given a BRAPI study identifier, return an list of BRAPI observation units"""
         observation_unit_call = self._get_obs_unit_call()
-        yield from self.fetch_objects('GET', f'/studies/{study_id}/{observation_unit_call}')
+        if observation_unit_call == 'phenotypes-search':
+            yield from self.fetch_objects('GET', f'/phenotypes-search?studyDbId={study_id}')
+        else:
+            yield from self.fetch_objects('GET', f'/studies/{study_id}/{observation_unit_call}')
     
     # #NOTE: if phenotype search is needed in the future
     # def get_observations_units(self, study_id: str, ) -> Iterable:
