@@ -279,22 +279,25 @@ class BrapiToIsaConverter:
                             a, b = obslvls.split(":")
                             row[head.index(
                                 "observationLevels[{}]".format(a))] = b
-                    if obs_unit_attribute in obs_unit_header and obs_unit[obs_unit_attribute]:
-                        outp = []
-                        if obs_unit_attribute == "observationUnitXref":
-                            # NOTE: INRA specific
-                            for item in obs_unit[obs_unit_attribute]:
-                                if item["id"]:
-                                    outp.append("{!s}:{!r}".format(
-                                        item["source"], item["id"]))
-                            row[head.index("observationUnitXref")
-                                ] = ';'.join(outp)
+                    if obs_unit_attribute in obs_unit_header:
+                        if obs_unit[obs_unit_attribute]: 
+                            outp = []
+                            if obs_unit_attribute == "observationUnitXref":
+                                # NOTE: INRA specific
+                                for item in obs_unit[obs_unit_attribute]:
+                                    if item["id"]:
+                                        outp.append("{!s}:{!r}".format(
+                                            item["source"], item["id"]))
+                                row[head.index("observationUnitXref")
+                                    ] = ';'.join(outp)
+                            else:
+                                row[head.index(obs_unit_attribute)
+                                    ] = obs_unit[obs_unit_attribute]
+                            if obs_unit_attribute == "germplasmDbId":
+                                row[head.index(
+                                    "accessionNumber")] = germplasminfo[obs_unit[obs_unit_attribute]][0]
                         else:
-                            row[head.index(obs_unit_attribute)
-                                ] = obs_unit[obs_unit_attribute]
-                        if obs_unit_attribute == "germplasmDbId":
-                            row[head.index(
-                                "accessionNumber")] = germplasminfo[obs_unit[obs_unit_attribute]][0]
+                            row[head.index(obs_unit_attribute)] = "NA"
 
                 rowbuffer = copy.deepcopy(row)
 
@@ -304,7 +307,9 @@ class BrapiToIsaConverter:
                         if obs_attribute in measurement and measurement[obs_attribute]:
                             row[head.index(obs_attribute)
                                 ] = measurement[obs_attribute]
-                        #else:
+                        else:
+                            row[head.index(obs_attribute)
+                                ] = "NA"
                             # DEBUG self.logger.info(obs_attribute + " does not exist in observation in observationUnit " + obs_unit['observationUnitDbId'])
                     if measurement["observationVariableName"] in head:
                         row[head.index(measurement["observationVariableName"])] = str(
