@@ -125,13 +125,13 @@ def create_study_sample_and_assay(client, brapi_study_id, isa_study,  sample_col
 
             # Looking for treatment in BRAPI and mapping to ISA Study Factor Value
             # --------------------------------------------------------------------
+            
             if 'treatments' in obs_unit:
                 for treatment in obs_unit['treatments']:
                     if 'Factor' in treatment:
                         f = StudyFactor(name=treatment['factor'], factor_type=OntologyAnnotation(term=treatment['factor']), comments=treatment['modality'])
                         if f not in isa_study.factors:
                             isa_study.factors.append(f)
-
                         fv = FactorValue(factor_name=f,
                                         value=OntologyAnnotation(term=str(treatment['factor']),
                                                                 term_source="",
