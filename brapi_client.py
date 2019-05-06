@@ -57,7 +57,7 @@ class BrapiClient:
                 self.obs_unit_call = "observationUnits"
             elif any(el['call'] == 'studies/{studyDbId}/observationunits' for el in r.json()['result']['data']):
                 self.logger.debug(" GOT OBSERVATIONUNIT THE 1.2+ WAY")
-                self.obs_unit_call = "observationUnits"        
+                self.obs_unit_call = "observationunits"        
             else:
                 if any(el['call'] == 'phenotypes-search' for el in r.json()['result']['data']):
                     self.logger.debug(" GOT NO STUDY OBSERVATIONUNIT CALL, TAKING PHENOTYPESEARCH INSTEAD")
