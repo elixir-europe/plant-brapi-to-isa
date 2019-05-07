@@ -6,6 +6,7 @@ import logging
 import os
 import sys
 import json
+from collections import defaultdict
 
 from isatools import isatab
 from isatools.model import Investigation, OntologyAnnotation, Characteristic, Source, \
@@ -95,6 +96,7 @@ def create_study_sample_and_assay(client, brapi_study_id, isa_study,  sample_col
     for k,assay in enumerate(isa_study.assays):
         obs_level_to_assay[assay.characteristic_categories[0]] = k
 
+    treatments = defaultdict(list)
     allready_converted_obs_unit = [] # Allow to handle multiyear observation units
     for obs_unit in OBSERVATIONUNITLIST:
         i = obs_level_to_assay[obs_unit['observationLevel']]
@@ -123,15 +125,15 @@ def create_study_sample_and_assay(client, brapi_study_id, isa_study,  sample_col
                         #TODO: quick workaround used to store observation units characteristics
                         isa_study.assays[i].comments.append(c)
 
-            # Looking for treatment in BRAPI and mapping to ISA Study Factor Value
-            # --------------------------------------------------------------------
+            # Looking for treatment in BRAPI and mapping to ISA samples 
+            # ---------------------------------------------------------
             
             if 'treatments' in obs_unit:
                 for treatment in obs_unit['treatments']:
-                    if 'Factor' in treatment:
-                        f = StudyFactor(name=treatment['factor'], factor_type=OntologyAnnotation(term=treatment['factor']), comments=treatment['modality'])
-                        if f not in isa_study.factors:
-                            isa_study.factors.append(f)
+                    if 'factor' in treatment and 'modality' in treatment:
+                        if treatment['modality'] not in treatments[treatment['factor']]:
+                            treatments[treatment['factor']].append(treatment['modality'])
+                        f = StudyFactor(name=treatment['factor'], factor_type=OntologyAnnotation(term=treatment['factor']))
                         fv = FactorValue(factor_name=f,
                                         value=OntologyAnnotation(term=str(treatment['factor']),
                                                                 term_source="",
@@ -180,6 +182,14 @@ def create_study_sample_and_assay(client, brapi_study_id, isa_study,  sample_col
         isa_study.assays[i].samples.append(this_isa_sample)
         isa_study.assays[i].process_sequence.append(phenotyping_process)
         plink(sample_collection_process, phenotyping_process)
+        
+    # Mapping treatments to ISA study Factor Value:
+    # ---------------------------------------------
+    for factor, modalities in treatments.items():
+        f = StudyFactor(name=factor, factor_type=OntologyAnnotation(term=factor))
+        modality = ";".join(modalities)
+        f.comments.append(Comment(name="modality",value=modality))                
+        isa_study.factors.append(f)
 
 def write_records_to_file(this_study_id, records, this_directory, filetype, ObservationLevel=''):
     logger.info('Writing to file')
