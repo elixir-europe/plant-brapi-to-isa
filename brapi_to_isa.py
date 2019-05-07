@@ -13,7 +13,7 @@ from isatools.model import Investigation, OntologyAnnotation, Characteristic, So
     Sample, Protocol, Process, StudyFactor, FactorValue, DataFile, ParameterValue, ProtocolParameter, plink, Person, Publication, Comment
 
 from brapi_client import BrapiClient
-from brapi_to_isa_converter import BrapiToIsaConverter
+from brapi_to_isa_converter import BrapiToIsaConverter, att_test
 
 __author__ = 'proccaserra (Philippe Rocca-Serra)'
 __author__ = 'cpommier (Cyril Pommier)'
@@ -72,23 +72,15 @@ logger.info("\n----------------\ntrials IDs to be exported : "
 
 def create_study_sample_and_assay(client, brapi_study_id, isa_study,  sample_collection_protocol, phenotyping_protocol, OBSERVATIONUNITLIST):
 
-    obsunit_to_isasample_mapping_dictionary = {
+    spat_dist_mapping_dictionary = {
         "X": "X",
         "Y": "Y",
-        "blockNumber": "Block Number",
-        "plotNumber": "Plot Number",
-        "plantNumber": "Plant Number",
-        "observationLevel": "Observation unit type"
+        "blockNumber": "Block",
+        "plotNumber": "plot",
+        "plantNumber": "plant",
+        "replicate": "replicate"
     }
 
-    obsunit_to_isaassay_mapping_dictionary = {
-        "X": "X",
-        "Y": "Y",
-        "blockNumber": "Block Number",
-        "plotNumber": "Plot Number",
-        "plantNumber": "Plant Number",
-        "observationLevel": "Observation unit type"
-    }
     
     # connecting the correct observation level to the correct assayobject
     # NOTE observation level is temporarily stored inside isa_study.assays[i].characteristic_categories[0] better field available?
@@ -99,7 +91,10 @@ def create_study_sample_and_assay(client, brapi_study_id, isa_study,  sample_col
     treatments = defaultdict(list)
     allready_converted_obs_unit = [] # Allow to handle multiyear observation units
     for obs_unit in OBSERVATIONUNITLIST:
-        i = obs_level_to_assay[obs_unit['observationLevel']]
+        if obs_unit['observationLevel']:
+            i = obs_level_to_assay[obs_unit['observationLevel']]
+        else:
+            i = 0
         # Getting the relevant germplasm used for that observation event:
         # ---------------------------------------------------------------
         this_source = isa_study.get_source(obs_unit['germplasmName'])
@@ -108,22 +103,29 @@ def create_study_sample_and_assay(client, brapi_study_id, isa_study,  sample_col
                 name= obs_unit['observationUnitName'],
                 derives_from=[this_source])
             allready_converted_obs_unit.append(obs_unit['observationUnitName'])
-            for key in obs_unit.keys():
-                if key in obsunit_to_isasample_mapping_dictionary.keys():
-                    if isinstance(obsunit_to_isasample_mapping_dictionary[key], str) and str(obs_unit[key]) is not None :
-                        c = Characteristic(category=OntologyAnnotation(term=obsunit_to_isasample_mapping_dictionary[key]),
-                                        value=OntologyAnnotation(term=str(obs_unit[key]),
+            
+            obslvl = att_test(obs_unit.get('observationLevel',"NA"))
+            c = Characteristic(category=OntologyAnnotation(term="Observation Unit Type"),
+                                value=OntologyAnnotation(term=obslvl,
                                                                     term_source="",
                                                                     term_accession=""))
-                        this_isa_sample.characteristics.append(c)
-                if key in obsunit_to_isaassay_mapping_dictionary.keys():
-                    if isinstance(obsunit_to_isaassay_mapping_dictionary[key], str):
-                        c = Characteristic(category=OntologyAnnotation(term=obsunit_to_isaassay_mapping_dictionary[key]),
-                                        value=OntologyAnnotation(term=str(obs_unit[key]),
+            this_isa_sample.characteristics.append(c)
+            
+            
+            spat_dist = []
+            for key in spat_dist_mapping_dictionary:
+                if key in obs_unit and obs_unit[key]:
+                    spat_dist.append('[' + spat_dist_mapping_dictionary[key] + ']' + obs_unit[key])
+            if 'observationLevels' in obs_unit and obs_unit['observationLevels']:
+                for lvl in obs_unit['observationLevels'].split(","):
+                    a, b = lvl.split(":")
+                    spat_dist.append('[' + a + ']' + b)
+            spat_dist_str = '; '.join(spat_dist)
+            c = Characteristic(category=OntologyAnnotation(term="Spatial Distribution"),
+                                value=OntologyAnnotation(term=att_test(spat_dist_str),
                                                                     term_source="",
                                                                     term_accession=""))
-                        #TODO: quick workaround used to store observation units characteristics
-                        isa_study.assays[i].comments.append(c)
+            this_isa_sample.characteristics.append(c)
 
             # Looking for treatment in BRAPI and mapping to ISA samples 
             # ---------------------------------------------------------
@@ -275,7 +277,7 @@ def main(arg):
         investigation.title = trial['trialName']
         if 'contacts' in trial:
             for brapicontact in trial['contacts']:
-                #NOTE: brapi has just name atribute -> no seperate first/last name
+                #NOTE: brapi has just name attribute -> no seperate first/last name
                 ContactName = brapicontact['name'].split(' ')
                 contact = Person(first_name=ContactName[0], last_name=ContactName[1],
                 affiliation=brapicontact['institutionName'], email=brapicontact['email'])
@@ -290,7 +292,7 @@ def main(arg):
             try:
                 brapi_study['studyDbId'].encode('ascii')
             except:
-                logger.debug("Study " + brapi_study['studyDbId'] + " containes a non ascii character and will be skipped.")
+                logger.debug("Study " + brapi_study['studyDbId'] + " contains a non ascii character and will be skipped.")
                 continue
             else:
                 #NOTE NEW: holding observationUnits in OBSERVATIONUNITLIST

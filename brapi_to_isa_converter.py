@@ -62,53 +62,25 @@ class BrapiToIsaConverter:
             germplasm_id)
 
         mapping_dictionnary = {
-            "accessionNumber": "Material Source ID",
-            "commonCropName": "commonCropName",
+            "commonCropName": "Organism",
             "genus": "Genus",
             "species": "Species",
             "subtaxa": "Infraspecific Name",
-            "taxonIds": ["Organism", "sourceName", "taxonId"]
-
+            "accessionNumber": "Material Source ID",
+            "germplasmPUI": "Material Source DOI",
         }
 
-        c = None
-        for key in all_germplasm_attributes:
-            if key in mapping_dictionnary:
-                if isinstance(mapping_dictionnary[key], str):
-                    c = self.create_isa_characteristic(
+
+        for key in mapping_dictionnary:
+            if key in all_germplasm_attributes and all_germplasm_attributes[key]:
+                c = self.create_isa_characteristic(
                         mapping_dictionnary[key], str(all_germplasm_attributes[key]))
-                else:
-                    if all_germplasm_attributes[key] and len(all_germplasm_attributes[key]) > 0:
-                        taxinfo = []
-                        for item in range(len(all_germplasm_attributes[key])):
-                            taxinfo.append(all_germplasm_attributes[key][item][mapping_dictionnary[key][1]] + ":" +
-                                           all_germplasm_attributes[key][item][mapping_dictionnary[key][2]])
-                        ontovalue = ";".join(taxinfo)
-                        c = self.create_isa_characteristic(
-                            mapping_dictionnary[key][0], ontovalue)
-                        if c not in returned_characteristics:
-                            returned_characteristics.append(c)
-
-            elif key == "donors":
-                miappeKey = "Donors"
-                donors = []
-                for item in range(len(all_germplasm_attributes["donors"])):
-                    donors.append(att_test(all_germplasm_attributes[key][item]["donorInstituteCode"]) + ":" +
-                                  att_test(all_germplasm_attributes[key][item]["donorAccessionNumber"]))
-                ontovalue = ";".join(donors)
-                c = self.create_isa_characteristic(miappeKey, ontovalue)
-
-            elif key == "synonyms":
-                if isinstance(all_germplasm_attributes[key], list):
-                    ontovalue = ";".join(all_germplasm_attributes[key])
-                    c = self.create_isa_characteristic(key, ontovalue)
-
             else:
                 c = self.create_isa_characteristic(
-                    key, str(all_germplasm_attributes[key]))
+                    mapping_dictionnary[key], "NA")
+            
+            returned_characteristics.append(c)
 
-            if c and c not in returned_characteristics:
-                returned_characteristics.append(c)
 
         return returned_characteristics
 
