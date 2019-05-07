@@ -135,7 +135,7 @@ def create_study_sample_and_assay(client, brapi_study_id, isa_study,  sample_col
                             treatments[treatment['factor']].append(treatment['modality'])
                         f = StudyFactor(name=treatment['factor'], factor_type=OntologyAnnotation(term=treatment['factor']))
                         fv = FactorValue(factor_name=f,
-                                        value=OntologyAnnotation(term=str(treatment['factor']),
+                                        value=OntologyAnnotation(term=str(treatment['modality']),
                                                                 term_source="",
                                                                 term_accession=""))
                         this_isa_sample.factor_values.append(fv)
