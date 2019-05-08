@@ -226,8 +226,8 @@ class BrapiClient:
 
             page += 1
 
-    def get_taxonId(self, genus, species, subspecies):
-        query = genus + ' ' + species + ' ' + subspecies
+    def get_taxonId(self, genus, species):
+        query = genus + ' ' + species
         query = " ".join(query.split())
         if query in self.taxon:
             return self.taxon[query]
@@ -238,7 +238,12 @@ class BrapiClient:
             self.logger.error("problem with request: " + str(r))
             raise RuntimeError("Non-200 status code")
         else:
-            header = re.search('<(taxon scientificName.*?)>', r.text).group(1)
-            taxonId = re.search('taxId="(.*?)"', header).group(1)
-            self.taxon[query] = taxonId
-            return taxonId
+            header = re.search('<(taxon scientificName.*?)>', r.text)
+            if header:
+                taxonId = re.search('taxId="(.*?)"', header.group(1)).group(1)
+                self.taxon[query] = taxonId
+                return taxonId
+                
+            else:
+                return None
+            

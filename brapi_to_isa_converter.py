@@ -66,8 +66,8 @@ class BrapiToIsaConverter:
                         'Organism', str(all_germplasm_attributes['taxonId']))
             returned_characteristics.append(c)
         else:
-            if all_germplasm_attributes['genus'] or all_germplasm_attributes['species'] or all_germplasm_attributes['species']:
-                taxonId = self._brapi_client.get_taxonId(all_germplasm_attributes['genus'],all_germplasm_attributes['species'], all_germplasm_attributes['subtaxa'])
+            if all_germplasm_attributes['genus'] or all_germplasm_attributes['species']:
+                taxonId = self._brapi_client.get_taxonId(all_germplasm_attributes['genus'],all_germplasm_attributes['species'])
                 if taxonId:
                     c = self.create_isa_characteristic(
                         'Organism', 'NCBI:'+ str(taxonId))
