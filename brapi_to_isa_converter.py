@@ -61,8 +61,31 @@ class BrapiToIsaConverter:
         all_germplasm_attributes = self._brapi_client.get_germplasm(
             germplasm_id)
 
+        if 'taxonId' in all_germplasm_attributes and all_germplasm_attributes['taxonId']:
+            c = self.create_isa_characteristic(
+                        'Organism', str(all_germplasm_attributes['taxonId']))
+            returned_characteristics.append(c)
+        else:
+            if all_germplasm_attributes['genus'] or all_germplasm_attributes['species'] or all_germplasm_attributes['species']:
+                taxonId = self._brapi_client.get_taxonId(all_germplasm_attributes['genus'],all_germplasm_attributes['species'], all_germplasm_attributes['subtaxa'])
+                if taxonId:
+                    c = self.create_isa_characteristic(
+                        'Organism', 'NCBI:'+ str(taxonId))
+                    
+                else:
+                    if 'commonCropName' in all_germplasm_attributes and all_germplasm_attributes['commonCropName']:
+                        c = self.create_isa_characteristic('Organism', all_germplasm_attributes['commonCropName'])
+                    else:
+                        c = self.create_isa_characteristic('Organism', "")
+
+            else:
+                if 'commonCropName' in all_germplasm_attributes and all_germplasm_attributes['commonCropName']:
+                    c = self.create_isa_characteristic('Organism', all_germplasm_attributes['commonCropName'])
+                else:
+                    c = self.create_isa_characteristic('Organism', "")
+            returned_characteristics.append(c)
+        
         mapping_dictionnary = {
-            "commonCropName": "Organism",
             "genus": "Genus",
             "species": "Species",
             "subtaxa": "Infraspecific Name",
@@ -77,7 +100,7 @@ class BrapiToIsaConverter:
                         mapping_dictionnary[key], str(all_germplasm_attributes[key]))
             else:
                 c = self.create_isa_characteristic(
-                    mapping_dictionnary[key], "NA")
+                    mapping_dictionnary[key], "")
             
             returned_characteristics.append(c)
 

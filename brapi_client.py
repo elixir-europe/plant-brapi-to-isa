@@ -6,6 +6,7 @@ import requests
 from requests.adapters import HTTPAdapter
 from requests.packages.urllib3.util.retry import Retry
 import time
+import re
 from cachetools import cached, LRUCache, TTLCache
 
 
@@ -23,6 +24,7 @@ class BrapiClient:
         self.logger = logger
         self.obs_unit_call = " "
         self.obs_var_call = " "
+        self.taxon = {}
 
     # def get_phenotypes(self) -> Iterable:
     #     """Returns a phenotype information from a BrAPI endpoint."""
@@ -223,3 +225,20 @@ class BrapiClient:
                 yield data
 
             page += 1
+
+    def get_taxonId(self, genus, species, subspecies):
+        query = genus + ' ' + species + ' ' + subspecies
+        query = " ".join(query.split())
+        if query in self.taxon:
+            return self.taxon[query]
+        link = "https://www.ebi.ac.uk/ena/data/view/Taxon:{}&display=xml".format(query)
+        self.logger.debug('GET ' + link)
+        r = requests.get(link)
+        if r.status_code != requests.codes.ok:
+            self.logger.error("problem with request: " + str(r))
+            raise RuntimeError("Non-200 status code")
+        else:
+            header = re.search('<(taxon scientificName.*?)>', r.text).group(1)
+            taxonId = re.search('taxId="(.*?)"', header).group(1)
+            self.taxon[query] = taxonId
+            return taxonId

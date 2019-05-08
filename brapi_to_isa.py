@@ -121,11 +121,12 @@ def create_study_sample_and_assay(client, brapi_study_id, isa_study,  sample_col
                     a, b = lvl.split(":")
                     spat_dist.append('[' + a + ']' + b)
             spat_dist_str = '; '.join(spat_dist)
-            c = Characteristic(category=OntologyAnnotation(term="Spatial Distribution"),
-                                value=OntologyAnnotation(term=att_test(spat_dist_str),
-                                                                    term_source="",
-                                                                    term_accession=""))
-            this_isa_sample.characteristics.append(c)
+            if spat_dist:
+                c = Characteristic(category=OntologyAnnotation(term="Spatial Distribution"),
+                                    value=OntologyAnnotation(term=spat_dist_str,
+                                                                        term_source="",
+                                                                        term_accession=""))
+                this_isa_sample.characteristics.append(c)
 
             # Looking for treatment in BRAPI and mapping to ISA samples 
             # ---------------------------------------------------------
@@ -146,7 +147,6 @@ def create_study_sample_and_assay(client, brapi_study_id, isa_study,  sample_col
             # Creating the corresponding ISA sample entity for structure the document:
             # ------------------------------------------------------------------------
             sample_collection_process = Process(executes_protocol=sample_collection_protocol)
-            sample_collection_process.date = datetime.datetime.today().isoformat()
             sample_collection_process.inputs.append(this_source)
             sample_collection_process.outputs.append(this_isa_sample)
             isa_study.process_sequence.append(sample_collection_process)
