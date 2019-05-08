@@ -146,7 +146,6 @@ def create_study_sample_and_assay(client, brapi_study_id, isa_study,  sample_col
             # Creating the corresponding ISA sample entity for structure the document:
             # ------------------------------------------------------------------------
             sample_collection_process = Process(executes_protocol=sample_collection_protocol)
-            sample_collection_process.performer = "NA"
             sample_collection_process.date = datetime.datetime.today().isoformat()
             sample_collection_process.inputs.append(this_source)
             sample_collection_process.outputs.append(this_isa_sample)
