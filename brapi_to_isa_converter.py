@@ -10,7 +10,7 @@ def att_test(attribute):
     if attribute:
         return attribute
     else:
-        return "NA"
+        return ""
 
 class BrapiToIsaConverter:
     """ Converter json coming out of the BRAPI to ISA object
@@ -104,7 +104,6 @@ class BrapiToIsaConverter:
             
             returned_characteristics.append(c)
 
-
         return returned_characteristics
 
     def create_isa_study(self, brapi_study_id, investigation, obs_levels_in_study):
@@ -112,7 +111,7 @@ class BrapiToIsaConverter:
 
         brapi_study = self._brapi_client.get_study(brapi_study_id)
         
-        # Adding study inforamtion on investigation level
+        # Adding study information on investigation level
         ###########################################################################
         this_study = Study(filename="s_" + str(brapi_study_id) + ".txt")
 
@@ -124,13 +123,13 @@ class BrapiToIsaConverter:
         elif 'studyName' in brapi_study:
             this_study.title = brapi_study['studyName']
         else:
-            this_study.title = "NA"
+            this_study.title = ""
 
-        this_study.description = att_test(brapi_study.get('studyDescription', "NA"))
-        this_study.comments.append(Comment(name="Study Start Date", value=att_test(brapi_study.get('startDate', "NA"))))
-        this_study.comments.append(Comment(name="Study End Date", value=att_test(brapi_study.get('endDate', "NA"))))
-        this_study.comments.append(Comment(name="Study Experimental Site", value=att_test(brapi_study['location'].get('name', "NA"))))
-        study_design = att_test(brapi_study.get('studyType', "NA"))
+        this_study.description = att_test(brapi_study.get('studyDescription', ""))
+        this_study.comments.append(Comment(name="Study Start Date", value=att_test(brapi_study.get('startDate', ""))))
+        this_study.comments.append(Comment(name="Study End Date", value=att_test(brapi_study.get('endDate', ""))))
+        this_study.comments.append(Comment(name="Study Experimental Site", value=att_test(brapi_study['location'].get('name', ""))))
+        study_design = att_test(brapi_study.get('studyType', ""))
         oa_st_design = OntologyAnnotation(term=study_design)
         this_study.design_descriptors = [oa_st_design]
         this_study.comments.append(Comment(name="Trait Definition File", value="t_" + str(brapi_study_id) + ".txt"))
@@ -148,16 +147,16 @@ class BrapiToIsaConverter:
                                                value=brapi_study['location']['countryName']))
         else:
             this_study.comments.append(
-                Comment(name="Study Country", value="NA"))
+                Comment(name="Study Country", value=""))
 
-        this_study.comments.append(Comment(name="Study Latitude", value=att_test(brapi_study['location'].get('latitude', "NA"))))
-        this_study.comments.append(Comment(name="Study Longitude", value=att_test(brapi_study['location'].get('longitude', "NA"))))
-        this_study.comments.append(Comment(name="Study Altitude",value=att_test(brapi_study['location'].get('altitude', "NA"))))
+        this_study.comments.append(Comment(name="Study Latitude", value=att_test(brapi_study['location'].get('latitude', ""))))
+        this_study.comments.append(Comment(name="Study Longitude", value=att_test(brapi_study['location'].get('longitude', ""))))
+        this_study.comments.append(Comment(name="Study Altitude",value=att_test(brapi_study['location'].get('altitude', ""))))
 
         # Adding Contacts information
         if 'contacts' in brapi_study:
             for brapicontact in brapi_study['contacts']:
-                #NOTE: brapi has just name atribute -> no seperate first/last name
+                #NOTE: brapi has just name attribute -> no separate first/last name
                 ContactName = brapicontact['name'].split(' ')
                 contact = Person(first_name=ContactName[0], last_name=ContactName[1],
                 affiliation=brapicontact['institutionName'], email=brapicontact['email'])

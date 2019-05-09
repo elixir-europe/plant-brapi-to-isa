@@ -17,8 +17,8 @@ from brapi_to_isa_converter import BrapiToIsaConverter, att_test
 
 __author__ = 'proccaserra (Philippe Rocca-Serra)'
 __author__ = 'cpommier (Cyril Pommier)'
-__author__ = 'gcornut (Guillaume Cornut)'
 __author__ = 'bedroesb  (Bert Droesbeke)'
+__author__ = 'gcornut (Guillaume Cornut)'
 __author__ = 'terazus (Dominique Batista)'
 
 log_file = "brapilog.log"
@@ -104,13 +104,12 @@ def create_study_sample_and_assay(client, brapi_study_id, isa_study,  sample_col
                 derives_from=[this_source])
             allready_converted_obs_unit.append(obs_unit['observationUnitName'])
             
-            obslvl = att_test(obs_unit.get('observationLevel',"NA"))
+            obslvl = att_test(obs_unit.get('observationLevel',""))
             c = Characteristic(category=OntologyAnnotation(term="Observation Unit Type"),
                                 value=OntologyAnnotation(term=obslvl,
                                                                     term_source="",
                                                                     term_accession=""))
             this_isa_sample.characteristics.append(c)
-            
             
             spat_dist = []
             for key in spat_dist_mapping_dictionary:
@@ -157,12 +156,13 @@ def create_study_sample_and_assay(client, brapi_study_id, isa_study,  sample_col
             phenotyping_process = Process(executes_protocol=phenotyping_protocol)
             phenotyping_process.inputs.append(this_isa_sample)
 
-            # Creating relevant protocol parameter values associated with the protocol application:
-            # -------------------------------------------------------------------------------------
             if 'season' in obs_unit['observations'][j]:
                 season = str(obs_unit['observations'][j]['season'])
                 if season and season not in seasons:
                     seasons[season] = str(obs_unit["observationUnitDbId"])
+                    
+        # Creating relevant protocol parameter values associated with the protocol application:
+        # -------------------------------------------------------------------------------------    
         if seasons:    
             for unique_season, DbId in seasons.items():
                 pv = ParameterValue(
