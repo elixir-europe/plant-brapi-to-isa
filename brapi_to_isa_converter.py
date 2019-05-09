@@ -10,7 +10,7 @@ def att_test(attribute):
     if attribute:
         return attribute
     else:
-        return "NA"
+        return ""
 
 class BrapiToIsaConverter:
     """ Converter json coming out of the BRAPI to ISA object
@@ -61,54 +61,48 @@ class BrapiToIsaConverter:
         all_germplasm_attributes = self._brapi_client.get_germplasm(
             germplasm_id)
 
+        if 'taxonId' in all_germplasm_attributes and all_germplasm_attributes['taxonId']:
+            c = self.create_isa_characteristic(
+                        'Organism', str(all_germplasm_attributes['taxonId']))
+            returned_characteristics.append(c)
+        else:
+            if all_germplasm_attributes['genus'] or all_germplasm_attributes['species']:
+                taxonId = self._brapi_client.get_taxonId(all_germplasm_attributes['genus'],all_germplasm_attributes['species'])
+                if taxonId:
+                    c = self.create_isa_characteristic(
+                        'Organism', 'NCBI:'+ str(taxonId))
+                    
+                else:
+                    if 'commonCropName' in all_germplasm_attributes and all_germplasm_attributes['commonCropName']:
+                        c = self.create_isa_characteristic('Organism', all_germplasm_attributes['commonCropName'])
+                    else:
+                        c = self.create_isa_characteristic('Organism', "")
+
+            else:
+                if 'commonCropName' in all_germplasm_attributes and all_germplasm_attributes['commonCropName']:
+                    c = self.create_isa_characteristic('Organism', all_germplasm_attributes['commonCropName'])
+                else:
+                    c = self.create_isa_characteristic('Organism', "")
+            returned_characteristics.append(c)
+        
         mapping_dictionnary = {
-            "accessionNumber": "Material Source ID",
-            "commonCropName": "commonCropName",
             "genus": "Genus",
             "species": "Species",
             "subtaxa": "Infraspecific Name",
-            "taxonIds": ["Organism", "sourceName", "taxonId"]
-
+            "accessionNumber": "Material Source ID",
+            "germplasmPUI": "Material Source DOI",
         }
 
-        c = None
-        for key in all_germplasm_attributes:
-            if key in mapping_dictionnary:
-                if isinstance(mapping_dictionnary[key], str):
-                    c = self.create_isa_characteristic(
+
+        for key in mapping_dictionnary:
+            if key in all_germplasm_attributes and all_germplasm_attributes[key]:
+                c = self.create_isa_characteristic(
                         mapping_dictionnary[key], str(all_germplasm_attributes[key]))
-                else:
-                    if all_germplasm_attributes[key] and len(all_germplasm_attributes[key]) > 0:
-                        taxinfo = []
-                        for item in range(len(all_germplasm_attributes[key])):
-                            taxinfo.append(all_germplasm_attributes[key][item][mapping_dictionnary[key][1]] + ":" +
-                                           all_germplasm_attributes[key][item][mapping_dictionnary[key][2]])
-                        ontovalue = ";".join(taxinfo)
-                        c = self.create_isa_characteristic(
-                            mapping_dictionnary[key][0], ontovalue)
-                        if c not in returned_characteristics:
-                            returned_characteristics.append(c)
-
-            elif key == "donors":
-                miappeKey = "Donors"
-                donors = []
-                for item in range(len(all_germplasm_attributes["donors"])):
-                    donors.append(att_test(all_germplasm_attributes[key][item]["donorInstituteCode"]) + ":" +
-                                  att_test(all_germplasm_attributes[key][item]["donorAccessionNumber"]))
-                ontovalue = ";".join(donors)
-                c = self.create_isa_characteristic(miappeKey, ontovalue)
-
-            elif key == "synonyms":
-                if isinstance(all_germplasm_attributes[key], list):
-                    ontovalue = ";".join(all_germplasm_attributes[key])
-                    c = self.create_isa_characteristic(key, ontovalue)
-
             else:
                 c = self.create_isa_characteristic(
-                    key, str(all_germplasm_attributes[key]))
-
-            if c and c not in returned_characteristics:
-                returned_characteristics.append(c)
+                    mapping_dictionnary[key], "")
+            
+            returned_characteristics.append(c)
 
         return returned_characteristics
 
@@ -117,7 +111,7 @@ class BrapiToIsaConverter:
 
         brapi_study = self._brapi_client.get_study(brapi_study_id)
         
-        # Adding study inforamtion on investigation level
+        # Adding study information on investigation level
         ###########################################################################
         this_study = Study(filename="s_" + str(brapi_study_id) + ".txt")
 
@@ -129,13 +123,13 @@ class BrapiToIsaConverter:
         elif 'studyName' in brapi_study:
             this_study.title = brapi_study['studyName']
         else:
-            this_study.title = "NA"
+            this_study.title = ""
 
-        this_study.description = att_test(brapi_study.get('studyDescription', "NA"))
-        this_study.comments.append(Comment(name="Study Start Date", value=att_test(brapi_study.get('startDate', "NA"))))
-        this_study.comments.append(Comment(name="Study End Date", value=att_test(brapi_study.get('endDate', "NA"))))
-        this_study.comments.append(Comment(name="Study Experimental Site", value=att_test(brapi_study['location'].get('name', "NA"))))
-        study_design = att_test(brapi_study.get('studyType', "NA"))
+        this_study.description = att_test(brapi_study.get('studyDescription', ""))
+        this_study.comments.append(Comment(name="Study Start Date", value=att_test(brapi_study.get('startDate', ""))))
+        this_study.comments.append(Comment(name="Study End Date", value=att_test(brapi_study.get('endDate', ""))))
+        this_study.comments.append(Comment(name="Study Experimental Site", value=att_test(brapi_study['location'].get('name', ""))))
+        study_design = att_test(brapi_study.get('studyType', ""))
         oa_st_design = OntologyAnnotation(term=study_design)
         this_study.design_descriptors = [oa_st_design]
         this_study.comments.append(Comment(name="Trait Definition File", value="t_" + str(brapi_study_id) + ".txt"))
@@ -153,16 +147,16 @@ class BrapiToIsaConverter:
                                                value=brapi_study['location']['countryName']))
         else:
             this_study.comments.append(
-                Comment(name="Study Country", value="NA"))
+                Comment(name="Study Country", value=""))
 
-        this_study.comments.append(Comment(name="Study Latitude", value=att_test(brapi_study['location'].get('latitude', "NA"))))
-        this_study.comments.append(Comment(name="Study Longitude", value=att_test(brapi_study['location'].get('longitude', "NA"))))
-        this_study.comments.append(Comment(name="Study Altitude",value=att_test(brapi_study['location'].get('altitude', "NA"))))
+        this_study.comments.append(Comment(name="Study Latitude", value=att_test(brapi_study['location'].get('latitude', ""))))
+        this_study.comments.append(Comment(name="Study Longitude", value=att_test(brapi_study['location'].get('longitude', ""))))
+        this_study.comments.append(Comment(name="Study Altitude",value=att_test(brapi_study['location'].get('altitude', ""))))
 
         # Adding Contacts information
         if 'contacts' in brapi_study:
             for brapicontact in brapi_study['contacts']:
-                #NOTE: brapi has just name atribute -> no seperate first/last name
+                #NOTE: brapi has just name attribute -> no separate first/last name
                 ContactName = brapicontact['name'].split(' ')
                 contact = Person(first_name=ContactName[0], last_name=ContactName[1],
                 affiliation=brapicontact['institutionName'], email=brapicontact['email'])

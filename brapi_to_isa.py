@@ -6,18 +6,19 @@ import logging
 import os
 import sys
 import json
+from collections import defaultdict
 
 from isatools import isatab
 from isatools.model import Investigation, OntologyAnnotation, Characteristic, Source, \
     Sample, Protocol, Process, StudyFactor, FactorValue, DataFile, ParameterValue, ProtocolParameter, plink, Person, Publication, Comment
 
 from brapi_client import BrapiClient
-from brapi_to_isa_converter import BrapiToIsaConverter
+from brapi_to_isa_converter import BrapiToIsaConverter, att_test
 
 __author__ = 'proccaserra (Philippe Rocca-Serra)'
 __author__ = 'cpommier (Cyril Pommier)'
-__author__ = 'gcornut (Guillaume Cornut)'
 __author__ = 'bedroesb  (Bert Droesbeke)'
+__author__ = 'gcornut (Guillaume Cornut)'
 __author__ = 'terazus (Dominique Batista)'
 
 log_file = "brapilog.log"
@@ -71,23 +72,15 @@ logger.info("\n----------------\ntrials IDs to be exported : "
 
 def create_study_sample_and_assay(client, brapi_study_id, isa_study,  sample_collection_protocol, phenotyping_protocol, OBSERVATIONUNITLIST):
 
-    obsunit_to_isasample_mapping_dictionary = {
+    spat_dist_mapping_dictionary = {
         "X": "X",
         "Y": "Y",
-        "blockNumber": "Block Number",
-        "plotNumber": "Plot Number",
-        "plantNumber": "Plant Number",
-        "observationLevel": "Observation unit type"
+        "blockNumber": "Block",
+        "plotNumber": "plot",
+        "plantNumber": "plant",
+        "replicate": "replicate"
     }
 
-    obsunit_to_isaassay_mapping_dictionary = {
-        "X": "X",
-        "Y": "Y",
-        "blockNumber": "Block Number",
-        "plotNumber": "Plot Number",
-        "plantNumber": "Plant Number",
-        "observationLevel": "Observation unit type"
-    }
     
     # connecting the correct observation level to the correct assayobject
     # NOTE observation level is temporarily stored inside isa_study.assays[i].characteristic_categories[0] better field available?
@@ -95,9 +88,13 @@ def create_study_sample_and_assay(client, brapi_study_id, isa_study,  sample_col
     for k,assay in enumerate(isa_study.assays):
         obs_level_to_assay[assay.characteristic_categories[0]] = k
 
+    treatments = defaultdict(list)
     allready_converted_obs_unit = [] # Allow to handle multiyear observation units
     for obs_unit in OBSERVATIONUNITLIST:
-        i = obs_level_to_assay[obs_unit['observationLevel']]
+        if obs_unit['observationLevel']:
+            i = obs_level_to_assay[obs_unit['observationLevel']]
+        else:
+            i = 0
         # Getting the relevant germplasm used for that observation event:
         # ---------------------------------------------------------------
         this_source = isa_study.get_source(obs_unit['germplasmName'])
@@ -106,34 +103,41 @@ def create_study_sample_and_assay(client, brapi_study_id, isa_study,  sample_col
                 name= obs_unit['observationUnitName'],
                 derives_from=[this_source])
             allready_converted_obs_unit.append(obs_unit['observationUnitName'])
-            for key in obs_unit.keys():
-                if key in obsunit_to_isasample_mapping_dictionary.keys():
-                    if isinstance(obsunit_to_isasample_mapping_dictionary[key], str) and str(obs_unit[key]) is not None :
-                        c = Characteristic(category=OntologyAnnotation(term=obsunit_to_isasample_mapping_dictionary[key]),
-                                        value=OntologyAnnotation(term=str(obs_unit[key]),
+            
+            obslvl = att_test(obs_unit.get('observationLevel',""))
+            c = Characteristic(category=OntologyAnnotation(term="Observation Unit Type"),
+                                value=OntologyAnnotation(term=obslvl,
                                                                     term_source="",
                                                                     term_accession=""))
-                        this_isa_sample.characteristics.append(c)
-                if key in obsunit_to_isaassay_mapping_dictionary.keys():
-                    if isinstance(obsunit_to_isaassay_mapping_dictionary[key], str):
-                        c = Characteristic(category=OntologyAnnotation(term=obsunit_to_isaassay_mapping_dictionary[key]),
-                                        value=OntologyAnnotation(term=str(obs_unit[key]),
-                                                                    term_source="",
-                                                                    term_accession=""))
-                        #TODO: quick workaround used to store observation units characteristics
-                        isa_study.assays[i].comments.append(c)
+            this_isa_sample.characteristics.append(c)
+            
+            spat_dist = []
+            for key in spat_dist_mapping_dictionary:
+                if key in obs_unit and obs_unit[key]:
+                    spat_dist.append('[' + spat_dist_mapping_dictionary[key] + ']' + obs_unit[key])
+            if 'observationLevels' in obs_unit and obs_unit['observationLevels']:
+                for lvl in obs_unit['observationLevels'].split(","):
+                    a, b = lvl.split(":")
+                    spat_dist.append('[' + a + ']' + b)
+            spat_dist_str = '; '.join(spat_dist)
+            if spat_dist:
+                c = Characteristic(category=OntologyAnnotation(term="Spatial Distribution"),
+                                    value=OntologyAnnotation(term=spat_dist_str,
+                                                                        term_source="",
+                                                                        term_accession=""))
+                this_isa_sample.characteristics.append(c)
 
-            # Looking for treatment in BRAPI and mapping to ISA Study Factor Value
-            # --------------------------------------------------------------------
+            # Looking for treatment in BRAPI and mapping to ISA samples 
+            # ---------------------------------------------------------
             
             if 'treatments' in obs_unit:
                 for treatment in obs_unit['treatments']:
-                    if 'Factor' in treatment:
-                        f = StudyFactor(name=treatment['factor'], factor_type=OntologyAnnotation(term=treatment['factor']), comments=treatment['modality'])
-                        if f not in isa_study.factors:
-                            isa_study.factors.append(f)
+                    if 'factor' in treatment and 'modality' in treatment:
+                        if treatment['modality'] not in treatments[treatment['factor']]:
+                            treatments[treatment['factor']].append(treatment['modality'])
+                        f = StudyFactor(name=treatment['factor'], factor_type=OntologyAnnotation(term=treatment['factor']))
                         fv = FactorValue(factor_name=f,
-                                        value=OntologyAnnotation(term=str(treatment['factor']),
+                                        value=OntologyAnnotation(term=str(treatment['modality']),
                                                                 term_source="",
                                                                 term_accession=""))
                         this_isa_sample.factor_values.append(fv)
@@ -142,8 +146,6 @@ def create_study_sample_and_assay(client, brapi_study_id, isa_study,  sample_col
             # Creating the corresponding ISA sample entity for structure the document:
             # ------------------------------------------------------------------------
             sample_collection_process = Process(executes_protocol=sample_collection_protocol)
-            sample_collection_process.performer = "NA"
-            sample_collection_process.date = datetime.datetime.today().isoformat()
             sample_collection_process.inputs.append(this_source)
             sample_collection_process.outputs.append(this_isa_sample)
             isa_study.process_sequence.append(sample_collection_process)
@@ -154,12 +156,13 @@ def create_study_sample_and_assay(client, brapi_study_id, isa_study,  sample_col
             phenotyping_process = Process(executes_protocol=phenotyping_protocol)
             phenotyping_process.inputs.append(this_isa_sample)
 
-            # Creating relevant protocol parameter values associated with the protocol application:
-            # -------------------------------------------------------------------------------------
             if 'season' in obs_unit['observations'][j]:
                 season = str(obs_unit['observations'][j]['season'])
                 if season and season not in seasons:
                     seasons[season] = str(obs_unit["observationUnitDbId"])
+                    
+        # Creating relevant protocol parameter values associated with the protocol application:
+        # -------------------------------------------------------------------------------------    
         if seasons:    
             for unique_season, DbId in seasons.items():
                 pv = ParameterValue(
@@ -180,6 +183,14 @@ def create_study_sample_and_assay(client, brapi_study_id, isa_study,  sample_col
         isa_study.assays[i].samples.append(this_isa_sample)
         isa_study.assays[i].process_sequence.append(phenotyping_process)
         plink(sample_collection_process, phenotyping_process)
+        
+    # Mapping treatments to ISA study Factor Value:
+    # ---------------------------------------------
+    for factor, modalities in treatments.items():
+        f = StudyFactor(name=factor, factor_type=OntologyAnnotation(term=factor))
+        modality = ";".join(modalities)
+        f.comments.append(Comment(name="modality",value=modality))                
+        isa_study.factors.append(f)
 
 def write_records_to_file(this_study_id, records, this_directory, filetype, ObservationLevel=''):
     logger.info('Writing to file')
@@ -265,7 +276,7 @@ def main(arg):
         investigation.title = trial['trialName']
         if 'contacts' in trial:
             for brapicontact in trial['contacts']:
-                #NOTE: brapi has just name atribute -> no seperate first/last name
+                #NOTE: brapi has just name attribute -> no seperate first/last name
                 ContactName = brapicontact['name'].split(' ')
                 contact = Person(first_name=ContactName[0], last_name=ContactName[1],
                 affiliation=brapicontact['institutionName'], email=brapicontact['email'])
@@ -280,7 +291,7 @@ def main(arg):
             try:
                 brapi_study['studyDbId'].encode('ascii')
             except:
-                logger.debug("Study " + brapi_study['studyDbId'] + " containes a non ascii character and will be skipped.")
+                logger.debug("Study " + brapi_study['studyDbId'] + " contains a non ascii character and will be skipped.")
                 continue
             else:
                 #NOTE NEW: holding observationUnits in OBSERVATIONUNITLIST
