@@ -214,8 +214,7 @@ class BrapiToIsaConverter:
             "Method": [],
             "Method Description": [],
             "Reference Associated to the Method": [],
-            "Scale": [],
-            "Time Scale": []
+            "Scale": []
         }
 
         # decorating dictionairy
@@ -223,17 +222,19 @@ class BrapiToIsaConverter:
             elements['Variable ID'].append(att_test(obs_var, 'observationVariableDbId'))
             elements['Variable Name'].append(att_test(obs_var, 'name'))
             elements['Trait'].append(att_test(obs_var['trait'], 'name'))
+            
             if att_test(obs_var['method'], 'name'):
                 elements['Method'].append(att_test(obs_var['method'], 'name'))
             else:
                 elements['Method'].append(att_test(obs_var, 'name'))
+            
             if att_test(obs_var['method'], 'description'):
                 elements['Method Description'].append(att_test(obs_var['method'], 'description'))
             else:
                 elements['Method Description'].append(att_test(obs_var['trait'], 'description'))
+            
             elements['Reference Associated to the Method'].append(att_test(obs_var['method'], 'reference'))
             elements['Scale'].append(att_test(obs_var['scale'], 'name'))
-            elements['Time Scale'].append(att_test(obs_var['scale'], 'dataType'))
 
         # Deleting empty columns
         data_elements = []
