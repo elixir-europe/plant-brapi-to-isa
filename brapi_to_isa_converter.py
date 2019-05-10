@@ -6,9 +6,9 @@ import copy
 from collections import defaultdict
 from brapi_client import BrapiClient
 
-def att_test(attribute):
-    if attribute:
-        return attribute
+def att_test(dictionary, attribute):
+    if attribute in dictionary and dictionary[attribute]:
+        return str(dictionary[attribute])
     else:
         return ""
 
@@ -116,7 +116,7 @@ class BrapiToIsaConverter:
         this_study = Study(filename="s_" + str(brapi_study_id) + ".txt")
 
         # Adding general study information
-        this_study.identifier = brapi_study.get('studyDbId', "NA")
+        this_study.identifier = brapi_study.get('studyDbId', "")
 
         if 'name' in brapi_study:
             this_study.title = brapi_study['name']
@@ -125,11 +125,11 @@ class BrapiToIsaConverter:
         else:
             this_study.title = ""
 
-        this_study.description = att_test(brapi_study.get('studyDescription', ""))
-        this_study.comments.append(Comment(name="Study Start Date", value=att_test(brapi_study.get('startDate', ""))))
-        this_study.comments.append(Comment(name="Study End Date", value=att_test(brapi_study.get('endDate', ""))))
-        this_study.comments.append(Comment(name="Study Experimental Site", value=att_test(brapi_study['location'].get('name', ""))))
-        study_design = att_test(brapi_study.get('studyType', ""))
+        this_study.description = att_test(brapi_study, 'studyDescription')
+        this_study.comments.append(Comment(name="Study Start Date", value=att_test(brapi_study, 'startDate')))
+        this_study.comments.append(Comment(name="Study End Date", value=att_test(brapi_study, 'endDate')))
+        this_study.comments.append(Comment(name="Study Experimental Site", value=att_test(brapi_study['location'], 'name')))
+        study_design = att_test(brapi_study, 'studyType')
         oa_st_design = OntologyAnnotation(term=study_design)
         this_study.design_descriptors = [oa_st_design]
         this_study.comments.append(Comment(name="Trait Definition File", value="t_" + str(brapi_study_id) + ".txt"))
@@ -149,9 +149,9 @@ class BrapiToIsaConverter:
             this_study.comments.append(
                 Comment(name="Study Country", value=""))
 
-        this_study.comments.append(Comment(name="Study Latitude", value=att_test(brapi_study['location'].get('latitude', ""))))
-        this_study.comments.append(Comment(name="Study Longitude", value=att_test(brapi_study['location'].get('longitude', ""))))
-        this_study.comments.append(Comment(name="Study Altitude",value=att_test(brapi_study['location'].get('altitude', ""))))
+        this_study.comments.append(Comment(name="Study Latitude", value=att_test(brapi_study['location'], 'latitude')))
+        this_study.comments.append(Comment(name="Study Longitude", value=att_test(brapi_study['location'], 'longitude')))
+        this_study.comments.append(Comment(name="Study Altitude",value=att_test(brapi_study['location'], 'altitude')))
 
         # Adding Contacts information
         if 'contacts' in brapi_study:
@@ -159,7 +159,7 @@ class BrapiToIsaConverter:
                 #NOTE: brapi has just name attribute -> no separate first/last name
                 ContactName = brapicontact['name'].split(' ')
                 contact = Person(first_name=ContactName[0], last_name=ContactName[1],
-                affiliation=brapicontact['institutionName'], email=brapicontact['email'])
+                affiliation=att_test(brapicontact, 'institutionName'), email=att_test(brapicontact, 'email'))
                 this_study.contacts.append(contact)
 
         # Adding dataLinks inforamtion
@@ -207,35 +207,50 @@ class BrapiToIsaConverter:
 
     def create_isa_tdf_from_obsvars(self, obsvars):
         records = []
-        header_elements = ["Variable Name", "Variable Full Name", "Variable Description", "Crop", "Growth Stage",
-                           "Date",
-                           "Method", "Method Description", "Method Formula", "Method Reference", "Scale",
-                           "Scale Data Type",
-                           "Scale Valid Values", "Unit", "Trait Name", "Trait Term REF", "Trait Class", "Trait Entity",
-                           "Trait Attribute"]
+        elements = {
+            "Variable ID": [],
+            "Variable Name": [],
+            "Trait": [],
+            "Method": [],
+            "Method Description": [],
+            "Reference Associated to the Method": [],
+            "Scale": []
+        }
 
-        tdf_header = '\t'.join(header_elements)
-        records.append(tdf_header)
+        # decorating dictionairy
+        for i, obs_var in enumerate(obsvars):
+            elements['Variable ID'].append(att_test(obs_var, 'observationVariableDbId'))
+            elements['Variable Name'].append(att_test(obs_var, 'name'))
+            elements['Trait'].append(att_test(obs_var['trait'], 'name'))
+            
+            if att_test(obs_var['method'], 'name'):
+                elements['Method'].append(att_test(obs_var['method'], 'name'))
+            else:
+                elements['Method'].append(att_test(obs_var, 'name'))
+            
+            if att_test(obs_var['method'], 'description'):
+                elements['Method Description'].append(att_test(obs_var['method'], 'description'))
+            else:
+                elements['Method Description'].append(att_test(obs_var['trait'], 'description'))
+            
+            elements['Reference Associated to the Method'].append(att_test(obs_var['method'], 'reference'))
+            elements['Scale'].append(att_test(obs_var['scale'], 'name'))
 
-        for obs_var in obsvars:
-            record_element = [str(obs_var['name']), str(obs_var['ontologyDbId']), str(obs_var['ontologyName']),
-                              str(obs_var['crop']),
-                              str(obs_var['growthStage']), str(
-                                  obs_var['date']), str(obs_var['method']['name']),
-                              str(obs_var['method']['description']), str(
-                                  obs_var['method']['formula']),
-                              str(obs_var['method']['reference']), str(
-                                  obs_var['scale']['name']),
-                              str(obs_var['scale']['dataType']),
-                              str(obs_var['scale']['validValues']['categories']), str(
-                                  obs_var['scale']['xref']),
-                              str(obs_var['trait']['name']), str(
-                                  obs_var['trait']['xref']),
-                              str(obs_var['trait']['class']),
-                              str(obs_var['trait']['entity']), str(obs_var['trait']['attribute'])]
-
-            record = '\t'.join(record_element)
-            records.append(record)
+        # Deleting empty columns
+        data_elements = []
+        header_elements = []
+        for key, value in elements.items():
+            if len(value) != value.count(''):
+                data_elements.append(value)
+                header_elements.append(key)
+        
+        # dumping header
+        records.append('\t'.join(header_elements))
+        # transposingdata
+        data_elements = list(map(list, zip(*data_elements)))
+        # dumping data 
+        for line in data_elements:
+            records.append('\t'.join(line))
 
         return records
 

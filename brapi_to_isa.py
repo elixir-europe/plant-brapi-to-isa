@@ -98,13 +98,13 @@ def create_study_sample_and_assay(client, brapi_study_id, isa_study,  sample_col
         # Getting the relevant germplasm used for that observation event:
         # ---------------------------------------------------------------
         this_source = isa_study.get_source(obs_unit['germplasmName'])
-        if this_source is not None and obs_unit['observationUnitName'] not in allready_converted_obs_unit:
+        if this_source and obs_unit['observationUnitName'] not in allready_converted_obs_unit:
             this_isa_sample = Sample(
                 name= obs_unit['observationUnitName'],
                 derives_from=[this_source])
             allready_converted_obs_unit.append(obs_unit['observationUnitName'])
             
-            obslvl = att_test(obs_unit.get('observationLevel',""))
+            obslvl = att_test(obs_unit, 'observationLevel')
             c = Characteristic(category=OntologyAnnotation(term="Observation Unit Type"),
                                 value=OntologyAnnotation(term=obslvl,
                                                                     term_source="",
