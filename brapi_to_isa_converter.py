@@ -181,6 +181,7 @@ class BrapiToIsaConverter:
                 name="OBI", description="Ontology for Biomedical Investigation")
             oa_tt = OntologyAnnotation(
                 term=level + " multimodal technique", term_accession="", term_source=oref_tt)
+            
             isa_assay_file = "a_" + str(brapi_study_id) + "_" + level + ".txt"
             new_assay = Assay(measurement_type=oa_mt,
                               technology_type=oa_tt, filename=isa_assay_file)

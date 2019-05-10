@@ -89,7 +89,7 @@ def create_study_sample_and_assay(client, brapi_study_id, isa_study,  sample_col
         obs_level_to_assay[assay.characteristic_categories[0]] = k
 
     treatments = defaultdict(list)
-    allready_converted_obs_unit = [] # Allow to handle multiyear observation units
+    allready_converted_obs_unit = [] # Allow to handle multiyear observation units NOTE (INRA specific)
     for obs_unit in OBSERVATIONUNITLIST:
         if obs_unit['observationLevel']:
             i = obs_level_to_assay[obs_unit['observationLevel']]
@@ -153,13 +153,20 @@ def create_study_sample_and_assay(client, brapi_study_id, isa_study,  sample_col
             # !!!: fix isatab.py to access other protocol_type values to enable Assay Tab serialization
         phenotyping_process = Process(executes_protocol=phenotyping_protocol)
         phenotyping_process.inputs.append(this_isa_sample)
+        
+        datafilename = 'd_' + str(brapi_study_id) + '_' + att_test(obs_unit, 'observationLevel') + '.txt'
+        datafile = DataFile(filename=datafilename,
+                                        label="Raw Data File",
+                                        generated_from=[this_isa_sample])
+        
+        phenotyping_process.outputs.append(datafile)
                     
         # Creating relevant protocol parameter values associated with the protocol application:
         # pv = ParameterValue(
         #             category=ProtocolParameter(parameter_name=OntologyAnnotation(term="season")),
         #             value=OntologyAnnotation(term="none reported", term_source="", term_accession=""))
         # phenotyping_process.parameter_values.append(pv)
-        phenotyping_process.name = "assay-name_(" + obs_unit["observationUnitDbId"] + ")" 
+        phenotyping_process.name = obs_unit["observationUnitDbId"] 
         isa_study.assays[i].samples.append(this_isa_sample)
         isa_study.assays[i].process_sequence.append(phenotyping_process)
         plink(sample_collection_process, phenotyping_process)
