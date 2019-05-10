@@ -129,7 +129,6 @@ def create_study_sample_and_assay(client, brapi_study_id, isa_study,  sample_col
 
             # Looking for treatment in BRAPI and mapping to ISA samples 
             # ---------------------------------------------------------
-            
             if 'treatments' in obs_unit:
                 for treatment in obs_unit['treatments']:
                     if 'factor' in treatment and 'modality' in treatment:
@@ -150,36 +149,17 @@ def create_study_sample_and_assay(client, brapi_study_id, isa_study,  sample_col
             sample_collection_process.outputs.append(this_isa_sample)
             isa_study.process_sequence.append(sample_collection_process)
 
-        seasons = {}
-        for j in range(len((obs_unit['observations']))):
-            # !!!: fix isatab.py to access other protocol_type values to enable Assay Tab serialization
-            phenotyping_process = Process(executes_protocol=phenotyping_protocol)
-            phenotyping_process.inputs.append(this_isa_sample)
 
-            if 'season' in obs_unit['observations'][j]:
-                season = str(obs_unit['observations'][j]['season'])
-                if season and season not in seasons:
-                    seasons[season] = str(obs_unit["observationUnitDbId"])
+            # !!!: fix isatab.py to access other protocol_type values to enable Assay Tab serialization
+        phenotyping_process = Process(executes_protocol=phenotyping_protocol)
+        phenotyping_process.inputs.append(this_isa_sample)
                     
         # Creating relevant protocol parameter values associated with the protocol application:
-        # -------------------------------------------------------------------------------------    
-        if seasons:    
-            for unique_season, DbId in seasons.items():
-                pv = ParameterValue(
-                            category=ProtocolParameter(parameter_name=OntologyAnnotation(term="season")),
-                            value=OntologyAnnotation(term=str(unique_season),
-                                                    term_source="",
-                                                    term_accession=""))
-                phenotyping_process.parameter_values.append(pv)
-                phenotyping_process.name = "assay-name_(" + DbId + ")" 
-        else:
-            pv = ParameterValue(
-                        category=ProtocolParameter(parameter_name=OntologyAnnotation(term="season")),
-                        value=OntologyAnnotation(term="none reported", term_source="", term_accession=""))
-            phenotyping_process.parameter_values.append(pv)
-            phenotyping_process.name = "assay-name_(" + obs_unit["observationUnitDbId"] + ")" 
-        
-        
+        # pv = ParameterValue(
+        #             category=ProtocolParameter(parameter_name=OntologyAnnotation(term="season")),
+        #             value=OntologyAnnotation(term="none reported", term_source="", term_accession=""))
+        # phenotyping_process.parameter_values.append(pv)
+        phenotyping_process.name = "assay-name_(" + obs_unit["observationUnitDbId"] + ")" 
         isa_study.assays[i].samples.append(this_isa_sample)
         isa_study.assays[i].process_sequence.append(phenotyping_process)
         plink(sample_collection_process, phenotyping_process)
