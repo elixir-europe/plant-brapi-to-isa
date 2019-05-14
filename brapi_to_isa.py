@@ -166,7 +166,7 @@ def create_study_sample_and_assay(client, brapi_study_id, isa_study,  sample_col
         
         datafilename = 'd_' + str(brapi_study_id) + '_' + att_test(obs_unit, 'observationLevel') + '.txt'
         datafile = DataFile(filename=datafilename,
-                                        label="Dericed Data File",
+                                        label="Derived Data File",
                                         generated_from=[this_isa_sample])
         phenotyping_process.outputs.append(datafile)
         phenotyping_process.name = obs_unit["observationUnitDbId"] 
