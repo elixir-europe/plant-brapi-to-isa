@@ -10,7 +10,7 @@ from collections import defaultdict
 
 from isatools import isatab
 from isatools.model import Investigation, OntologyAnnotation, Characteristic, Source, \
-    Sample, Protocol, Process, StudyFactor, FactorValue, DataFile, ParameterValue, ProtocolParameter, plink, Person, Publication, Comment
+    Sample, Protocol, Process, StudyFactor, FactorValue, DataFile, ParameterValue, ProtocolParameter, plink, Person, Publication, Comment, Material
 
 from brapi_client import BrapiClient
 from brapi_to_isa_converter import BrapiToIsaConverter, att_test
@@ -93,8 +93,10 @@ def create_study_sample_and_assay(client, brapi_study_id, isa_study,  sample_col
     for obs_unit in OBSERVATIONUNITLIST:
         if obs_unit['observationLevel']:
             i = obs_level_to_assay[obs_unit['observationLevel']]
+            obslvl = obs_unit['observationLevel']
         else:
             i = 0
+            obslvl = 'study'
         # Getting the relevant germplasm used for that observation event:
         # ---------------------------------------------------------------
         this_source = isa_study.get_source(obs_unit['germplasmName'])
@@ -104,7 +106,6 @@ def create_study_sample_and_assay(client, brapi_study_id, isa_study,  sample_col
                 derives_from=[this_source])
             allready_converted_obs_unit.append(obs_unit['observationUnitName'])
             
-            obslvl = att_test(obs_unit, 'observationLevel')
             c = Characteristic(category=OntologyAnnotation(term="Observation Unit Type"),
                                 value=OntologyAnnotation(term=obslvl,
                                                                     term_source="",
@@ -152,24 +153,28 @@ def create_study_sample_and_assay(client, brapi_study_id, isa_study,  sample_col
 
             # !!!: fix isatab.py to access other protocol_type values to enable Assay Tab serialization
         phenotyping_process = Process(executes_protocol=phenotyping_protocol)
+        
+        material = Material(name="extract-{}".format(obs_unit["observationUnitDbId"]))
+        material.type = "test"
+        c = Characteristic(category=OntologyAnnotation(term="Observation Unit Type"),
+                                value=OntologyAnnotation(term=obslvl,
+                                                                    term_source="",
+                                                                    term_accession=""))
+        material.characteristics.append(c)
+        phenotyping_process.outputs.append(material)
         phenotyping_process.inputs.append(this_isa_sample)
         
         datafilename = 'd_' + str(brapi_study_id) + '_' + att_test(obs_unit, 'observationLevel') + '.txt'
         datafile = DataFile(filename=datafilename,
-                                        label="Raw Data File",
+                                        label="Dericed Data File",
                                         generated_from=[this_isa_sample])
-        
         phenotyping_process.outputs.append(datafile)
-                    
-        # Creating relevant protocol parameter values associated with the protocol application:
-        # pv = ParameterValue(
-        #             category=ProtocolParameter(parameter_name=OntologyAnnotation(term="season")),
-        #             value=OntologyAnnotation(term="none reported", term_source="", term_accession=""))
-        # phenotyping_process.parameter_values.append(pv)
         phenotyping_process.name = obs_unit["observationUnitDbId"] 
+
         isa_study.assays[i].samples.append(this_isa_sample)
         isa_study.assays[i].process_sequence.append(phenotyping_process)
         plink(sample_collection_process, phenotyping_process)
+
         
     # Mapping treatments to ISA study Factor Value:
     # ---------------------------------------------
@@ -269,7 +274,12 @@ def main(arg):
                 affiliation=brapicontact['institutionName'], email=brapicontact['email'])
                 investigation.contacts.append(contact)
         investigation.comments.append(Comment(name="MIAPPE version", value="1.1"))
-
+        if 'publications' in trial:
+            for brapipublic in trial['publications']:
+                #This is BrAPI v1.3 specific (when older, skipped) 
+                publication = Publication(doi=brapipublic['publicationPUI'])
+                publication.status = OntologyAnnotation(term="published")
+                investigation.publications.append(publication)
         # iterating through the BRAPI studies associated to a given BRAPI trial:
         for brapi_study in trial['studies']:
             germplasminfo = {}
@@ -359,7 +369,8 @@ def main(arg):
                                             filetype="d_", ObservationLevel=level)
                     except Exception as ioe:
                         print(ioe)
-
+                        
+    logger.info('CONVERSION FINISHED')
 
 #############################################
 # MAIN METHOD TO START THE CONVERSION PROCESS
