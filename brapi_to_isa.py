@@ -150,28 +150,55 @@ def create_study_sample_and_assay(client, brapi_study_id, isa_study,  sample_col
             sample_collection_process.outputs.append(this_isa_sample)
             isa_study.process_sequence.append(sample_collection_process)
 
-
-            # !!!: fix isatab.py to access other protocol_type values to enable Assay Tab serialization
-        phenotyping_process = Process(executes_protocol=phenotyping_protocol)
+        # Assays at observation unit level
+        # --------------------------------
         
-        material = Material(name="extract-{}".format(obs_unit["observationUnitDbId"]))
-        material.type = "test"
+        # !!!: fix isatab.py to access other protocol_type values to enable Assay Tab serialization
+        
+        isa_study.assays[i].samples.append(this_isa_sample)
+        phenotyping_process = Process(executes_protocol=phenotyping_protocol)
+        phenotyping_process.inputs.append(this_isa_sample)
+        phenotyping_process.name = obs_unit["observationUnitDbId"] 
+
+        # ---------- TRY out for characteristics column in assay file ----------------------------
+        material = Material(name=obs_unit["observationUnitDbId"])
         c = Characteristic(category=OntologyAnnotation(term="Observation Unit Type"),
                                 value=OntologyAnnotation(term=obslvl,
                                                                     term_source="",
                                                                     term_accession=""))
         material.characteristics.append(c)
         phenotyping_process.outputs.append(material)
-        phenotyping_process.inputs.append(this_isa_sample)
+        phenotyping_process.inputs.append(material)
+        isa_study.assays[i].other_material.append(material)
+
+        # ----------------------------------------------------------------------------------------
+
+        # Adding Parameter Value[Collection Date] column
+        col_date_pv = ParameterValue(
+                category=ProtocolParameter(parameter_name=OntologyAnnotation(term="Collection Date")),
+                value=OntologyAnnotation(term="NA", term_source="", term_accession=""))
+
+        phenotyping_process.parameter_values.append(col_date_pv)
+
+        # Adding Parameter Value[Sample Description] column
+        sampl_des_pv = ParameterValue(
+                category=ProtocolParameter(parameter_name=OntologyAnnotation(term="Sample Description")),
+                value=OntologyAnnotation(term="NA", term_source="", term_accession=""))
+
+        phenotyping_process.parameter_values.append(sampl_des_pv)
         
+        # Adding Derived Data File column
         datafilename = 'd_' + str(brapi_study_id) + '_' + att_test(obs_unit, 'observationLevel') + '.txt'
-        datafile = DataFile(filename=datafilename,
+        DER_datafile = DataFile(filename=datafilename,
                                         label="Derived Data File",
                                         generated_from=[this_isa_sample])
-        phenotyping_process.outputs.append(datafile)
-        phenotyping_process.name = obs_unit["observationUnitDbId"] 
+        phenotyping_process.outputs.append(DER_datafile)
 
-        isa_study.assays[i].samples.append(this_isa_sample)
+        # Adding Raw Data File column
+        RAW_datafile = DataFile(filename="NA",
+                                        label="Raw Data File")
+        phenotyping_process.outputs.append(RAW_datafile)
+        
         isa_study.assays[i].process_sequence.append(phenotyping_process)
         plink(sample_collection_process, phenotyping_process)
 
