@@ -368,6 +368,7 @@ def main(arg):
                 
                 if JSON_boolean:
                     # Writing isa_study to ISA-JSON format:
+                    # NOTE error in ISAJSONEncoder
                     # --------------------------------
                     try:
                         json.dumps(investigation, cls=ISAJSONEncoder, sort_keys=True, indent=4, separators=(',', ': '))
