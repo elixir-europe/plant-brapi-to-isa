@@ -9,6 +9,7 @@ import json
 from collections import defaultdict
 
 from isatools import isatab
+from isatools.isajson import ISAJSONEncoder
 from isatools.model import Investigation, OntologyAnnotation, Characteristic, Source, \
     Sample, Protocol, Process, StudyFactor, FactorValue, DataFile, ParameterValue, ProtocolParameter, plink, Person, Publication, Comment, Material
 
@@ -43,12 +44,14 @@ parser = argparse.ArgumentParser()
 parser.add_argument('-e', '--endpoint', help="a BrAPi server endpoint", type=str)
 parser.add_argument('-t', '--trials', help="comma separated list of trial Ids. 'all' to get all trials (not recomended)", type=str, action='append')
 parser.add_argument('-s', '--studies', help="comma separated list of study Ids", type=str, action='append')
+parser.add_argument('-J', '--json', help="flag to activate json dump", action="store_true")
 SERVER = 'https://test-server.brapi.org/brapi/v1/'
 
 logger.debug('Argument List:' + str(sys.argv))
 args = parser.parse_args()
 TRIAL_IDS = args.trials
 STUDY_IDS = args.studies
+JSON_boolean = args.json
 
 if args.endpoint:
     SERVER = args.endpoint
@@ -176,14 +179,14 @@ def create_study_sample_and_assay(client, brapi_study_id, isa_study,  sample_col
         # Adding Parameter Value[Collection Date] column
         col_date_pv = ParameterValue(
                 category=ProtocolParameter(parameter_name=OntologyAnnotation(term="Collection Date")),
-                value=OntologyAnnotation(term="NA", term_source="", term_accession=""))
+                value=OntologyAnnotation(term="", term_source="", term_accession=""))
 
         phenotyping_process.parameter_values.append(col_date_pv)
 
         # Adding Parameter Value[Sample Description] column
         sampl_des_pv = ParameterValue(
                 category=ProtocolParameter(parameter_name=OntologyAnnotation(term="Sample Description")),
-                value=OntologyAnnotation(term="NA", term_source="", term_accession=""))
+                value=OntologyAnnotation(term="", term_source="", term_accession=""))
 
         phenotyping_process.parameter_values.append(sampl_des_pv)
         
@@ -195,7 +198,7 @@ def create_study_sample_and_assay(client, brapi_study_id, isa_study,  sample_col
         phenotyping_process.outputs.append(DER_datafile)
 
         # Adding Raw Data File column
-        RAW_datafile = DataFile(filename="NA",
+        RAW_datafile = DataFile(filename="",
                                         label="Raw Data File")
         phenotyping_process.outputs.append(RAW_datafile)
         
@@ -362,18 +365,29 @@ def main(arg):
 
                 # Now dealing with BRAPI observation units and attempting to create ISA samples
                 create_study_sample_and_assay(client, brapi_study_id, isa_study,  sample_collection_protocol, phenotyping_protocol, OBSERVATIONUNITLIST)
+                
+                if JSON_boolean:
+                    # Writing isa_study to ISA-JSON format:
+                    # --------------------------------
+                    try:
+                        json.dumps(investigation, cls=ISAJSONEncoder, sort_keys=True, indent=4, separators=(',', ': '))
+                        logger.info('ISA-JSON DUMP DONE!...')
+                    except IOError as ioe:
+                        logger.info('CONVERSION FAILED!...')
+                        logger.info(str(ioe))
 
-                # Writing isa_study to ISA-Tab format:
-                # --------------------------------
-                try:
-                    # isatools.isatab.dumps(investigation)  # dumps() writes out the ISA
-                    # !!!: fix isatab.py to access other protocol_type values to enable Assay Tab serialization
-                    # !!!: if Assay Table is missing the 'Assay Name' field, remember to check protocol_type used !!!
-                    isatab.dump(isa_obj=investigation, output_path=output_directory)
-                    logger.info('DONE!...')
-                except IOError as ioe:
-                    logger.info('CONVERSION FAILED!...')
-                    logger.info(str(ioe))
+                else:
+                    # Writing isa_study to ISA-Tab format:
+                    # --------------------------------
+                    try:
+                        # isatools.isatab.dumps(investigation)  # dumps() writes out the ISA
+                        # !!!: fix isatab.py to access other protocol_type values to enable Assay Tab serialization
+                        # !!!: if Assay Table is missing the 'Assay Name' field, remember to check protocol_type used !!!
+                        isatab.dump(isa_obj=investigation, output_path=output_directory)
+                        logger.info('ISA-TAB DUMP DONE!...')
+                    except IOError as ioe:
+                        logger.info('CONVERSION FAILED!...')
+                        logger.info(str(ioe))
 
                 try:
                     variable_records = converter.create_isa_tdf_from_obsvars(client.get_study_observed_variables(brapi_study_id))
