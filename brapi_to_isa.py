@@ -433,7 +433,7 @@ def main(arg):
                     json.dump(report, out_fp2, indent=4)
                 
                 logger.info('VALIDATION FINISHED')
-                logger.info('The ISA-TAB validation log file can be found at :' + validation_log_path)
+                logger.info('The ISA-TAB validation log file can be found at: ' + validation_log_path)
             
             except Exception as ioe:
                 logger.info('ISA-TAB validation failed!...')
