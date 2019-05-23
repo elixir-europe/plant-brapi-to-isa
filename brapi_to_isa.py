@@ -8,8 +8,9 @@ import sys
 import json
 from collections import defaultdict
 
+from isatools.convert import isatab2json
 from isatools import isatab
-from isatools.isajson import ISAJSONEncoder
+
 from isatools.model import Investigation, OntologyAnnotation, Characteristic, Source, \
     Sample, Protocol, Process, StudyFactor, FactorValue, DataFile, ParameterValue, ProtocolParameter, plink, Person, Publication, Comment, Material
 
@@ -44,7 +45,9 @@ parser = argparse.ArgumentParser()
 parser.add_argument('-e', '--endpoint', help="a BrAPi server endpoint", type=str)
 parser.add_argument('-t', '--trials', help="comma separated list of trial Ids. 'all' to get all trials (not recomended)", type=str, action='append')
 parser.add_argument('-s', '--studies', help="comma separated list of study Ids", type=str, action='append')
-parser.add_argument('-J', '--json', help="flag to activate json dump", action="store_true")
+parser.add_argument('-J', '--json', help="flag to desactivate json dump", action="store_false")
+parser.add_argument('-V', '--validator', help="flag to desactivate validation", action="store_false")
+
 SERVER = 'https://test-server.brapi.org/brapi/v1/'
 
 logger.debug('Argument List:' + str(sys.argv))
@@ -52,6 +55,7 @@ args = parser.parse_args()
 TRIAL_IDS = args.trials
 STUDY_IDS = args.studies
 JSON_boolean = args.json
+VALIDATOR_boolean = args.validator
 
 if args.endpoint:
     SERVER = args.endpoint
@@ -345,8 +349,6 @@ def main(arg):
 
                 # Getting the list of all germplasms used in the BRAPI isa_study:
                 germplasms = client.get_study_germplasms(brapi_study_id)
-
-                germ_counter = 0
                 
                 # Iterating through the germplasm considered as biosource,
                 # For each of them, we retrieve their attributes and create isa characteristics
@@ -361,58 +363,83 @@ def main(arg):
                     # Associating ISA sources to ISA isa_study object
                     isa_study.sources.append(source)
 
-                    germ_counter = germ_counter + 1
-
                 # Now dealing with BRAPI observation units and attempting to create ISA samples
                 create_study_sample_and_assay(client, brapi_study_id, isa_study,  sample_collection_protocol, phenotyping_protocol, OBSERVATIONUNITLIST)
                 
-                if JSON_boolean:
-                    # Writing isa_study to ISA-JSON format:
-                    # NOTE error in ISAJSONEncoder
-                    # --------------------------------
-                    try:
-                        json.dumps(investigation, cls=ISAJSONEncoder, sort_keys=True, indent=4, separators=(',', ': '))
-                        logger.info('ISA-JSON DUMP DONE!...')
-                    except IOError as ioe:
-                        logger.info('CONVERSION FAILED!...')
-                        logger.info(str(ioe))
 
-                else:
-                    # Writing isa_study to ISA-Tab format:
-                    # --------------------------------
-                    try:
-                        # isatools.isatab.dumps(investigation)  # dumps() writes out the ISA
-                        # !!!: fix isatab.py to access other protocol_type values to enable Assay Tab serialization
-                        # !!!: if Assay Table is missing the 'Assay Name' field, remember to check protocol_type used !!!
-                        isatab.dump(isa_obj=investigation, output_path=output_directory)
-                        logger.info('ISA-TAB DUMP DONE!...')
-                    except IOError as ioe:
-                        logger.info('CONVERSION FAILED!...')
-                        logger.info(str(ioe))
-
+                # Writing isa_study to ISA-Tab format:
+                # ------------------------------------
+                try:
+                    # isatools.isatab.dumps(investigation)  # dumps() writes out the ISA
+                    # !!!: fix isatab.py to access other protocol_type values to enable Assay Tab serialization
+                    # !!!: if Assay Table is missing the 'Assay Name' field, remember to check protocol_type used !!!
+                    isatab.dump(isa_obj=investigation, output_path=output_directory)
+                    logger.info('ISA-TAB DUMP DONE!...')
+                except IOError as ioe:
+                    logger.info('CONVERSION FAILED!...')
+                    logger.info(str(ioe))
+                
+                # Writing Trait Definition File:
+                # ------------------------------
                 try:
                     variable_records = converter.create_isa_tdf_from_obsvars(client.get_study_observed_variables(brapi_study_id))
-                    # Writing Trait Definition File:
-                    # ------------------------------
+
                     write_records_to_file(this_study_id=str(brapi_study_id),
                                         this_directory=output_directory,
                                         records=variable_records,
                                         filetype="t_")
                 except Exception as ioe:
-                    print(ioe)
+                    logger.info('Trait definition file fails to generate!...')
+                    logger.info(str(ioe))
 
-                # Getting Variable Data and writing Measurement Data File
-                # -------------------------------------------------------
+                # Getting Variable Data and writing Data File
+                # -------------------------------------------
                 for level, variables in obs_level.items():
                     try:
                         data_readings = converter.create_isa_obs_data_from_obsvars(OBSERVATIONUNITLIST, list(variables), level, germplasminfo, obs_levels)
-                        logger.debug("Generating data files")
+                        logger.info("Generating data files")
                         write_records_to_file(this_study_id=str(brapi_study_id), this_directory=output_directory, records=data_readings,
                                             filetype="d_", ObservationLevel=level)
                     except Exception as ioe:
-                        print(ioe)
+                        logger.info('Data file fails to generate!...')
+                        logger.info(str(ioe))
+                
+        # Converting ISA-TAB to ISA-JSON format:
+        # --------------------------------------
+        if JSON_boolean:
+            try:
+                logger.info('Converting ISA-TAB to ISA-JSON format')
+                input_file_path = output_directory
+                output_file_path = output_directory + trial['trialName'] + '.json'
+
+                isa_json = isatab2json.convert(
+                input_file_path, use_new_parser=True, validate_first=False)
+                with open(output_file_path, 'w') as out_fp:
+                    json.dump(isa_json, out_fp, indent=4)
+            except Exception as ioe:
+                logger.info('Conversion to JSON failed!...')
+                logger.info(str(ioe))
+        
+        # Validating ISA-TAB with configuration files
+        # -------------------------------------------
+        if VALIDATOR_boolean:
+            try:
+                isa_config_dir = "./isaconfig-phenotyping-basic"
+                isa_tab_dir = output_directory
+                logger.info('Validating isa-tab files against configuration files found in ' + isa_config_dir)
+                validation_log_path = output_directory + trial['trialName'] + '_validation_log.json'
+                report = isatab.validate(open(os.path.join(isa_tab_dir, 'i_investigation.txt')), isa_config_dir)
+                with open(validation_log_path, 'w') as out_fp2:
+                    json.dump(report, out_fp2, indent=4)
+                
+                logger.info('VALIDATION FINISHED')
+                logger.info('The ISA-TAB validation log file can be found at :' + validation_log_path)
+            
+            except Exception as ioe:
+                logger.info('ISA-TAB validation failed!...')
+                logger.info(str(ioe))
                         
-    logger.info('CONVERSION FINISHED')
+    logger.info('CONVERSION AND VALIDATION FINISHED')
 
 #############################################
 # MAIN METHOD TO START THE CONVERSION PROCESS

@@ -1,0 +1,115 @@
+<?xml version="1.0" ?>
+<isatab-config-file xmlns="http://www.ebi.ac.uk/bii/isatab_configuration#">
+    <isatab-configuration table-name="s_study">
+        <measurement source-abbreviation="" term-accession="" term-label="[Sample]"/>
+        <technology source-abbreviation="" term-accession="" term-label=""/>
+        <field data-type="String" header="Source Name" is-file-field="false" is-forced-ontology="false" is-hidden="false" is-multiple-value="false" is-required="true">
+            <description><![CDATA[(MIAPPE: Biological Material ID) Code used to identify the biological material in the data file. Should be unique within the Investigation. Can correspond to experimental plant ID, seed lot ID, etc… This material identification is different from a BiosampleID which corresponds to Observation Unit or Samples sections below.]]></description>
+            <default-value><![CDATA[biological-material_A]]></default-value>
+        </field>
+        <field data-type="string" header="Characteristics[Organism]" is-file-field="false" is-forced-ontology="false" is-hidden="false" is-multiple-value="false" is-required="true">
+            <description><![CDATA[(MIAPPE: Organism) An identifier for the organism at the species level. Use of the NCBI taxon ID is recommended.]]></description>
+            <default-value><![CDATA[e.g. NCBI:4577]]></default-value>
+        </field>
+        <field data-type="String" header="Characteristics[Genus]" is-file-field="false" is-forced-ontology="false" is-hidden="false" is-multiple-value="false" is-required="false">
+            <description><![CDATA[(MIAPPE: Genus) Genus name for the organism under study, according to standard scientific nomenclature.]]></description>
+            <default-value><![CDATA[e.g. Zea]]></default-value>
+        </field>
+        <field data-type="String" header="Characteristics[Species]" is-file-field="false" is-forced-ontology="false" is-hidden="false" is-multiple-value="false" is-required="false">
+            <description><![CDATA[(MIAPPE: Species) Species name (formally: specific epithet) for the organism under study, according to standard scientific nomenclature.]]></description>
+            <default-value><![CDATA[e.g. mays]]></default-value>
+        </field>
+        <field data-type="String" header="Characteristics[Infraspecific Name]" is-file-field="false" is-forced-ontology="false" is-hidden="false" is-multiple-value="false" is-required="false">
+            <description><![CDATA[(MIAPPE: Infraspecific name) Name of any subtaxa level, including variety, crossing name, etc. It can be used to store any additional taxonomic identifier. Either free text description or key-value pair list format (the key is the name of the rank and the value is the value of the rank). Ranks can be among the following terms: subspecies, cultivar, variety, subvariety, convariety, group, subgroup, hybrid, line, form, subform. For MCPD compliance, the following abbreviations are allowed: ‘subsp.’ (subspecies); ‘convar.’ (convariety); ‘var.’ (variety); ‘f.’ (form); ‘Group’ (cultivar group).]]></description>
+            <default-value><![CDATA[e.g. var:B73]]></default-value>
+        </field>
+        <field data-type="String" header="Characteristics[Biological Material Latitude]" is-file-field="false" is-forced-ontology="false" is-hidden="false" is-multiple-value="false" is-required="false">
+            <description><![CDATA[(MIAPPE: Biological material latitude) Latitude of the studied biological material. [Alternative identifier for in situ material]]]></description>
+            <default-value><![CDATA[e.g. +39.067]]></default-value>
+        </field>
+        <field data-type="String" header="Characteristics[Biological Material Longitude]" is-file-field="false" is-forced-ontology="false" is-hidden="false" is-multiple-value="false" is-required="false">
+            <description><![CDATA[(MIAPPE: Biological material longitude) Latitude of the studied biological material. [Alternative identifier for in situ material]]]></description>
+            <default-value><![CDATA[e.g. -8.73]]></default-value>
+        </field>
+        <field data-type="String" header="Characteristics[Biological Material Altitude]" is-file-field="false" is-forced-ontology="false" is-hidden="false" is-multiple-value="false" is-required="false">
+            <description><![CDATA[(MIAPPE: Biological Material altitude) Altitude of the studied biological material, provided in meters (m). [Alternative identifier for in situ material]]]></description>
+            <default-value><![CDATA[e.g. 10]]></default-value>
+        </field>
+        <unit-field data-type="String" is-forced-ontology="false" is-multiple-value="false" is-required="false">
+            <default-value><![CDATA[meter]]></default-value>
+            <description>Unit abbreviation for Biological material altitude.</description>
+        </unit-field>
+        <field data-type="String" header="Characteristics[Biological Material Coordinates Uncertainty]" is-file-field="false" is-forced-ontology="false" is-hidden="false" is-multiple-value="false" is-required="false">
+            <description><![CDATA[(MIAPPE: Biological material coordinates uncertainty) Circular uncertainty of the coordinates, preferably provided in meters (m). [Alternative identifier for in situ material]]]></description>
+            <default-value><![CDATA[e.g. 200]]></default-value>
+        </field>
+        <unit-field data-type="String" is-forced-ontology="false" is-multiple-value="false" is-required="false">
+            <default-value><![CDATA[meter]]></default-value>
+            <description>Unit abbreviation for Biological material coordinates uncertainty.&quot;</description>
+        </unit-field>
+        <field data-type="String" header="Characteristics[Biological Material Preprocessing]" is-file-field="false" is-forced-ontology="false" is-hidden="false" is-multiple-value="false" is-required="false">
+            <description><![CDATA[(MIAPPE: Biological material preprocessing) Description of any process or treatment applied uniformly to the biological material, prior to the study itself. Can be provided as free text or as an accession number from a suitable controlled vocabulary.]]></description>
+            <default-value><![CDATA[e.g. EO:0007210 - PVY(NTN); transplanted from study http://phenome-fppn.fr/maugio/2013/t2351 observation unit ID: pot:894]]></default-value>
+        </field>
+        <field data-type="String" header="Characteristics[Material Source ID]" is-file-field="false" is-forced-ontology="false" is-hidden="false" is-multiple-value="false" is-required="false">
+            <description><![CDATA[(MIAPPE: Material source ID (Holding institute/stock centre, accession) An identifier for the source of the biological material, in the form of a key-value pair comprising the name/identifier of the repository from which the material was sourced plus the accession number of the repository for that material. Where an accession number has not been assigned, but the material has been derived from the crossing of known accessions, the material can be defined as follows: mother_accession X father_accession, or, if father is unknown, as mother_accession X UNKNOWN. For in situ material, the region of provenance may be used when an accession is not available.]]></description>
+            <default-value><![CDATA[e.g. ICNF:PNB-RPI]]></default-value>
+        </field>
+        <field data-type="String" header="Characteristics[Material Source DOI]" is-file-field="false" is-forced-ontology="false" is-hidden="false" is-multiple-value="false" is-required="false">
+            <description><![CDATA[(MIAPPE: Material source DOI) Digital Object Identifier (DOI) of the material source]]></description>
+            <default-value><![CDATA[e.g. doi:10.15454/1.4658436467893904E12]]></default-value>
+        </field>
+        <field data-type="String" header="Characteristics[Material Source Latitude]" is-file-field="false" is-forced-ontology="false" is-hidden="false" is-multiple-value="false" is-required="false">
+            <description><![CDATA[(MIAPPE: Material source latitude) Latitude of the material source. [Alternative identifier for in situ material]]]></description>
+            <default-value><![CDATA[e.g. +39.067]]></default-value>
+        </field>
+        <field data-type="String" header="Characteristics[Material Source Longitude]" is-file-field="false" is-forced-ontology="false" is-hidden="false" is-multiple-value="false" is-required="false">
+            <description><![CDATA[(MIAPPE: Material source longitude) Longitude of the material source. [Alternative identifier for in situ material]]]></description>
+            <default-value><![CDATA[e.g. -8.73]]></default-value>
+        </field>
+        <field data-type="String" header="Characteristics[Material Source Altitude]" is-file-field="false" is-forced-ontology="false" is-hidden="false" is-multiple-value="false" is-required="false">
+            <description><![CDATA[(MIAPPE: Material source altitude) Altitude of the material source, provided in metres (m). [Alternative identifier for in situ material]]]></description>
+            <default-value><![CDATA[e.g. 10]]></default-value>
+        </field>
+        <unit-field data-type="String" is-forced-ontology="false" is-multiple-value="false" is-required="false">
+            <default-value><![CDATA[meter]]></default-value>
+            <description>Unit abbreviation for Material source altitude</description>
+        </unit-field>
+        <field data-type="String" header="Characteristics[Material Source Coordinates Uncertainty]" is-file-field="false" is-forced-ontology="false" is-hidden="false" is-multiple-value="false" is-required="false">
+            <description><![CDATA[(MIAPPE: Material source coordinates uncertainty) Circular uncertainty of the coordinates, provided in meters (m). [Alternative identifier for in situ material]]]></description>
+            <default-value><![CDATA[e.g. 200]]></default-value>
+        </field>
+        <unit-field data-type="String" is-forced-ontology="false" is-multiple-value="false" is-required="false">
+            <default-value><![CDATA[meter]]></default-value>
+            <description>Unit abbreviation for Material source coordinates uncertainty.</description>
+        </unit-field>
+        <field data-type="String" header="Characteristics[Material Source Description]" is-file-field="false" is-forced-ontology="false" is-hidden="false" is-multiple-value="false" is-required="false">
+            <description><![CDATA[(MIAPPE: Material source description) Description of the material source]]></description>
+            <default-value><![CDATA[e.g. Branches were collected from a 10-year-old tree growing in a progeny trial established in a loamy brown earth soil.]]></default-value>
+        </field>
+        <protocol-field protocol-type="Growth"/>
+        <field data-type="String" header="Sample Name" is-file-field="false" is-forced-ontology="false" is-hidden="false" is-multiple-value="false" is-required="true">
+            <description><![CDATA[(MIAPPE: Observation unit ID) Identifier used to identify the observation unit in data files containing the values observed or measured on that unit. Must be locally unique.]]></description>
+            <default-value><![CDATA[e.g. obs_unit_B]]></default-value>
+        </field>
+        <field data-type="list" header="Characteristics[Observation Unit Type]" is-file-field="false" is-forced-ontology="false" is-hidden="false" is-multiple-value="false" is-required="true">
+            <description><![CDATA[(MIAPPE: Observation unit type) Type of observation unit in textual form, usually one of the following: block, sub-block, plot, plant, trial, pot, replication or replicate, individual, virtual_trial, unit-parcel]]></description>
+            <default-value><![CDATA[plant]]></default-value>
+            <list-values>block,sub-block,plot,plant,trial,pot,replicate,individual,virtual_trial,unit-parcel</list-values>
+        </field>
+        <field data-type="String" header="Characteristics[External ID]" is-file-field="false" is-forced-ontology="false" is-hidden="false" is-multiple-value="false" is-required="false">
+            <description><![CDATA[(MIAPPE: External ID) Identifier for the observation unit in a persistent repository, comprises the name of the repository and the identifier of the observation unit therein. The EBI Biosamples repository can be used. URI are recommended when possible.]]></description>
+            <default-value><![CDATA[e.g. Biosamples:SAMEA4202911]]></default-value>
+        </field>
+        <field data-type="String" header="Characteristics[Spatial Distribution]" is-file-field="false" is-forced-ontology="false" is-hidden="false" is-multiple-value="false" is-required="false">
+            <description><![CDATA[(MIAPPE: Spatial distribution) Type and value of a spatial coordinate (georeference or relative) or level of observation (plot 45, subblock 7, block 2) provided as a key-value pair of the form type:value. Levels of observation must be consistent with those listed in the Study section.]]></description>
+            <default-value><![CDATA[e.g. Latitude:+2.341; row:4 ; X:3; Y:6; Xm:35; Ym:65; Block:1; Plot:894]]></default-value>
+        </field>
+        <field data-type="String" header="Factor Value[e.g. Watering]" is-file-field="false" is-forced-ontology="false" is-hidden="false" is-multiple-value="false" is-required="false">
+            <description><![CDATA[(MIAPPE: Observation Unit factor value) List of values for each factor applied to the observation unit - one per column, for the respective factor name.]]></description>
+            <default-value><![CDATA[e.g. watered]]></default-value>
+        </field>
+        <structured-field name="characteristics"/>
+        <structured-field name="factors"/>
+    </isatab-configuration>
+</isatab-config-file>
