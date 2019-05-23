@@ -194,7 +194,7 @@ class BrapiToIsaConverter:
             if oref_tt not in investigation.ontology_source_references:
                 investigation.ontology_source_references.append(oref_tt)
 
-        print("number of ISA assays:", len(this_study.assays))
+        self.logger.info("Number of ISA assays: " + str(len(this_study.assays)))
 
         return this_study, investigation
 
