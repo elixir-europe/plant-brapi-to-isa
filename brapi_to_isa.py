@@ -77,7 +77,7 @@ logger.info("\n----------------\ntrials IDs to be exported : "
 # CASSAVA_BRAPI_V1 = 'https://cassavabase.org/brapi/v1/'
 
 
-def create_study_sample_and_assay(client, brapi_study_id, isa_study,  sample_collection_protocol, phenotyping_protocol, OBSERVATIONUNITLIST):
+def create_study_sample_and_assay(client, brapi_study_id, isa_study,  sample_collection_protocol, phenotyping_protocol, OBSERVATIONUNITLIST, brapi_study):
 
     spat_dist_mapping_dictionary = {
         "X": "X",
@@ -95,6 +95,28 @@ def create_study_sample_and_assay(client, brapi_study_id, isa_study,  sample_col
     for k,assay in enumerate(isa_study.assays):
         obs_level_to_assay[assay.characteristic_categories[0]] = k
 
+    # DATA - link as one line in assay file
+    # -------------------------------------
+    if 'dataLinks' in brapi_study and brapi_study['dataLinks']:
+        for k in range(len(isa_study.assays)):
+            this_source = isa_study.get_source('study')
+            this_isa_sample = Sample(
+                name='study' ,
+                derives_from=[this_source])
+            isa_study.assays[k].samples.append(this_isa_sample)
+            phenotyping_process = Process(executes_protocol=phenotyping_protocol)
+            phenotyping_process.inputs.append(this_isa_sample)
+            phenotyping_process.name = brapi_study["studyDbId"] 
+            datalinks = []
+            for fileName in brapi_study['dataLinks']:
+                datalinks.append(fileName['url'])
+            RAW_datafile = DataFile(filename=','.join(datalinks),
+                                        label="Derived Data File")
+            phenotyping_process.outputs.append(RAW_datafile)
+            isa_study.assays[k].process_sequence.append(phenotyping_process)
+
+    # Iterating over the observation units to decorate the assays (each for every observation level)
+    # ----------------------------------------------------------------------------------------------
     treatments = defaultdict(list)
     allready_converted_obs_unit = [] # Allow to handle multiyear observation units NOTE (INRA specific)
     for obs_unit in OBSERVATIONUNITLIST:
@@ -319,6 +341,8 @@ def main(arg):
             germplasminfo = {}
             
             brapi_study_id = brapi_study['studyDbId']
+            brapi_study = client.get_study(brapi_study_id)
+
             try:
                 brapi_study['studyDbId'].encode('ascii')
             except:
@@ -332,7 +356,7 @@ def main(arg):
                 
                 obs_level, obs_levels = converter.get_obs_levels(brapi_study_id, OBSERVATIONUNITLIST)
                 # NB: this method always create an ISA Assay Type
-                isa_study, investigation = converter.create_isa_study(brapi_study_id, investigation, obs_level.keys())
+                isa_study, investigation = converter.create_isa_study(brapi_study_id, investigation, obs_level.keys(), brapi_study)
 
                 investigation.studies.append(isa_study)
 
@@ -364,7 +388,7 @@ def main(arg):
                     isa_study.sources.append(source)
 
                 # Now dealing with BRAPI observation units and attempting to create ISA samples
-                create_study_sample_and_assay(client, brapi_study_id, isa_study,  sample_collection_protocol, phenotyping_protocol, OBSERVATIONUNITLIST)
+                create_study_sample_and_assay(client, brapi_study_id, isa_study,  sample_collection_protocol, phenotyping_protocol, OBSERVATIONUNITLIST, brapi_study)
                 
 
                 # Writing isa_study to ISA-Tab format:
