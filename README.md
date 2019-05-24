@@ -15,8 +15,10 @@ This is setup to be used with Docker for easy dependency requirements. You can d
 
 ```
 docker build -t brapi2isa -f Dockerfile .
-docker run -it -v outputdir:/outputdir brapi2isa -t <your trial DbId> -e <your endpoint>
+docker run -it -v /outputdir:/outputdir brapi2isa -t <your trial DbId> -e <your endpoint>
 ```
+
+NOTE: volume mount not yet working
 
 ### Usage for your own endpoint: 
 
