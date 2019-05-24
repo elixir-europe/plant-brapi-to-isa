@@ -21,6 +21,16 @@ docker-compose build && docker-compose run --rm conv
 
 Output will be put into a subfolder `out`.
 
+# setup.py 
+Allows to use this program as a python pip package.
+
+Install the package with:
+pip install git+ssh://git@github.com:elixir-europe/plant-brapi-to-isa.git@<REF>#egg=brapi2isa
+
+Where <REF> is the git tag or branch or commit
+And then it can just be imported with
+import brapi_to_isa
+
 # Documentation
 
 
