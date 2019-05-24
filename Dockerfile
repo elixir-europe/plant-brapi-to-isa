@@ -1,8 +1,8 @@
 FROM python:3.6.1
 
-#RUN git clone https://github.com/ISA-tools/isa-api && pip install ./isa-api
-RUN pip install isatools requests
+RUN pip install isatools requests pycountry-convert cachetools
 
 COPY *.py /
+COPY /isaconfig-phenotyping-basic /isaconfig-phenotyping-basic
 
-CMD ["python","/brapi_to_isa.py"]
+ENTRYPOINT python /brapi_to_isa.py
