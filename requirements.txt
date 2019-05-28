@@ -1,5 +1,7 @@
 isatools
 requests
+pycountry-convert 
+cachetools
 
 # tests dependencies
 mock
