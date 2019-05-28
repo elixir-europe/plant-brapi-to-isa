@@ -11,23 +11,22 @@ Code to pull data from BrAPI endpoints and create an [ISA](http://isa-tools.org)
 
 This is setup to be used with Docker for easy dependency requirements. You can download and run with a command like:
 
-### Running BrAPI to ISA container without test containers:
+### Running BrAPI to ISA in a container without test containers:
 
-```
+```bash
 docker build -t brapi2isa -f Dockerfile .
-docker run -it -v /outputdir:/outputdir brapi2isa -t <your trial DbId> -e <your endpoint>
-```
 
-NOTE: volume mount not yet working
+docker run -it -v <absolutepath>/outputdir:/outputdir brapi2isa -t <your trial DbId> -e <your endpoint>
+```
 
 ### Usage for your own endpoint: 
 
-```
+```bash
 docker-compose build && docker-compose run BrAPI2ISA -t <your trial DbId> -e <your endpoint>
 ```
 ### Usage for testing:
 
-```
+```bash
 docker-compose build && docker-compose run <>
 ```
  Where <> can be following values:
