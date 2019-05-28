@@ -106,10 +106,8 @@ class BrapiToIsaConverter:
 
         return returned_characteristics
 
-    def create_isa_study(self, brapi_study_id, investigation, obs_levels_in_study):
+    def create_isa_study(self, brapi_study_id, investigation, obs_levels_in_study, brapi_study):
         """Returns an ISA study given a BrAPI endpoints and a BrAPI study identifier."""
-
-        brapi_study = self._brapi_client.get_study(brapi_study_id)
         
         # Adding study information on investigation level
         ###########################################################################
