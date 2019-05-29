@@ -1,0 +1,64 @@
+<?xml version="1.0" ?>
+<isatab-config-file xmlns="http://www.ebi.ac.uk/bii/isatab_configuration#">
+    <isatab-configuration isatab-assay-type="generic_assay" isatab-conversion-target="generic" table-name="phenotyping_individual_level">
+        <measurement source-abbreviation="" term-accession="" term-label="phenotyping"/>
+        <technology source-abbreviation="" term-accession="" term-label="individual level analysis"/>
+        <field data-type="String" header="Sample Name" is-file-field="false" is-forced-ontology="false" is-hidden="false" is-multiple-value="false" is-required="true">
+            <description><![CDATA[(MIAPPE: Observation unit ID) Identifier used to identify the observation unit in data files containing the values observed or measured on that unit. Must be locally unique.]]></description>
+            <default-value><![CDATA[obs_unit_X]]></default-value>
+        </field>
+        <field data-type="list" header="Characteristics[Observation Unit Type]" is-file-field="false" is-forced-ontology="false" is-hidden="false" is-multiple-value="false" is-required="true">
+            <description><![CDATA[(MIAPPE: Experimental unit type) Type of observation unit in textual form, usually one of the following: block, sub-block, plot, plant, study, pot, replication or replicate, individual, virtual_trial, unit-parcel]]></description>
+            <list-values>block,sub-block,plot,plant,study,pot,replicate,individual,virtual_trial,unit-parcel</list-values>
+            <default-value><![CDATA[individual]]></default-value>
+        </field>
+        <protocol-field protocol-type="Sampling"/>
+
+        <field data-type="String" header="Parameter Value[Collection Date]" is-file-field="false" is-forced-ontology="false" is-hidden="false" is-multiple-value="false" is-required="true">
+            <description><![CDATA[(MIAPPE: (Sample) Collection date) Any information not captured by the other sample fields, including quantification, sample treatments and processing.]]></description>
+            <default-value><![CDATA[e.g. 2005-08-15T15:52:01+00:00]]></default-value>
+        </field>
+        <field data-type="String" header="Parameter Value[Sample Description]" is-file-field="false" is-forced-ontology="false" is-hidden="false" is-multiple-value="false" is-required="true">
+            <description><![CDATA[(MIAPPE: Sample description) Any information not captured by the other sample fields, including quantification, sample treatments and processing.]]></description>
+            <default-value><![CDATA[e.g. Distal part of the leaf ; 100 mg of roots taken from 10 roots at 20°C, conserved in vacuum at 20 mM NaCl salinity, stored at -60 °C to -85 °C.]]></default-value>
+        </field>
+        <field data-type="String" header="Extract Name" is-file-field="false" is-forced-ontology="false" is-hidden="false" is-multiple-value="false" is-required="false">
+            <description><![CDATA[(MIAPPE: Sample ID) Unique identifier for the sample. Description column must be given after this, holding the sample description (MIAPPE: Sample description).]]></description>
+            <default-value><![CDATA[sample_S]]></default-value>
+        </field>
+
+        <field data-type="Ontology term" header="Characteristics[Plant Structure Development Stage]" is-file-field="false" is-forced-ontology="false" is-hidden="false" is-multiple-value="false" is-required="false">
+            <description><![CDATA[(MIAPPE: Plant structure development stage) The stage in the life of a plant structure during which the sample was taken, in the form of an accession number to a suitable controlled vocabulary (Plant Ontology, BBCH scale)]]></description>
+            <default-value/>
+            <recommended-ontologies>
+                <ontology id="http://purl.obolibrary.org/obo/po.owl#" abbreviation="PO" name="Plant Ontology" version="2018-09-25"/>
+            </recommended-ontologies>
+        </field>
+        <field data-type="Ontology term" header="Characteristics[Plant Anatomical Entity]" is-file-field="false" is-forced-ontology="false" is-hidden="false" is-multiple-value="false" is-required="false">
+            <description><![CDATA[(MIAPPE: Plant anatomical entity) A description of the plant part (e.g. leaf) or the plant product (e.g. resin) from which the sample was taken, in the form of an accession number to a suitable controlled vocabulary (Plant Ontology).]]></description>
+            <default-value/>
+            <recommended-ontologies>
+                <ontology id="http://purl.obolibrary.org/obo/po.owl#" abbreviation="PO" name="Plant Ontology" version="2018-09-25"/>
+            </recommended-ontologies>
+        </field>
+        <field data-type="String" header="Characteristics[External ID]" is-file-field="false" is-forced-ontology="false" is-hidden="false" is-multiple-value="false" is-required="false">
+            <description><![CDATA[(MIAPPE: (Sample) External ID) An identifier for the sample in a persistent repository, comprising the name of the repository and the accession number of the observation unit therein. Submission to the EBI Biosamples repository is recommended. URI are recommended when possible.]]></description>
+                        <default-value><![CDATA[e.g. Biosamples:SAMEA4202911]]></default-value>
+        </field>
+        <protocol-field protocol-type="Phenotyping"/>
+        <field data-type="String" header="Assay Name" is-file-field="false" is-forced-ontology="false" is-hidden="false" is-multiple-value="false" is-required="true">
+            <description><![CDATA[Assay Name]]></description>
+                        <default-value><![CDATA[assay_A]]></default-value>
+        </field>
+        <field data-type="String" header="Raw Data File" is-file-field="false" is-forced-ontology="false" is-hidden="false" is-multiple-value="false" is-required="true">
+            <description><![CDATA[Raw Data File]]></description>
+            <default-value><![CDATA[e.g. raw_data.csv]]></default-value>
+        </field>
+        <protocol-field protocol-type="Data Transformation"/>
+        <field data-type="String" header="Derived Data File" is-file-field="false" is-forced-ontology="false" is-hidden="false" is-multiple-value="false" is-required="true">
+            <description><![CDATA[Name of file holding the processed data.]]></description>
+                        <default-value><![CDATA[e.g. data.txt]]></default-value>
+        </field>
+        <structured-field name="factors"/>
+    </isatab-configuration>
+</isatab-config-file>
