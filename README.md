@@ -1,6 +1,3 @@
-# BRANCHES
-**Current HEAD: elixir-europe/plant-brapi-to-isa/refactor**
-
 **WARNING** :  Repository about to be frozen, the reference/working repository will be : https://github.com/ISA-tools/plant-brapi-to-isa
 
 **NB**:the mapping from BrAPI to MIAPPE is fully documented here : 
