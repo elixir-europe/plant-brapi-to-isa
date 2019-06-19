@@ -1,0 +1,319 @@
+<?xml version="1.0" ?>
+<isatab-config-file xmlns="http://www.ebi.ac.uk/bii/isatab_configuration#">
+    <isatab-configuration table-name="i_investigation">
+        <measurement source-abbreviation="" term-accession="" term-label="[investigation]"/>
+        <technology source-abbreviation="" term-accession="" term-label=""/>
+        <field data-type="String" header="Investigation Identifier" is-file-field="false" is-forced-ontology="false" is-hidden="false" is-multiple-value="false" is-required="false" section="INVESTIGATION">
+            <description><![CDATA[(MIAPPE: Investigation unique ID) Identifier comprising the unique name of the institution/database hosting the submission of the investigation data, and the accession number of the investigation in that institution.]]></description>
+            <default-value/>
+        </field>
+        <field data-type="String" header="Investigation Title" is-file-field="false" is-forced-ontology="false" is-hidden="false" is-multiple-value="false" is-required="true" section="INVESTIGATION">
+            <description><![CDATA[(MIAPPE: Investigation title) Human-readable string summarising the investigation.]]></description>
+            <default-value/>
+        </field>
+        <field data-type="String" header="Investigation Description" is-file-field="false" is-forced-ontology="false" is-hidden="false" is-multiple-value="false" is-required="false" section="INVESTIGATION">
+            <description><![CDATA[(MIAPPE: Investigation description) Human-readable text describing the investigation in more detail.]]></description>
+            <default-value><![CDATA[e.g. The migration of maize from tropical to temperate climates was accompanied by a dramatic evolution in flowering time. To gain insight into the genetic architecture of this adaptive trait, we conducted a 50K SNP-based genome-wide association and diversity investigation on a panel of tropical and temperate American and European representatives.]]></default-value>
+        </field>
+        <field data-type="String" header="Investigation Submission Date" is-file-field="false" is-forced-ontology="false" is-hidden="false" is-multiple-value="false" is-required="false" section="INVESTIGATION">
+            <description><![CDATA[(MIAPPE: Submission date) Date of submission of the dataset presently being described to a host repository.]]></description>
+            <default-value><![CDATA[e.g. 2012-12-17]]></default-value>
+        </field>
+        <field data-type="String" header="Investigation Public Release Date" is-file-field="false" is-forced-ontology="false" is-hidden="false" is-multiple-value="false" is-required="false" section="INVESTIGATION">
+            <description><![CDATA[(MIAPPE: Public release date) Date of first public release of the dataset presently being described.]]></description>
+            <default-value><![CDATA[e.g. 2013-02-25]]></default-value>
+        </field>
+        <field data-type="String" header="Comment[Investigation License]" is-file-field="false" is-forced-ontology="false" is-hidden="false" is-multiple-value="false" is-required="false" section="INVESTIGATION">
+            <description><![CDATA[(MIAPPE: License) License for the reuse of the data associated with this investigation. The Creative Commons licenses cover most use cases and are recommended.]]></description>
+            <default-value><![CDATA[e.g. CC BY-SA 4.0]]></default-value>
+        </field>
+        <field data-type="String" header="Comment[MIAPPE Version]" is-file-field="false" is-forced-ontology="false" is-hidden="false" is-multiple-value="false" is-required="true" section="INVESTIGATION">
+            <description><![CDATA[(MIAPPE: MIAPPE version) The version of MIAPPE used.]]></description>
+            <default-value><![CDATA[1.1]]></default-value>
+        </field>
+        <field data-type="String" header="Comment [Created With Configuration]" is-file-field="false" is-forced-ontology="false" is-hidden="false" is-multiple-value="false" is-required="false" section="INVESTIGATION">
+            <description><![CDATA[Comment [Created with configuration]]]></description>
+            <default-value/>
+        </field>
+        <field data-type="String" header="Comment [Last Opened With Configuration]" is-file-field="false" is-forced-ontology="false" is-hidden="false" is-multiple-value="false" is-required="false" section="INVESTIGATION">
+            <description><![CDATA[Comment [Last Opened With Configuration]]]></description>
+            <default-value/>
+        </field>
+        <field data-type="String" header="Investigation PubMed ID" is-file-field="false" is-forced-ontology="false" is-hidden="false" is-multiple-value="true" is-required="false" section="INVESTIGATION PUBLICATIONS">
+            <description><![CDATA[Investigation PubMed ID]]></description>
+            <default-value/>
+        </field>
+        <field data-type="String" header="Investigation Publication DOI" is-file-field="false" is-forced-ontology="false" is-hidden="false" is-multiple-value="true" is-required="false" section="INVESTIGATION PUBLICATIONS">
+            <description><![CDATA[(MIAPPE: Associated publication) An identifier for a literature publication where the investigation is described. Use of DOIs is recommended.]]></description>
+            <default-value/>
+        </field>
+        <field data-type="String" header="Investigation Publication Author List" is-file-field="false" is-forced-ontology="false" is-hidden="false" is-multiple-value="false" is-required="false" section="INVESTIGATION PUBLICATIONS">
+            <description><![CDATA[Investigation Publication Author List]]></description>
+            <default-value/>
+        </field>
+        <field data-type="String" header="Investigation Publication Title" is-file-field="false" is-forced-ontology="false" is-hidden="false" is-multiple-value="false" is-required="false" section="INVESTIGATION PUBLICATIONS">
+            <description><![CDATA[Investigation Publication Title]]></description>
+            <default-value/>
+        </field>
+        <field data-type="Ontology term" header="Investigation Publication Status" is-file-field="false" is-forced-ontology="false" is-hidden="false" is-multiple-value="false" is-required="false" section="INVESTIGATION PUBLICATIONS">
+            <description><![CDATA[Investigation Publication Status]]></description>
+            <default-value/>
+        </field>
+        <field data-type="String" header="Comment[Investigation Person ID]" is-file-field="false" is-forced-ontology="false" is-hidden="false" is-multiple-value="true" is-required="false" section="INVESTIGATION CONTACTS">
+            <description><![CDATA[(MIAPPE: Person ID) An identifier for the data submitter. If that submitter is an individual, ORCID identifiers are recommended.]]></description>
+            <default-value><![CDATA[placeholder]]></default-value>
+        </field>
+        <field data-type="String" header="Investigation Person Last Name" is-file-field="false" is-forced-ontology="false" is-hidden="false" is-multiple-value="true" is-required="true" section="INVESTIGATION CONTACTS">
+            <description><![CDATA[(MIAPPE: Person name) The name of the person (either full name or as used in scientific publications)]]></description>
+            <default-value><![CDATA[placeholder]]></default-value>
+        </field>
+        <field data-type="String" header="Investigation Person First Name" is-file-field="false" is-forced-ontology="false" is-hidden="false" is-multiple-value="true" is-required="true" section="INVESTIGATION CONTACTS">
+            <description><![CDATA[(MIAPPE: Person name) The name of the person (either full name or as used in scientific publications)]]></description>
+            <default-value><![CDATA[placeholder]]></default-value>
+        </field>
+        <field data-type="String" header="Investigation Person Mid Initials" is-file-field="false" is-forced-ontology="false" is-hidden="false" is-multiple-value="true" is-required="false" section="INVESTIGATION CONTACTS">
+            <description><![CDATA[(MIAPPE: Person name) The name of the person (either full name or as used in scientific publications)]]></description>
+            <default-value><![CDATA[placeholder]]></default-value>
+        </field>
+        <field data-type="String" header="Investigation Person Email" is-file-field="false" is-forced-ontology="false" is-hidden="false" is-multiple-value="true" is-required="false" section="INVESTIGATION CONTACTS">
+            <description><![CDATA[(MIAPPE: Person email) The electronic mail address of the person.]]></description>
+            <default-value><![CDATA[placeholder]]></default-value>
+        </field>
+        <field data-type="String" header="Investigation Person Phone" is-file-field="false" is-forced-ontology="false" is-hidden="false" is-multiple-value="true" is-required="false" section="INVESTIGATION CONTACTS">
+            <description><![CDATA[Investigation Person Phone]]></description>
+            <default-value><![CDATA[placeholder]]></default-value>
+        </field>
+        <field data-type="String" header="Investigation Person Fax" is-file-field="false" is-forced-ontology="false" is-hidden="false" is-multiple-value="true" is-required="false" section="INVESTIGATION CONTACTS">
+            <description><![CDATA[Investigation Person Fax]]></description>
+            <default-value><![CDATA[placeholder]]></default-value>
+        </field>
+        <field data-type="String" header="Investigation Person Address" is-file-field="false" is-forced-ontology="false" is-hidden="false" is-multiple-value="true" is-required="true" section="INVESTIGATION CONTACTS">
+            <description><![CDATA[(MIAPPE: Person affiliation) The institution the person belongs to]]></description>
+            <default-value><![CDATA[placeholder]]></default-value>
+        </field>
+        <field data-type="String" header="Investigation Person Affiliation" is-file-field="false" is-forced-ontology="false" is-hidden="false" is-multiple-value="true" is-required="true" section="INVESTIGATION CONTACTS">
+            <description><![CDATA[(MIAPPE: Person affiliation) The institution the person belongs to]]></description>
+            <default-value><![CDATA[placeholder]]></default-value>
+        </field>
+        <field data-type="Ontology term" header="Investigation Person Roles" is-file-field="false" is-forced-ontology="false" is-hidden="false" is-multiple-value="true" is-required="false" section="INVESTIGATION CONTACTS">
+            <description><![CDATA[(MIAPPE: Person role) Type of contribution of the person to the investigation]]></description>
+            <default-value/>
+        </field>
+        <field data-type="String" header="Study Identifier" is-file-field="false" is-forced-ontology="false" is-hidden="false" is-multiple-value="false" is-required="true" section="STUDY">
+            <description><![CDATA[(MIAPPE: Study unique ID) Unique identifier comprising the name or identifier for the institution/database hosting the submission of the study data, and the identifier of the study in that institution.]]></description>
+            <default-value/>
+        </field>
+        <field data-type="String" header="Study Title" is-file-field="false" is-forced-ontology="false" is-hidden="false" is-multiple-value="false" is-required="true" section="STUDY">
+            <description><![CDATA[(MIAPPE: Study title) Human-readable text summarising the study]]></description>
+            <default-value><![CDATA[e.g. 2002 evaluation of flowering time for a panel of 375 maize lines at the experimental station of Maugio (France).]]></default-value>
+        </field>
+        <field data-type="String" header="Study Description" is-file-field="false" is-forced-ontology="false" is-hidden="false" is-multiple-value="false" is-required="false" section="STUDY">
+            <description><![CDATA[(MIAPPE: Study description) Human-readable text describing the study]]></description>
+            <default-value><![CDATA[e.g. 2002 evaluation of male and female flowering time for a panel of 375 maize lines representing the worldwide genetic diversity at the experimental station of Maugio, France.]]></default-value>
+        </field>
+        <field data-type="String" header="Comment[Study Start Date]" is-file-field="false" is-forced-ontology="false" is-hidden="false" is-multiple-value="false" is-required="true" section="STUDY">
+            <description><![CDATA[(MIAPPE: Start date of study) Date and, if relevant, time when the experiment started]]></description>
+            <default-value><![CDATA[e.g. 2002-04-04]]></default-value>
+        </field>
+        <field data-type="String" header="Comment[Study End Date]" is-file-field="false" is-forced-ontology="false" is-hidden="false" is-multiple-value="false" is-required="false" section="STUDY">
+            <description><![CDATA[(MIAPPE: End date of study) Date and, if relevant, time when the experiment ende]]></description>
+            <default-value><![CDATA[e.g. 2002-11-27]]></default-value>
+        </field>
+        <field data-type="String" header="Comment[Study Contact Institution]" is-file-field="false" is-forced-ontology="false" is-hidden="false" is-multiple-value="false" is-required="true" section="STUDY">
+            <description><![CDATA[(MIAPPE: Contact institution) Name and address of the institution responsible for the study.]]></description>
+            <default-value><![CDATA[e.g. UMR de Génétique Végétale, INRA – Université Paris-Sud – CNRS, Gif-sur-Yvette, France]]></default-value>
+        </field>
+        <field data-type="String" header="Comment[Study Country]" is-file-field="false" is-forced-ontology="false" is-hidden="false" is-multiple-value="false" is-required="true" section="STUDY">
+            <description><![CDATA[(MIAPPE: Geographic location (country)) The country where the experiment took place, either as a full name or preferably as a 2-letter code.]]></description>
+            <default-value><![CDATA[e.g. FR]]></default-value>
+        </field>
+        <field data-type="String" header="Comment[Study Experimental Site Name]" is-file-field="false" is-forced-ontology="false" is-hidden="false" is-multiple-value="false" is-required="true" section="STUDY">
+            <description><![CDATA[(MIAPPE: Experimental site name) The name of the natural site, experimental field, greenhouse, phenotyping facility, etc. where the experiment took place.]]></description>
+            <default-value><![CDATA[e.g. INRA, UE Diascope - Chemin de Mezouls - Domaine expérimental de Melgueil - 34130 Mauguio - France]]></default-value>
+        </field>
+        <field data-type="String" header="Comment[Study Latitude]" is-file-field="false" is-forced-ontology="false" is-hidden="false" is-multiple-value="false" is-required="false" section="STUDY">
+            <description><![CDATA[(MIAPPE: Geographic location (latitude)) Latitude of the experimental site in degrees, in decimal format.]]></description>
+            <default-value><![CDATA[e.g. +43.619264]]></default-value>
+        </field>
+        <field data-type="String" header="Comment[Study Longitude]" is-file-field="false" is-forced-ontology="false" is-hidden="false" is-multiple-value="false" is-required="false" section="STUDY">
+            <description><![CDATA[(MIAPPE: Geographic location (longitude)) Longititute of the experimental site in degrees, in decimal format.]]></description>
+            <default-value><![CDATA[e.g. +3.967454]]></default-value>
+        </field>
+        <field data-type="String" header="Comment[Study Altitude]" is-file-field="false" is-forced-ontology="false" is-hidden="false" is-multiple-value="false" is-required="false" section="STUDY">
+            <description><![CDATA[(MIAPPE: Geographic location (altitude)) Altitude of the experimental site, provided in metres (m).]]></description>
+            <default-value><![CDATA[e.g. 100 m]]></default-value>
+        </field>
+        <field data-type="String" header="Study Submission Date" is-file-field="false" is-forced-ontology="false" is-hidden="false" is-multiple-value="false" is-required="false" section="STUDY">
+            <description><![CDATA[Study Submission Date]]></description>
+            <default-value/>
+        </field>
+        <field data-type="String" header="Study Public Release Date" is-file-field="false" is-forced-ontology="false" is-hidden="false" is-multiple-value="false" is-required="false" section="STUDY">
+            <description><![CDATA[Study Public Release Date]]></description>
+            <default-value/>
+        </field>
+        <field data-type="String" header="Study File Name" is-file-field="false" is-forced-ontology="false" is-hidden="true" is-multiple-value="false" is-required="true" section="STUDY">
+            <description><![CDATA[No MIAPPE equivalent, but use this field as necessary to indicate your study files.]]></description>
+            <default-value><![CDATA[]]></default-value>
+        </field>
+        <field data-type="String" header="Comment[Study Data File Link]" is-file-field="false" is-forced-ontology="false" is-hidden="false" is-multiple-value="true" is-required="false" section="STUDY">
+            <description><![CDATA[(MIAPPE: Data file link) Link to the data file (or digital object) in a public database or in a persistant institutional repository; or identifier of the data file when submitted together with the MIAPPE submission.]]></description>
+            <default-value><![CDATA[e.g. http://www.ebi.ac.uk/arrayexpress/experiments/E-GEOD-32551/]]></default-value>
+        </field>
+        <field data-type="String" header="Comment[Study Data File Description]" is-file-field="false" is-forced-ontology="false" is-hidden="false" is-multiple-value="true" is-required="false" section="STUDY">
+            <description><![CDATA[(MIAPPE: Data file description) Description of the format of the data file. May be a standard file format name, or a description of organization of the data in a tabular file.]]></description>
+            <default-value><![CDATA[e.g. FASTA, MAGE-Tab]]></default-value>
+        </field>
+        <field data-type="String" header="Comment[Study Data File Version]" is-file-field="false" is-forced-ontology="false" is-hidden="false" is-multiple-value="true" is-required="false" section="STUDY">
+            <description><![CDATA[(MIAPPE: Data file version) The version of the dataset (the actual data).]]></description>
+            <default-value><![CDATA[e.g. 1.0]]></default-value>
+        </field>
+        <field data-type="String" header="Comment[Trait Definition File]" is-file-field="true" is-forced-ontology="false" is-hidden="false" is-multiple-value="false" is-required="true" section="STUDY">
+            <description><![CDATA[(MIAPPE: name and url to Trait definition file.]]></description>
+            <default-value></default-value>
+        </field> 
+        <field data-type="String" header="Study PubMed ID" is-file-field="false" is-forced-ontology="false" is-hidden="false" is-multiple-value="false" is-required="false" section="STUDY PUBLICATIONS">
+            <description><![CDATA[Study PubMed ID]]></description>
+            <default-value/>
+        </field>
+        <field data-type="String" header="Study Publication DOI" is-file-field="false" is-forced-ontology="false" is-hidden="false" is-multiple-value="false" is-required="false" section="STUDY PUBLICATIONS">
+            <description><![CDATA[Study Publication DOI]]></description>
+            <default-value/>
+        </field>
+        <field data-type="String" header="Study Publication Author List" is-file-field="false" is-forced-ontology="false" is-hidden="false" is-multiple-value="false" is-required="false" section="STUDY PUBLICATIONS">
+            <description><![CDATA[Study Publication Author List]]></description>
+            <default-value/>
+        </field>
+        <field data-type="String" header="Study Publication Title" is-file-field="false" is-forced-ontology="false" is-hidden="false" is-multiple-value="false" is-required="false" section="STUDY PUBLICATIONS">
+            <description><![CDATA[Study Publication Title]]></description>
+            <default-value/>
+        </field>
+        <field data-type="Ontology term" header="Study Publication Status" is-file-field="false" is-forced-ontology="false" is-hidden="false" is-multiple-value="false" is-required="false" section="STUDY PUBLICATIONS">
+            <description><![CDATA[Study Publication Status]]></description>
+            <default-value/>
+        </field>
+        <field data-type="String" header="Comment[Study Person ID]" is-file-field="false" is-forced-ontology="false" is-hidden="false" is-multiple-value="true" is-required="false" section="STUDY CONTACTS">
+            <description><![CDATA[(MIAPPE: Person ID) An identifier for the data submitter. If that submitter is an individual, ORCID identifiers are recommended.]]></description>
+            <default-value/>
+        </field>
+        <field data-type="String" header="Study Person Last Name" is-file-field="false" is-forced-ontology="false" is-hidden="false" is-multiple-value="true" is-required="false" section="STUDY CONTACTS">
+            <description><![CDATA[(MIAPPE: Person name) The name of the person (either full name or as used in scientific publications)]]></description>
+            <default-value/>
+        </field>
+        <field data-type="String" header="Study Person First Name" is-file-field="false" is-forced-ontology="false" is-hidden="false" is-multiple-value="true" is-required="false" section="STUDY CONTACTS">
+            <description><![CDATA[(MIAPPE: Person name) The name of the person (either full name or as used in scientific publications)]]></description>
+            <default-value/>
+        </field>
+        <field data-type="String" header="Study Person Mid Initials" is-file-field="false" is-forced-ontology="false" is-hidden="false" is-multiple-value="true" is-required="false" section="STUDY CONTACTS">
+            <description><![CDATA[(MIAPPE: Person name) The name of the person (either full name or as used in scientific publications)]]></description>
+            <default-value/>
+        </field>
+        <field data-type="String" header="Study Person Email" is-file-field="false" is-forced-ontology="false" is-hidden="false" is-multiple-value="true" is-required="false" section="STUDY CONTACTS">
+            <description><![CDATA[(MIAPPE: Person email) The electronic mail address of the person.]]></description>
+            <default-value/>
+        </field>
+        <field data-type="String" header="Study Person Phone" is-file-field="false" is-forced-ontology="false" is-hidden="false" is-multiple-value="true" is-required="false" section="STUDY CONTACTS">
+            <description><![CDATA[Study Person Phone]]></description>
+            <default-value/>
+        </field>
+        <field data-type="String" header="Study Person Fax" is-file-field="false" is-forced-ontology="false" is-hidden="false" is-multiple-value="true" is-required="false" section="STUDY CONTACTS">
+            <description><![CDATA[Study Person Fax]]></description>
+            <default-value/>
+        </field>
+        <field data-type="String" header="Study Person Affiliation" is-file-field="false" is-forced-ontology="false" is-hidden="false" is-multiple-value="true" is-required="false" section="STUDY CONTACTS">
+            <description><![CDATA[(MIAPPE: Person affiliation) The institution the person belongs to]]></description>
+            <default-value/>
+        </field>
+        <field data-type="Ontology term" header="Study Person Roles" is-file-field="false" is-forced-ontology="false" is-hidden="false" is-multiple-value="true" is-required="false" section="STUDY CONTACTS">
+            <description><![CDATA[(MIAPPE: Person role) Type of contribution of the person to the investigation]]></description>
+            <default-value/>
+        </field>
+        <field data-type="Ontology term" header="Study Design Type" is-file-field="false" is-forced-ontology="false" is-hidden="false" is-multiple-value="false" is-required="false" section="STUDY DESIGN DESCRIPTORS">
+            <description><![CDATA[(MIAPPE: Type of experimental design) Type of esperimental design of the study, in the form of an accession number from the Crop Ontology. Crop Ontology term (subclass of CO_715:0000003)]]></description>
+            <default-value/>
+            <recommended-ontologies>
+                <ontology id="http://www.cropontology.org/rdf/CO_715:" abbreviation="CO_715" name="Crop Research Ontology" version="unknown"/>
+            </recommended-ontologies>
+        </field>
+        <field data-type="String" header="Comment[Study Design Description]" is-file-field="false" is-forced-ontology="false" is-hidden="false" is-multiple-value="false" is-required="true" section="STUDY DESIGN DESCRIPTORS">
+            <description><![CDATA[(MIAPPE: Description of the experimental design) Short description of the experimental design, possibly including statistical design. In specific cases, e.g. legacy datasets or data computed from several studies, the experimental design can be unknown/NA, aggregated/reduced data, or simply 'none'.]]></description>
+            <default-value/>
+        </field>
+        <field data-type="String" header="Comment[Observation Unit Level Hierarchy]" is-file-field="false" is-forced-ontology="false" is-hidden="false" is-multiple-value="false" is-required="false" section="STUDY DESIGN DESCRIPTORS">
+            <description><![CDATA[(MIAPPE: Observation unit level hierarchy) Hierarchy of the different levels of repetitions between each others]]></description>
+            <default-value/>
+        </field>
+        <field data-type="String" header="Comment[Observation Unit Description]" is-file-field="false" is-forced-ontology="false" is-hidden="false" is-multiple-value="false" is-required="true" section="STUDY DESIGN DESCRIPTORS">
+            <description><![CDATA[(MIAPPE: Observation unit description) General description of the observation units in the study.]]></description>
+            <default-value/>
+        </field>
+        <field data-type="String" header="Comment[Map Of Experimental Design]" is-file-field="false" is-forced-ontology="false" is-hidden="false" is-multiple-value="false" is-required="false" section="STUDY DESIGN DESCRIPTORS">
+            <description><![CDATA[(MIAPPE: Map of experimental design) Representation of the experimental design.]]></description>
+            <default-value/>
+        </field>
+        <field data-type="String" header="Study Factor Name" is-file-field="false" is-forced-ontology="false" is-hidden="false" is-multiple-value="false" is-required="false" section="STUDY FACTORS">
+            <description><![CDATA[(MIAPPE: Experimental Factor type) Name/Acronym of the experimental factor.]]></description>
+            <default-value><![CDATA[e.g. Watering]]></default-value>
+        </field>
+        <field data-type="Ontology term" header="Study Factor Type" is-file-field="false" is-forced-ontology="false" is-hidden="false" is-multiple-value="false" is-required="true" section="STUDY FACTORS">
+            <description><![CDATA[Study Factor Type]]></description>
+            <default-value/>
+        </field>
+        <field data-type="String" header="Comment[Study Factor Description]" is-file-field="false" is-forced-ontology="false" is-hidden="false" is-multiple-value="false" is-required="false" section="STUDY FACTORS">
+            <description><![CDATA[(MIAPPE: Experimental Factor description) Free text description of the experimental factor. This include all relevant treatments planification and protocol planed for all the plant targeted by a given experimental factor.]]></description>
+            <default-value/>
+        </field>
+        <field data-type="String" header="Comment[Study Factor Values]" is-file-field="false" is-forced-ontology="false" is-hidden="false" is-multiple-value="true" is-required="false" section="STUDY FACTORS">
+            <description><![CDATA[(MIAPPE: Experimental Factor values) List of possible values for the factor.]]></description>
+            <default-value/>
+        </field>
+        <field data-type="String" header="Study Assay Measurement Type" is-file-field="false" is-forced-ontology="false" is-hidden="false" is-multiple-value="false" is-required="false" section="STUDY ASSAYS">
+            <description><![CDATA[No MIAPPE equivalent, but use this field as necessary.]]></description>
+            <default-value/>
+        </field>
+        <field data-type="String" header="Study Assay Technology Type" is-file-field="false" is-forced-ontology="false" is-hidden="false" is-multiple-value="false" is-required="false" section="STUDY ASSAYS">
+            <description><![CDATA[Study Assay Technology Type]]></description>
+            <default-value/>
+        </field>
+        <field data-type="String" header="Study Assay Technology Platform" is-file-field="false" is-forced-ontology="false" is-hidden="false" is-multiple-value="false" is-required="false" section="STUDY ASSAYS">
+            <description><![CDATA[Study Assay Technology Platform]]></description>
+            <default-value/>
+        </field>
+        <field data-type="String" header="Study Assay File Name" is-file-field="false" is-forced-ontology="false" is-hidden="false" is-multiple-value="false" is-required="true" section="STUDY ASSAYS">
+            <description><![CDATA[No MIAPPE equivalent, but use this field as necessary to indicate your assay files.]]></description>
+            <default-value/>
+        </field>
+        <field data-type="String" header="Study Protocol Name" is-file-field="false" is-forced-ontology="false" is-hidden="false" is-multiple-value="true" is-required="true" section="STUDY PROTOCOLS">
+            <description><![CDATA[Fixed protocols: Growth, Sampling (optional), Phenotyping, Data transformation. Optional: Event.]]></description>
+            <default-value/>
+        </field>
+        <field data-type="Ontology term" header="Study Protocol Type" is-file-field="false" is-forced-ontology="false" is-hidden="false" is-multiple-value="true" is-required="true" section="STUDY PROTOCOLS">
+            <description><![CDATA[For Growth protocol: (MIAPPE) Description of growth facility. For Events: (fixed) Event. For Sampling, Phenotyping: same.]]></description>
+            <default-value/>
+        </field>
+        <field data-type="String" header="Study Protocol Description" is-file-field="false" is-forced-ontology="false" is-hidden="false" is-multiple-value="true" is-required="false" section="STUDY PROTOCOLS">
+            <description><![CDATA[For Growth protocol: (MIAPPE) Cultural practices. For Events: (MIAPPE) Event description.]]></description>
+            <default-value/>
+        </field>
+        <field data-type="String" header="Study Protocol URI" is-file-field="false" is-forced-ontology="false" is-hidden="false" is-multiple-value="true" is-required="false" section="STUDY PROTOCOLS">
+            <description><![CDATA[For Growth protocol: (MIAPPE) Type of growth facility. For Events: (MIAPPE) Event accession number.]]></description>
+            <default-value/>
+        </field>
+        <field data-type="String" header="Study Protocol Version" is-file-field="false" is-forced-ontology="false" is-hidden="false" is-multiple-value="true" is-required="false" section="STUDY PROTOCOLS">
+            <description><![CDATA[Study Protocol Version]]></description>
+            <default-value/>
+        </field>
+        <field data-type="Ontology term" header="Study Protocol Parameters Name" is-file-field="false" is-forced-ontology="false" is-hidden="false" is-multiple-value="true" is-required="false" section="STUDY PROTOCOLS">
+            <description><![CDATA[For Growth: (MIAPPE) Environment Parameter. For Events: (MIAPPE - fixed) Event Date. For Phenotyping: (fixed) Trait definition file.]]></description>
+            <default-value/>
+        </field>
+        <field data-type="String" header="Study Protocol Components Name" is-file-field="false" is-forced-ontology="false" is-hidden="false" is-multiple-value="true" is-required="false" section="STUDY PROTOCOLS">
+            <description><![CDATA[Study Protocol Components Name]]></description>
+            <default-value/>
+        </field>
+        <field data-type="Ontology term" header="Study Protocol Components Type" is-file-field="false" is-forced-ontology="false" is-hidden="false" is-multiple-value="true" is-required="false" section="STUDY PROTOCOLS">
+            <description><![CDATA[Study Protocol Components Type]]></description>
+            <default-value/>
+        </field>
+        <structured-field name="factors"/>
+    </isatab-configuration>
+</isatab-config-file>
