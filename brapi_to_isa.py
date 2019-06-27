@@ -194,6 +194,11 @@ def create_study_sample_and_assay(client, brapi_study_id, isa_study,  sample_col
 
         phenotyping_process.parameter_values.append(sampl_des_pv)
         
+        # Adding Raw Data File column
+        RAW_datafile = DataFile(filename="NA in BrAPI",
+                                        label="Raw Data File")
+        phenotyping_process.outputs.append(RAW_datafile)
+
         # Adding Derived Data File column
         datafilename = 'd_' + str(brapi_study_id) + '_' + att_test(obs_unit, 'observationLevel') + '.txt'
         DER_datafile = DataFile(filename=datafilename,
@@ -201,11 +206,6 @@ def create_study_sample_and_assay(client, brapi_study_id, isa_study,  sample_col
                                         generated_from=[this_isa_sample])
         phenotyping_process.outputs.append(DER_datafile)
 
-        # Adding Raw Data File column
-        RAW_datafile = DataFile(filename="NA in BrAPI",
-                                        label="Raw Data File")
-        phenotyping_process.outputs.append(RAW_datafile)
-        
         isa_study.assays[i].process_sequence.append(phenotyping_process)
         plink(sample_collection_process, phenotyping_process)
 
