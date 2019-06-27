@@ -30,7 +30,7 @@ services:
             - -e
             - https://urgi.versailles.inra.fr/gnpis-core-srv/brapi/v1/
             - -s
-            - "RIGW1,GWAS_Tomato_Solcap_Avignon"
+            - RIGW1,GWAS_Tomato_Solcap_Avignon
         volumes:
          - ./outputdir:/outputdir
     test_pippa:

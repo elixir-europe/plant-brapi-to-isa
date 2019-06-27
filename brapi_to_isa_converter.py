@@ -167,7 +167,7 @@ class BrapiToIsaConverter:
             for brapidata in brapi_study['dataLinks']:
                 this_study.comments.append(Comment(name="Study Data File Link",value=brapidata['url']))
                 this_study.comments.append(Comment(name="Study Data File Description",value=brapidata['type']))
-                this_study.comments.append(Comment(name="Study Data File Version",value="NA"))
+                this_study.comments.append(Comment(name="Study Data File Version",value="NA in BrAPI"))
 
         # Declaring as many ISA Assay Types as there are BRAPI Observation Levels
         ###########################################################################

@@ -43,10 +43,10 @@ logger.addHandler(file4log)
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-e', '--endpoint', help="a BrAPi server endpoint", type=str)
-parser.add_argument('-t', '--trials', help="comma separated list of trial Ids. 'all' to get all trials (not recomended)", type=str, action='append')
+parser.add_argument('-t', '--trials', help="comma separated list of trial Ids. 'all' to get all trials (not recommended)", type=str, action='append')
 parser.add_argument('-s', '--studies', help="comma separated list of study Ids", type=str, action='append')
-parser.add_argument('-J', '--json', help="flag to desactivate json dump", action="store_false")
-parser.add_argument('-V', '--validator', help="flag to desactivate validation", action="store_false")
+parser.add_argument('-J', '--json', help="flag to deactivate json dump", action="store_false")
+parser.add_argument('-V', '--validator', help="flag to deactivate validation", action="store_false")
 
 SERVER = 'https://test-server.brapi.org/brapi/v1/'
 
@@ -183,14 +183,14 @@ def create_study_sample_and_assay(client, brapi_study_id, isa_study,  sample_col
         # Adding Parameter Value[Collection Date] column
         col_date_pv = ParameterValue(
                 category=ProtocolParameter(parameter_name=OntologyAnnotation(term="Collection Date")),
-                value=OntologyAnnotation(term="", term_source="", term_accession=""))
+                value=OntologyAnnotation(term="NA in BrAPI", term_source="", term_accession=""))
 
         phenotyping_process.parameter_values.append(col_date_pv)
 
         # Adding Parameter Value[Sample Description] column
         sampl_des_pv = ParameterValue(
                 category=ProtocolParameter(parameter_name=OntologyAnnotation(term="Sample Description")),
-                value=OntologyAnnotation(term="", term_source="", term_accession=""))
+                value=OntologyAnnotation(term="NA in BrAPI", term_source="", term_accession=""))
 
         phenotyping_process.parameter_values.append(sampl_des_pv)
         
@@ -202,7 +202,7 @@ def create_study_sample_and_assay(client, brapi_study_id, isa_study,  sample_col
         phenotyping_process.outputs.append(DER_datafile)
 
         # Adding Raw Data File column
-        RAW_datafile = DataFile(filename="",
+        RAW_datafile = DataFile(filename="NA in BrAPI",
                                         label="Raw Data File")
         phenotyping_process.outputs.append(RAW_datafile)
         

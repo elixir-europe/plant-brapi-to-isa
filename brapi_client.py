@@ -104,7 +104,7 @@ class BrapiClient:
         """ Given a BRAPI study identifier, return an list of BRAPI observation units"""
         observation_unit_call = self._get_obs_unit_call()
         if observation_unit_call == 'phenotypes-search':
-            yield from self.fetch_objects('GET', f'/phenotypes-search?studyDbId={study_id}')
+            yield from self.fetch_objects('GET', f'/phenotypes-search', params={'studyDbId':study_id})
         else:
             yield from self.fetch_objects('GET', f'/studies/{study_id}/{observation_unit_call}')
     
