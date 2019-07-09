@@ -191,7 +191,7 @@ def create_study_sample_and_assay(client, brapi_study_id, isa_study,  sample_col
         # Adding Parameter Value[Sample Description] column
         sampl_des_pp = ProtocolParameter(parameter_name=OntologyAnnotation(term="Sample Description"))
         sampl_des_pv = ParameterValue(category=sampl_des_pp,value=OntologyAnnotation(term="NA in BrAPI"))
-        phenotyping_process.parameter_values.append(col_date_pv)
+        phenotyping_process.parameter_values.append(sampl_des_pv)
         
         # Adding Raw Data File column
         RAW_datafile = DataFile(filename="NA in BrAPI",
