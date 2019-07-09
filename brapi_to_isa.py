@@ -78,7 +78,7 @@ logger.info("\n----------------\ntrials IDs to be exported : "
 # CASSAVA_BRAPI_V1 = 'https://cassavabase.org/brapi/v1/'
 
 
-def create_study_sample_and_assay(client, brapi_study_id, isa_study,  sample_collection_protocol, phenotyping_protocol, data_transformation_protocol, growth_protocol, OBSERVATIONUNITLIST):
+def create_study_sample_and_assay(client, brapi_study_id, isa_study,  sample_collection_protocol, phenotyping_protocol, data_transformation_protocol, OBSERVATIONUNITLIST):
 
     spat_dist_mapping_dictionary = {
         "X": "X",
@@ -184,18 +184,14 @@ def create_study_sample_and_assay(client, brapi_study_id, isa_study,  sample_col
         '''
 
         # Adding Parameter Value[Collection Date] column
-        col_date_pv = ParameterValue(
-                category=ProtocolParameter(parameter_name=OntologyAnnotation(term="Collection Date")),
-                value=OntologyAnnotation(term="NA in BrAPI"))
-        phenotyping_protocol.parameters.append(col_date_pv)
+        col_date_pp = ProtocolParameter(parameter_name=OntologyAnnotation(term="Collection Date"))
+        col_date_pv = ParameterValue(category=col_date_pp,value=OntologyAnnotation(term="NA in BrAPI"))
         phenotyping_process.parameter_values.append(col_date_pv)
 
         # Adding Parameter Value[Sample Description] column
-        sampl_des_pv = ParameterValue(
-                category=ProtocolParameter(parameter_name=OntologyAnnotation(term="Sample Description")),
-                value=OntologyAnnotation(term="NA in BrAPI"))
-        phenotyping_protocol.parameters.append(sampl_des_pv)
-        phenotyping_process.parameter_values.append(sampl_des_pv)
+        sampl_des_pp = ProtocolParameter(parameter_name=OntologyAnnotation(term="Sample Description"))
+        sampl_des_pv = ParameterValue(category=sampl_des_pp,value=OntologyAnnotation(term="NA in BrAPI"))
+        phenotyping_process.parameter_values.append(col_date_pv)
         
         # Adding Raw Data File column
         RAW_datafile = DataFile(filename="NA in BrAPI",
@@ -352,14 +348,16 @@ def main(arg):
                 # TODO: see https://github.com/ISA-tools/isa-api/blob/master/isatools/isatab.py#L886
                 phenotyping_protocol = Protocol(name="Phenotyping",
                                                 protocol_type=OntologyAnnotation(term="nucleic acid sequencing"))
+
+                col_date_pp = ProtocolParameter(parameter_name=OntologyAnnotation(term="Collection Date"))
+                phenotyping_protocol.parameters.append(col_date_pp)
+                sampl_des_pp = ProtocolParameter(parameter_name=OntologyAnnotation(term="Sample Description"))
+                phenotyping_protocol.parameters.append(sampl_des_pp)
+                
                 isa_study.protocols.append(phenotyping_protocol)
 
                 data_transformation_protocol = Protocol(name="Data Transformation",
                                                 protocol_type=OntologyAnnotation(term="Data Transformation"))
-                isa_study.protocols.append(data_transformation_protocol)
-
-                growth_protocol = Protocol(name="Growth",
-                                                protocol_type=OntologyAnnotation(term="Growth"))
                 isa_study.protocols.append(data_transformation_protocol)
 
                 # Getting the list of all germplasms used in the BRAPI isa_study:
@@ -379,7 +377,7 @@ def main(arg):
                     isa_study.sources.append(source)
 
                 # Now dealing with BRAPI observation units and attempting to create ISA samples
-                create_study_sample_and_assay(client, brapi_study_id, isa_study,  sample_collection_protocol, phenotyping_protocol, data_transformation_protocol, growth_protocol, OBSERVATIONUNITLIST)
+                create_study_sample_and_assay(client, brapi_study_id, isa_study,  sample_collection_protocol, phenotyping_protocol, data_transformation_protocol, OBSERVATIONUNITLIST)
                 
 
                 # Writing isa_study to ISA-Tab format:
