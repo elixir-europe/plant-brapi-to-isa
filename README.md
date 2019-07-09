@@ -1,7 +1,10 @@
-# BRANCHES
-**Current HEAD: elixir-europe/plant-brapi-to-isa/reactor**
-
 **WARNING** :  Repository about to be frozen, the reference/working repository will be : https://github.com/ISA-tools/plant-brapi-to-isa
+
+**NB**:the mapping from BrAPI to MIAPPE is fully documented here : 
+https://github.com/MIAPPE/ISA-Tab-for-plant-phenotyping/blob/v1.1/README.md 
+
+**Unavailable values**
+In BrAPI, unavailable value are treated the REST way, with null. In ISA MIAPPE, we must handle missing values in a R analysis environment friendly way. Therefore  all null value must be converted to "na".
 
 # plant-brapi-to-isa
 
@@ -37,6 +40,16 @@ docker-compose build && docker-compose run <>
 
 
 Output will be put into a subfolder `/outputdir`.
+
+# setup.py 
+Allows to use this program as a python pip package.
+
+Install the package with:
+pip install git+ssh://git@github.com:elixir-europe/plant-brapi-to-isa.git@<REF>#egg=brapi2isa
+
+Where <REF> is the git tag or branch or commit
+And then it can just be imported with
+import brapi_to_isa
 
 # Documentation
 

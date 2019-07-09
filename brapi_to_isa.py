@@ -127,7 +127,7 @@ def create_study_sample_and_assay(client, brapi_study_id, isa_study,  sample_col
             if 'observationLevels' in obs_unit and obs_unit['observationLevels']:
                 for lvl in obs_unit['observationLevels'].split(","):
                     a, b = lvl.split(":")
-                    spat_dist.append('[' + a + ']' + b)
+                    spat_dist.append(a + ':' + b)
             spat_dist_str = '; '.join(spat_dist)
             if spat_dist:
                 c = Characteristic(category=OntologyAnnotation(term="Spatial Distribution"),
