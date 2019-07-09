@@ -303,19 +303,28 @@ def main(arg):
         investigation.identifier = trial['trialDbId']
         investigation.title = trial['trialName']
 
+        #Investigation fields unavailable in BrAPI
+        investigation.description = "NA in BrAPI"
+        investigation.submission_date = "NA in BrAPI"
+        investigation.public_release_date = "NA in BrAPI"
+        investigation.comments.append(Comment(name="License", value="NA in BrAPI"))
+
         if 'contacts' in trial:
             for brapicontact in trial['contacts']:
                 #NOTE: brapi has just name attribute -> no seperate first/last name
                 ContactName = brapicontact['name'].split(' ')
                 contact = Person(first_name=ContactName[0], last_name=ContactName[1],
-                affiliation=att_test(brapicontact,'institutionName', 'NA'), email=att_test(brapicontact,'email', 'NA'), address='NA in BrAPI')
+                affiliation=att_test(brapicontact,'institutionName', 'NA'), email=att_test(brapicontact,'email', 'NA'), address='NA in BrAPI', roles='NA in BrAPI')
                 investigation.contacts.append(contact)
+
         investigation.comments.append(Comment(name="MIAPPE version", value="1.1"))
+
         if 'publications' in trial:
             for brapipublic in trial['publications']:
                 #This is BrAPI v1.3 specific (when older, skipped) 
                 publication = Publication(doi=att_test(brapipublic, 'publicationPUI', 'NA'))
                 publication.status = OntologyAnnotation(term="published")
+
                 investigation.publications.append(publication)
         # iterating through the BRAPI studies associated to a given BRAPI trial:
         for brapi_study in trial['studies']:

@@ -123,35 +123,48 @@ class BrapiToIsaConverter:
         elif 'studyName' in brapi_study:
             this_study.title = brapi_study['studyName']
         else:
-            this_study.title = ""
+            this_study.title = "NA"
 
         this_study.description = att_test(brapi_study, 'studyDescription')
+
+        oa_st_design = OntologyAnnotation(term='NA in BrAPI')
+        oa_st_design.comments.append(Comment(name="Study Design Description", value="NA in BrAPI"))
+        oa_st_design.comments.append(Comment(name="Observation Unit Level Hierarchy", value="NA in BrAPI"))
+        oa_st_design.comments.append(Comment(name="Observation Unit Description", value="NA in BrAPI"))
+        oa_st_design.comments.append(Comment(name="Map of Experimental Design", value="NA in BrAPI"))  
+        this_study.design_descriptors = [oa_st_design]
+
         this_study.comments.append(Comment(name="Study Start Date", value=att_test(brapi_study, 'startDate')))
         this_study.comments.append(Comment(name="Study End Date", value=att_test(brapi_study, 'endDate')))
-        this_study.comments.append(Comment(name="Study Experimental Site", value=att_test(brapi_study['location'], 'name', 'NA')))
-        study_design = att_test(brapi_study, 'studyType')
-        oa_st_design = OntologyAnnotation(term=study_design)
-        this_study.design_descriptors = [oa_st_design]
         this_study.comments.append(Comment(name="Trait Definition File", value="t_" + str(brapi_study_id) + ".txt"))
+        this_study.comments.append(Comment(name="Description of Growth Facility",value="NA in BrAPI"))
+        this_study.comments.append(Comment(name="Type of Growth Facility",value="NA in BrAPI"))
+        this_study.comments.append(Comment(name="Study Contact institution",value="NA in BrAPI"))
+        this_study.comments.append(Comment(name="Study Experimental site",value="NA in BrAPI"))
         
         # Adding Location information 
-        if 'countryCode' in brapi_study['location'] and brapi_study['location']['countryCode']:
-            if len(brapi_study['location']['countryCode']) == 3:
-                this_study.comments.append(Comment(name="Study Country",
-                                                   value=a3a2(brapi_study['location']['countryCode'])))
-            elif len(brapi_study['location']['countryCode']) == 2:
-                this_study.comments.append(Comment(name="Study Country",
-                                                   value=brapi_study['location']['countryCode']))
-        elif 'countryName' in brapi_study['location'] and brapi_study['location']['countryName']:
-            this_study.comments.append(Comment(name="Study Country",
-                                               value=brapi_study['location']['countryName']))
-        else:
-            this_study.comments.append(
-                Comment(name="Study Country", value=""))
+        if 'location' in brapi_study and brapi_study['location']:
+            this_study.comments.append(Comment(name="Study Experimental Site", value=att_test(brapi_study['location'], 'name', 'NA')))
 
-        this_study.comments.append(Comment(name="Study Latitude", value=att_test(brapi_study['location'], 'latitude')))
-        this_study.comments.append(Comment(name="Study Longitude", value=att_test(brapi_study['location'], 'longitude')))
-        this_study.comments.append(Comment(name="Study Altitude",value=att_test(brapi_study['location'], 'altitude')))
+            if 'countryCode' in brapi_study['location'] and brapi_study['location']['countryCode']:
+                if len(brapi_study['location']['countryCode']) == 3:
+                    this_study.comments.append(Comment(name="Study Country",
+                                                    value=a3a2(brapi_study['location']['countryCode'])))
+                elif len(brapi_study['location']['countryCode']) == 2:
+                    this_study.comments.append(Comment(name="Study Country",
+                                                    value=brapi_study['location']['countryCode']))
+            elif 'countryName' in brapi_study['location'] and brapi_study['location']['countryName']:
+                this_study.comments.append(Comment(name="Study Country",
+                                                value=brapi_study['location']['countryName']))
+            else:
+                this_study.comments.append(
+                    Comment(name="Study Country", value="NA"))
+
+            this_study.comments.append(Comment(name="Study Latitude", value=att_test(brapi_study['location'], 'latitude')))
+            this_study.comments.append(Comment(name="Study Longitude", value=att_test(brapi_study['location'], 'longitude')))
+            this_study.comments.append(Comment(name="Study Altitude",value=att_test(brapi_study['location'], 'altitude')))
+        else:
+            self.logger.info("BrAPI study " + brapi_study['studyDbId'] + "has no location attribute, this is mandatory to be MIAPPE compliant.")
 
         # Adding Contacts information
         if 'contacts' in brapi_study:
