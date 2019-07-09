@@ -186,14 +186,14 @@ def create_study_sample_and_assay(client, brapi_study_id, isa_study,  sample_col
         # Adding Parameter Value[Collection Date] column
         col_date_pv = ParameterValue(
                 category=ProtocolParameter(parameter_name=OntologyAnnotation(term="Collection Date")),
-                value=OntologyAnnotation(term="NA in BrAPI", term_source="", term_accession=""))
+                value=OntologyAnnotation(term="NA in BrAPI"))
         phenotyping_protocol.parameters.append(col_date_pv)
         phenotyping_process.parameter_values.append(col_date_pv)
 
         # Adding Parameter Value[Sample Description] column
         sampl_des_pv = ParameterValue(
                 category=ProtocolParameter(parameter_name=OntologyAnnotation(term="Sample Description")),
-                value=OntologyAnnotation(term="NA in BrAPI", term_source="", term_accession=""))
+                value=OntologyAnnotation(term="NA in BrAPI"))
         phenotyping_protocol.parameters.append(sampl_des_pv)
         phenotyping_process.parameter_values.append(sampl_des_pv)
         
