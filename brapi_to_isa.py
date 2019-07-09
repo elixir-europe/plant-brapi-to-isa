@@ -6,13 +6,13 @@ import logging
 import os
 import sys
 import json
+import re
 from collections import defaultdict
 
 from isatools.convert import isatab2json
 from isatools import isatab
 
-from isatools.model import Investigation, OntologyAnnotation, Characteristic, Source, \
-    Sample, Protocol, Process, StudyFactor, FactorValue, DataFile, ParameterValue, ProtocolParameter, plink, Person, Publication, Comment, Material
+from isatools.model import *
 
 from brapi_client import BrapiClient
 from brapi_to_isa_converter import BrapiToIsaConverter, att_test
@@ -43,10 +43,10 @@ logger.addHandler(file4log)
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-e', '--endpoint', help="a BrAPi server endpoint", type=str)
-parser.add_argument('-t', '--trials', help="comma separated list of trial Ids. 'all' to get all trials (not recomended)", type=str, action='append')
+parser.add_argument('-t', '--trials', help="comma separated list of trial Ids. 'all' to get all trials (not recommended)", type=str, action='append')
 parser.add_argument('-s', '--studies', help="comma separated list of study Ids", type=str, action='append')
-parser.add_argument('-J', '--json', help="flag to desactivate json dump", action="store_false")
-parser.add_argument('-V', '--validator', help="flag to desactivate validation", action="store_false")
+parser.add_argument('-J', '--json', help="flag to deactivate json dump", action="store_false")
+parser.add_argument('-V', '--validator', help="flag to deactivate validation", action="store_false")
 
 SERVER = 'https://test-server.brapi.org/brapi/v1/'
 
@@ -69,6 +69,7 @@ logger.info("\n----------------\ntrials IDs to be exported : "
 # SERVER = 'https://pippa.psb.ugent.be/BrAPIPPA/brapi/v1/'
 # SERVER = 'https://triticeaetoolbox.org/wheat/brapi/v1/'
 # SERVER = 'https://cassavabase.org/brapi/v1/'
+# SERVER = 'https://brapi.biodata.pt/brapi/v1/'
 
 # GNPIS_BRAPI_V1 = 'https://urgi.versailles.inra.fr/gnpis-core-srv/brapi/v1/'
 # EU_SOL_BRAPI_V1 = 'https://www.eu-sol.wur.nl/webapi/tomato/brapi/v1/'
@@ -77,7 +78,7 @@ logger.info("\n----------------\ntrials IDs to be exported : "
 # CASSAVA_BRAPI_V1 = 'https://cassavabase.org/brapi/v1/'
 
 
-def create_study_sample_and_assay(client, brapi_study_id, isa_study,  sample_collection_protocol, phenotyping_protocol, OBSERVATIONUNITLIST):
+def create_study_sample_and_assay(client, brapi_study_id, isa_study,  sample_collection_protocol, phenotyping_protocol, data_transformation_protocol, growth_protocol, OBSERVATIONUNITLIST):
 
     spat_dist_mapping_dictionary = {
         "X": "X",
@@ -98,7 +99,7 @@ def create_study_sample_and_assay(client, brapi_study_id, isa_study,  sample_col
     treatments = defaultdict(list)
     allready_converted_obs_unit = [] # Allow to handle multiyear observation units NOTE (INRA specific)
     for obs_unit in OBSERVATIONUNITLIST:
-        if obs_unit['observationLevel']:
+        if 'observationLevel' in obs_unit and obs_unit['observationLevel']:
             i = obs_level_to_assay[obs_unit['observationLevel']]
             obslvl = obs_unit['observationLevel']
         else:
@@ -167,6 +168,7 @@ def create_study_sample_and_assay(client, brapi_study_id, isa_study,  sample_col
         phenotyping_process.inputs.append(this_isa_sample)
         phenotyping_process.name = obs_unit["observationUnitDbId"] 
 
+        '''
         # ---------- TRY out for characteristics column in assay file ----------------------------
         material = Material(name=obs_unit["observationUnitDbId"])
         c = Characteristic(category=OntologyAnnotation(term="Observation Unit Type"),
@@ -179,23 +181,27 @@ def create_study_sample_and_assay(client, brapi_study_id, isa_study,  sample_col
         isa_study.assays[i].other_material.append(material)
 
         # ----------------------------------------------------------------------------------------
+        '''
 
         # Adding Parameter Value[Collection Date] column
         col_date_pv = ParameterValue(
                 category=ProtocolParameter(parameter_name=OntologyAnnotation(term="Collection Date")),
-                value=OntologyAnnotation(term="", term_source="", term_accession=""))
-
+                value=OntologyAnnotation(term="NA in BrAPI", term_source="", term_accession=""))
         phenotyping_protocol.parameters.append(col_date_pv)
         phenotyping_process.parameter_values.append(col_date_pv)
 
         # Adding Parameter Value[Sample Description] column
         sampl_des_pv = ParameterValue(
                 category=ProtocolParameter(parameter_name=OntologyAnnotation(term="Sample Description")),
-                value=OntologyAnnotation(term="", term_source="", term_accession=""))
-
+                value=OntologyAnnotation(term="NA in BrAPI", term_source="", term_accession=""))
         phenotyping_protocol.parameters.append(sampl_des_pv)
         phenotyping_process.parameter_values.append(sampl_des_pv)
         
+        # Adding Raw Data File column
+        RAW_datafile = DataFile(filename="NA in BrAPI",
+                                        label="Raw Data File")
+        phenotyping_process.outputs.append(RAW_datafile)
+
         # Adding Derived Data File column
         datafilename = 'd_' + str(brapi_study_id) + '_' + att_test(obs_unit, 'observationLevel') + '.txt'
         DER_datafile = DataFile(filename=datafilename,
@@ -203,11 +209,6 @@ def create_study_sample_and_assay(client, brapi_study_id, isa_study,  sample_col
                                         generated_from=[this_isa_sample])
         phenotyping_process.outputs.append(DER_datafile)
 
-        # Adding Raw Data File column
-        RAW_datafile = DataFile(filename="",
-                                        label="Raw Data File")
-        phenotyping_process.outputs.append(RAW_datafile)
-        
         isa_study.assays[i].process_sequence.append(phenotyping_process)
         plink(sample_collection_process, phenotyping_process)
 
@@ -231,6 +232,9 @@ def write_records_to_file(this_study_id, records, this_directory, filetype, Obse
             fh.write(this_element + '\n')
     fh.close()
 
+def filenameFormat(trialName):
+    trialName = re.sub('[\s]+', '_', trialName)
+    return trialName
 
 def get_output_path(path):
     path = "outputdir/" + path + "/"
@@ -296,24 +300,25 @@ def main(arg):
         logger.info('we start from a set of Trials')
         investigation = Investigation()
 
-        output_directory = get_output_path( trial['trialName'])
+        output_directory = get_output_path(filenameFormat(trial['trialName']))
         logger.info("Generating output in : "+ output_directory)
 
         # FILL IN TRIAL INFORMATION
         investigation.identifier = trial['trialDbId']
         investigation.title = trial['trialName']
+
         if 'contacts' in trial:
             for brapicontact in trial['contacts']:
                 #NOTE: brapi has just name attribute -> no seperate first/last name
                 ContactName = brapicontact['name'].split(' ')
                 contact = Person(first_name=ContactName[0], last_name=ContactName[1],
-                affiliation=brapicontact['institutionName'], email=brapicontact['email'])
+                affiliation=att_test(brapicontact,'institutionName', 'NA'), email=att_test(brapicontact,'email', 'NA'), address='NA in BrAPI')
                 investigation.contacts.append(contact)
         investigation.comments.append(Comment(name="MIAPPE version", value="1.1"))
         if 'publications' in trial:
             for brapipublic in trial['publications']:
                 #This is BrAPI v1.3 specific (when older, skipped) 
-                publication = Publication(doi=brapipublic['publicationPUI'])
+                publication = Publication(doi=att_test(brapipublic, 'publicationPUI', 'NA'))
                 publication.status = OntologyAnnotation(term="published")
                 investigation.publications.append(publication)
         # iterating through the BRAPI studies associated to a given BRAPI trial:
@@ -339,15 +344,23 @@ def main(arg):
                 investigation.studies.append(isa_study)
 
                 # creating the main ISA protocols:
-                sample_collection_protocol = Protocol(name="sample collection",
+                sample_collection_protocol = Protocol(name="Sampling",
                                                     protocol_type=OntologyAnnotation(term="sample collection"))
                 isa_study.protocols.append(sample_collection_protocol)
 
                 # !!!: fix isatab.py to access other protocol_type values to enable Assay Tab serialization
                 # TODO: see https://github.com/ISA-tools/isa-api/blob/master/isatools/isatab.py#L886
-                phenotyping_protocol = Protocol(name="phenotyping",
+                phenotyping_protocol = Protocol(name="Phenotyping",
                                                 protocol_type=OntologyAnnotation(term="nucleic acid sequencing"))
                 isa_study.protocols.append(phenotyping_protocol)
+
+                data_transformation_protocol = Protocol(name="Data Transformation",
+                                                protocol_type=OntologyAnnotation(term="Data Transformation"))
+                isa_study.protocols.append(data_transformation_protocol)
+
+                growth_protocol = Protocol(name="Growth",
+                                                protocol_type=OntologyAnnotation(term="Growth"))
+                isa_study.protocols.append(data_transformation_protocol)
 
                 # Getting the list of all germplasms used in the BRAPI isa_study:
                 germplasms = client.get_study_germplasms(brapi_study_id)
@@ -366,7 +379,7 @@ def main(arg):
                     isa_study.sources.append(source)
 
                 # Now dealing with BRAPI observation units and attempting to create ISA samples
-                create_study_sample_and_assay(client, brapi_study_id, isa_study,  sample_collection_protocol, phenotyping_protocol, OBSERVATIONUNITLIST)
+                create_study_sample_and_assay(client, brapi_study_id, isa_study,  sample_collection_protocol, phenotyping_protocol, data_transformation_protocol, growth_protocol, OBSERVATIONUNITLIST)
                 
 
                 # Writing isa_study to ISA-Tab format:
@@ -412,7 +425,7 @@ def main(arg):
             try:
                 logger.info('Converting ISA-TAB to ISA-JSON format')
                 input_file_path = output_directory
-                output_file_path = output_directory + trial['trialName'] + '.json'
+                output_file_path = output_directory + filenameFormat(trial['trialName']) + '.json'
 
                 isa_json = isatab2json.convert(
                 input_file_path, use_new_parser=True, validate_first=False)

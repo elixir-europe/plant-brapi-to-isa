@@ -6,11 +6,11 @@ import copy
 from collections import defaultdict
 from brapi_client import BrapiClient
 
-def att_test(dictionary, attribute):
+def att_test(dictionary, attribute, NA=""):
     if attribute in dictionary and dictionary[attribute]:
         return str(dictionary[attribute])
     else:
-        return ""
+        return NA
 
 class BrapiToIsaConverter:
     """ Converter json coming out of the BRAPI to ISA object
@@ -35,7 +35,7 @@ class BrapiToIsaConverter:
         obs_levels = defaultdict(set)
         for ou in OBSERVATIONUNITLIST:
             for obs in ou['observations']:
-                if ou['observationLevel']:
+                if 'observationLevel' in ou and ou['observationLevel']:
                     obs_level_in_study[ou['observationLevel']].add(
                         obs['observationVariableName'])
                     if 'observationLevels' in ou.keys() and ou['observationLevels']:
@@ -128,7 +128,7 @@ class BrapiToIsaConverter:
         this_study.description = att_test(brapi_study, 'studyDescription')
         this_study.comments.append(Comment(name="Study Start Date", value=att_test(brapi_study, 'startDate')))
         this_study.comments.append(Comment(name="Study End Date", value=att_test(brapi_study, 'endDate')))
-        this_study.comments.append(Comment(name="Study Experimental Site", value=att_test(brapi_study['location'], 'name')))
+        this_study.comments.append(Comment(name="Study Experimental Site", value=att_test(brapi_study['location'], 'name', 'NA')))
         study_design = att_test(brapi_study, 'studyType')
         oa_st_design = OntologyAnnotation(term=study_design)
         this_study.design_descriptors = [oa_st_design]
@@ -167,7 +167,7 @@ class BrapiToIsaConverter:
             for brapidata in brapi_study['dataLinks']:
                 this_study.comments.append(Comment(name="Study Data File Link",value=brapidata['url']))
                 this_study.comments.append(Comment(name="Study Data File Description",value=brapidata['type']))
-                this_study.comments.append(Comment(name="Study Data File Version",value="NA"))
+                this_study.comments.append(Comment(name="Study Data File Version",value="NA in BrAPI"))
 
         # Declaring as many ISA Assay Types as there are BRAPI Observation Levels
         ###########################################################################
