@@ -100,8 +100,8 @@ def create_study_sample_and_assay(client, brapi_study_id, isa_study,  sample_col
     allready_converted_obs_unit = [] # Allow to handle multiyear observation units NOTE (INRA specific)
     for obs_unit in OBSERVATIONUNITLIST:
         if 'observationLevel' in obs_unit and obs_unit['observationLevel']:
-            i = obs_level_to_assay[obs_unit['observationLevel']]
-            obslvl = obs_unit['observationLevel']
+            i = obs_level_to_assay[obs_unit['observationLevel'].lower()]
+            obslvl = obs_unit['observationLevel'].lower()
         else:
             i = 0
             obslvl = 'study'
@@ -183,14 +183,14 @@ def create_study_sample_and_assay(client, brapi_study_id, isa_study,  sample_col
         data_transformation_process = Process(executes_protocol=data_transformation_protocol)
 
         # Adding Raw Data File column
-        RAW_datafile = DataFile(filename="NA in BrAPI",
+        RAW_datafile = DataFile(filename="NA",
                                         label="Raw Data File",
                                         generated_from=[this_isa_sample])
         phenotyping_process.outputs.append(RAW_datafile)
         data_transformation_process.inputs.append(RAW_datafile)
         
         # Adding Derived Data File column
-        datafilename = 'd_' + str(brapi_study_id) + '_' + att_test(obs_unit, 'observationLevel', "study") + '.txt'
+        datafilename = 'd_' + str(brapi_study_id) + '_' + att_test(obs_unit, 'observationLevel', "study").lower() + '.txt'
         DER_datafile = DataFile(filename=datafilename,
                                         label="Derived Data File")
         data_transformation_process.outputs.append(DER_datafile)
@@ -207,7 +207,8 @@ def create_study_sample_and_assay(client, brapi_study_id, isa_study,  sample_col
     for factor, modalities in treatments.items():
         f = StudyFactor(name=factor, factor_type=OntologyAnnotation(term=factor))
         modality = ";".join(modalities)
-        f.comments.append(Comment(name="modality",value=modality))                
+        f.comments.append(Comment(name="Study Factor Values",value=modality))
+        f.comments.append(Comment(name="Study Factor Description", value="NA in BrAPI"))           
         isa_study.factors.append(f)
 
 def write_records_to_file(this_study_id, records, this_directory, filetype, ObservationLevel=''):
@@ -306,8 +307,9 @@ def main(arg):
             for brapicontact in trial['contacts']:
                 #NOTE: brapi has just name attribute -> no seperate first/last name
                 ContactName = brapicontact['name'].split(' ')
+                role = OntologyAnnotation(term=att_test(brapicontact, 'type', 'NA'))
                 contact = Person(first_name=ContactName[0], last_name=ContactName[1],
-                affiliation=att_test(brapicontact,'institutionName', 'NA'), email=att_test(brapicontact,'email', 'NA'), address='NA in BrAPI')
+                affiliation=att_test(brapicontact,'institutionName', 'NA'), email=att_test(brapicontact,'email', 'NA'), address='NA in BrAPI', roles=[role])
                 investigation.contacts.append(contact)
 
         investigation.comments.append(Comment(name="MIAPPE version", value="1.1"))

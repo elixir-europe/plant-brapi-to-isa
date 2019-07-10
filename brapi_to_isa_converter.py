@@ -36,12 +36,12 @@ class BrapiToIsaConverter:
         for ou in OBSERVATIONUNITLIST:
             for obs in ou['observations']:
                 if 'observationLevel' in ou and ou['observationLevel']:
-                    obs_level_in_study[ou['observationLevel']].add(
+                    obs_level_in_study[ou['observationLevel'].lower()].add(
                         obs['observationVariableName'])
                     if 'observationLevels' in ou.keys() and ou['observationLevels']:
                         for obslvl in ou['observationLevels'].split(","):
                             a, b = obslvl.split(":")
-                            obs_levels[ou['observationLevel']].add(a)
+                            obs_levels[ou['observationLevel'].lower()].add(a)
                 else:
                     if obs['observationVariableName']:
                         obs_level_in_study['study'].add(
@@ -65,8 +65,10 @@ class BrapiToIsaConverter:
             germplasm_id)
 
         if 'taxonId' in all_germplasm_attributes and all_germplasm_attributes['taxonId']:
-            c = self.create_isa_characteristic(
-                        'Organism', str(all_germplasm_attributes['taxonId']))
+            taxonids =[]
+            for taxonid in all_germplasm_attributes['taxonId']:
+                taxonids.append(att_test(taxonid, 'sourceName', 'NCBI') + ":" + str(taxonid['taxonId']))
+            c = self.create_isa_characteristic('Organism', ';'.join(taxonids))
             returned_characteristics.append(c)
         else:
             if ('genus' in all_germplasm_attributes and all_germplasm_attributes['genus']) or ('species' in all_germplasm_attributes and all_germplasm_attributes['species']):
@@ -130,7 +132,7 @@ class BrapiToIsaConverter:
 
         this_study.description = att_test(brapi_study, 'studyDescription')
 
-        oa_st_design = OntologyAnnotation(term='NA in BrAPI')
+        oa_st_design = OntologyAnnotation(term=att_test(brapi_study, 'studyType', 'NA'))
         oa_st_design.comments.append(Comment(name="Study Design Description", value="NA in BrAPI"))
         oa_st_design.comments.append(Comment(name="Observation Unit Level Hierarchy", value="NA in BrAPI"))
         oa_st_design.comments.append(Comment(name="Observation Unit Description", value="NA in BrAPI"))
@@ -295,7 +297,7 @@ class BrapiToIsaConverter:
             emptyRow.append("")
 
         for obs_unit in obs_units:
-            if ('observationLevel' in obs_unit and obs_unit['observationLevel'] == level) or (level == 'study'):
+            if ('observationLevel' in obs_unit and obs_unit['observationLevel'].lower() == level) or (level == 'study'):
                 row = copy.deepcopy(emptyRow)
                 # Get data from observationUnit
                 for obs_unit_attribute in obs_unit.keys():
