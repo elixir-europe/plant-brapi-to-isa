@@ -186,7 +186,7 @@ def create_study_sample_and_assay(client, brapi_study_id, isa_study,  sample_col
         RAW_datafile = DataFile(filename="NA in BrAPI",
                                         label="Raw Data File",
                                         generated_from=[this_isa_sample])
-        
+        phenotyping_process.outputs.append(RAW_datafile)
         data_transformation_process.inputs.append(RAW_datafile)
         
         # Adding Derived Data File column
