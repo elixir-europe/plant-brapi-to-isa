@@ -162,26 +162,12 @@ def create_study_sample_and_assay(client, brapi_study_id, isa_study,  sample_col
         # --------------------------------
         
         # !!!: fix isatab.py to access other protocol_type values to enable Assay Tab serialization
-        
+
         isa_study.assays[i].samples.append(this_isa_sample)
+
         phenotyping_process = Process(executes_protocol=phenotyping_protocol)
         phenotyping_process.inputs.append(this_isa_sample)
         phenotyping_process.name = obs_unit["observationUnitDbId"] 
-
-        '''
-        # ---------- TRY out for characteristics column in assay file ----------------------------
-        material = Material(name=obs_unit["observationUnitDbId"])
-        c = Characteristic(category=OntologyAnnotation(term="Observation Unit Type"),
-                                value=OntologyAnnotation(term=obslvl,
-                                                                    term_source="",
-                                                                    term_accession=""))
-        material.characteristics.append(c)
-        phenotyping_process.outputs.append(material)
-        phenotyping_process.inputs.append(material)
-        isa_study.assays[i].other_material.append(material)
-
-        # ----------------------------------------------------------------------------------------
-        '''
 
         # Adding Parameter Value[Collection Date] column
         col_date_pp = ProtocolParameter(parameter_name=OntologyAnnotation(term="Collection Date"))
@@ -193,20 +179,27 @@ def create_study_sample_and_assay(client, brapi_study_id, isa_study,  sample_col
         sampl_des_pv = ParameterValue(category=sampl_des_pp,value=OntologyAnnotation(term="NA in BrAPI"))
         phenotyping_process.parameter_values.append(sampl_des_pv)
         
+        # Data Transformation
+        data_transformation_process = Process(executes_protocol=data_transformation_protocol)
+
         # Adding Raw Data File column
         RAW_datafile = DataFile(filename="NA in BrAPI",
-                                        label="Raw Data File")
-        phenotyping_process.outputs.append(RAW_datafile)
-
-        # Adding Derived Data File column
-        datafilename = 'd_' + str(brapi_study_id) + '_' + att_test(obs_unit, 'observationLevel') + '.txt'
-        DER_datafile = DataFile(filename=datafilename,
-                                        label="Derived Data File",
+                                        label="Raw Data File",
                                         generated_from=[this_isa_sample])
-        phenotyping_process.outputs.append(DER_datafile)
+        
+        data_transformation_process.inputs.append(RAW_datafile)
+        
+        # Adding Derived Data File column
+        datafilename = 'd_' + str(brapi_study_id) + '_' + att_test(obs_unit, 'observationLevel', "study") + '.txt'
+        DER_datafile = DataFile(filename=datafilename,
+                                        label="Derived Data File")
+        data_transformation_process.outputs.append(DER_datafile)
 
         isa_study.assays[i].process_sequence.append(phenotyping_process)
         plink(sample_collection_process, phenotyping_process)
+        
+        isa_study.assays[i].process_sequence.append(data_transformation_process)
+        plink(phenotyping_process, data_transformation_process)
 
         
     # Mapping treatments to ISA study Factor Value:
@@ -221,7 +214,7 @@ def write_records_to_file(this_study_id, records, this_directory, filetype, Obse
     logger.info('Writing to file')
     # tdf_file = 'out/' + this_study_id
     if ObservationLevel:
-        ObservationLevel = '_' + ObservationLevel
+        ObservationLevel = "_" + ObservationLevel
     with open(this_directory + filetype + this_study_id + ObservationLevel + '.txt', 'w', encoding="utf-8") as fh:
         for this_element in records:
             # print(this_element)
@@ -449,7 +442,7 @@ def main(arg):
                 isa_config_dir = "./isaconfig-phenotyping-basic"
                 isa_tab_dir = output_directory
                 logger.info('Validating isa-tab files against configuration files found in ' + isa_config_dir)
-                validation_log_path = output_directory + trial['trialName'] + '_validation_log.json'
+                validation_log_path = output_directory + filenameFormat(trial['trialName']) + '_validation_log.json'
                 report = isatab.validate(open(os.path.join(isa_tab_dir, 'i_investigation.txt')), isa_config_dir)
                 with open(validation_log_path, 'w') as out_fp2:
                     json.dump(report, out_fp2, indent=4)
