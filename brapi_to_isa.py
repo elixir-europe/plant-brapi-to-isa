@@ -222,7 +222,7 @@ def write_records_to_file(this_study_id, records, this_directory, filetype, Obse
     # tdf_file = 'out/' + this_study_id
     if ObservationLevel:
         ObservationLevel = '_' + ObservationLevel
-    with open(this_directory + filetype + this_study_id + ObservationLevel + '.txt', 'w') as fh:
+    with open(this_directory + filetype + this_study_id + ObservationLevel + '.txt', 'w', encoding="utf-8") as fh:
         for this_element in records:
             # print(this_element)
             fh.write(this_element + '\n')
@@ -314,7 +314,7 @@ def main(arg):
                 #NOTE: brapi has just name attribute -> no seperate first/last name
                 ContactName = brapicontact['name'].split(' ')
                 contact = Person(first_name=ContactName[0], last_name=ContactName[1],
-                affiliation=att_test(brapicontact,'institutionName', 'NA'), email=att_test(brapicontact,'email', 'NA'), address='NA in BrAPI', roles='NA in BrAPI')
+                affiliation=att_test(brapicontact,'institutionName', 'NA'), email=att_test(brapicontact,'email', 'NA'), address='NA in BrAPI')
                 investigation.contacts.append(contact)
 
         investigation.comments.append(Comment(name="MIAPPE version", value="1.1"))
