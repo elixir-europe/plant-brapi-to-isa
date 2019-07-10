@@ -43,8 +43,11 @@ class BrapiToIsaConverter:
                             a, b = obslvl.split(":")
                             obs_levels[ou['observationLevel']].add(a)
                 else:
-                    obs_level_in_study['study'].add(
-                        obs['observationVariableName'])
+                    if obs['observationVariableName']:
+                        obs_level_in_study['study'].add(
+                            obs['observationVariableName'])
+                    else:
+                        obs_level_in_study['study'].add("NA variable")
 
         self.logger.info("Observation Levels in study: " +
                          ",".join(obs_level_in_study.keys()))
@@ -292,7 +295,7 @@ class BrapiToIsaConverter:
             emptyRow.append("")
 
         for obs_unit in obs_units:
-            if obs_unit['observationLevel'] == level:
+            if ('observationLevel' in obs_unit and obs_unit['observationLevel'] == level) or (level == 'study'):
                 row = copy.deepcopy(emptyRow)
                 # Get data from observationUnit
                 for obs_unit_attribute in obs_unit.keys():
