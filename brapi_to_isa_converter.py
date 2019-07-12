@@ -134,7 +134,7 @@ class BrapiToIsaConverter:
         else:
             this_study.title = PAR_NAinData
 
-        this_study.description = att_test(brapi_study, 'studyDescription')
+        this_study.description = att_test(brapi_study, 'studyDescription', PAR_NAinData)
 
         oa_st_design = OntologyAnnotation(term=att_test(brapi_study, 'studyType', PAR_NAinData))
         oa_st_design.comments.append(Comment(name="Study Design Description", value=PAR_NAinBrAPI))
@@ -180,8 +180,9 @@ class BrapiToIsaConverter:
             for brapicontact in brapi_study['contacts']:
                 #NOTE: brapi has just name attribute -> no separate first/last name
                 ContactName = brapicontact['name'].split(' ')
+                role = OntologyAnnotation(term=att_test(brapicontact, 'type', PAR_NAinData))
                 contact = Person(first_name=ContactName[0], last_name=ContactName[1],
-                affiliation=att_test(brapicontact, 'institutionName'), email=att_test(brapicontact, 'email'))
+                affiliation=att_test(brapicontact, 'institutionName'), email=att_test(brapicontact, 'email'), address=PAR_NAinBrAPI, roles=[role])
                 this_study.contacts.append(contact)
 
         # Adding dataLinks inforamtion

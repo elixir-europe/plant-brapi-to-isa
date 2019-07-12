@@ -64,14 +64,14 @@ logger.info("\n----------------\ntrials IDs to be exported : "
             + str(STUDY_IDS) + "\nTarget endpoint :  "
             + str(SERVER) + "\n----------------" )
 
-# SERVER = 'https://urgi.versailles.inra.fr/gnpis-core-srv/brapi/v1/'
+# SERVER = 'https://urgi.versailles.inra.fr/faidare/brapi/v1/'
 # SERVER = 'https://www.eu-sol.wur.nl/webapi/tomato/brapi/v1/'
 # SERVER = 'https://pippa.psb.ugent.be/BrAPIPPA/brapi/v1/'
 # SERVER = 'https://triticeaetoolbox.org/wheat/brapi/v1/'
 # SERVER = 'https://cassavabase.org/brapi/v1/'
 # SERVER = 'https://brapi.biodata.pt/brapi/v1/'
 
-# GNPIS_BRAPI_V1 = 'https://urgi.versailles.inra.fr/gnpis-core-srv/brapi/v1/'
+# GNPIS_BRAPI_V1 = 'https://urgi.versailles.inra.fr/faidare/brapi/v1/'
 # EU_SOL_BRAPI_V1 = 'https://www.eu-sol.wur.nl/webapi/tomato/brapi/v1/'
 # PIPPA_BRAPI_V1 = "https://pippa.psb.ugent.be/BrAPIPPA/brapi/v1/"
 # TRITI_BRAPI_V1 = 'https://triticeaetoolbox.org/wheat/brapi/v1/'
