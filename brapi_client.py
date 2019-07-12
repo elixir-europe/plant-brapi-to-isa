@@ -217,9 +217,6 @@ class BrapiClient:
                 self.logger.error("problem with request: " + str(r))
                 raise RuntimeError("Non-200 status code")
             maxcount = int(r.json()['metadata']['pagination']['totalPages'])
-            # TODO: remove, hack to adress GnpIS bug, to be fixed in production by January 2019
-            if '/observationUnits' in url:
-                page = 1000
 
             for data in r.json()['result']['data']:
                 yield data

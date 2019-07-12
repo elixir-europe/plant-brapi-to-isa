@@ -15,7 +15,7 @@ from isatools import isatab
 from isatools.model import *
 
 from brapi_client import BrapiClient
-from brapi_to_isa_converter import BrapiToIsaConverter, att_test
+from brapi_to_isa_converter import BrapiToIsaConverter, att_test, PAR_NAinData, PAR_NAinBrAPI, PAR_defaultObsLvl, PAR_suppObsLvl
 
 __author__ = 'proccaserra (Philippe Rocca-Serra)'
 __author__ = 'cpommier (Cyril Pommier)'
@@ -78,6 +78,7 @@ logger.info("\n----------------\ntrials IDs to be exported : "
 # CASSAVA_BRAPI_V1 = 'https://cassavabase.org/brapi/v1/'
 
 
+
 def create_study_sample_and_assay(client, brapi_study_id, isa_study,  sample_collection_protocol, phenotyping_protocol, data_transformation_protocol, OBSERVATIONUNITLIST):
 
     spat_dist_mapping_dictionary = {
@@ -104,7 +105,7 @@ def create_study_sample_and_assay(client, brapi_study_id, isa_study,  sample_col
             obslvl = obs_unit['observationLevel'].lower()
         else:
             i = 0
-            obslvl = 'study'
+            obslvl = PAR_defaultObsLvl
         # Getting the relevant germplasm used for that observation event:
         # ---------------------------------------------------------------
         this_source = isa_study.get_source(obs_unit['germplasmName'])
@@ -171,26 +172,26 @@ def create_study_sample_and_assay(client, brapi_study_id, isa_study,  sample_col
 
         # Adding Parameter Value[Collection Date] column
         col_date_pp = ProtocolParameter(parameter_name=OntologyAnnotation(term="Collection Date"))
-        col_date_pv = ParameterValue(category=col_date_pp,value=OntologyAnnotation(term="NA in BrAPI"))
+        col_date_pv = ParameterValue(category=col_date_pp,value=OntologyAnnotation(term=PAR_NAinBrAPI))
         phenotyping_process.parameter_values.append(col_date_pv)
 
         # Adding Parameter Value[Sample Description] column
         sampl_des_pp = ProtocolParameter(parameter_name=OntologyAnnotation(term="Sample Description"))
-        sampl_des_pv = ParameterValue(category=sampl_des_pp,value=OntologyAnnotation(term="NA in BrAPI"))
+        sampl_des_pv = ParameterValue(category=sampl_des_pp,value=OntologyAnnotation(term=PAR_NAinBrAPI))
         phenotyping_process.parameter_values.append(sampl_des_pv)
         
         # Data Transformation
         data_transformation_process = Process(executes_protocol=data_transformation_protocol)
 
         # Adding Raw Data File column
-        RAW_datafile = DataFile(filename="NA",
+        RAW_datafile = DataFile(filename=PAR_NAinData,
                                         label="Raw Data File",
                                         generated_from=[this_isa_sample])
         phenotyping_process.outputs.append(RAW_datafile)
         data_transformation_process.inputs.append(RAW_datafile)
         
         # Adding Derived Data File column
-        datafilename = 'd_' + str(brapi_study_id) + '_' + att_test(obs_unit, 'observationLevel', "study").lower() + '.txt'
+        datafilename = 'd_' + str(brapi_study_id) + '_' + att_test(obs_unit, 'observationLevel', PAR_defaultObsLvl).lower() + '.txt'
         DER_datafile = DataFile(filename=datafilename,
                                         label="Derived Data File")
         data_transformation_process.outputs.append(DER_datafile)
@@ -208,7 +209,7 @@ def create_study_sample_and_assay(client, brapi_study_id, isa_study,  sample_col
         f = StudyFactor(name=factor, factor_type=OntologyAnnotation(term=factor))
         modality = ";".join(modalities)
         f.comments.append(Comment(name="Study Factor Values",value=modality))
-        f.comments.append(Comment(name="Study Factor Description", value="NA in BrAPI"))           
+        f.comments.append(Comment(name="Study Factor Description", value=PAR_NAinBrAPI))           
         isa_study.factors.append(f)
 
 def write_records_to_file(this_study_id, records, this_directory, filetype, ObservationLevel=''):
@@ -264,7 +265,7 @@ def get_trials( brapi_client : BrapiClient):
 def get_empty_trial():
     empty_trial = {
         "trialDbId": "trial_less_study_" + STUDY_IDS[0],
-        "trialName": "NA",
+        "trialName": PAR_NAinData,
         "trialType": "Project",
         "endDate": "",
         "startDate": "",
@@ -298,18 +299,18 @@ def main(arg):
         investigation.title = trial['trialName']
 
         #Investigation fields unavailable in BrAPI
-        investigation.description = "NA in BrAPI"
-        investigation.submission_date = "NA in BrAPI"
-        investigation.public_release_date = "NA in BrAPI"
-        investigation.comments.append(Comment(name="License", value="NA in BrAPI"))
+        investigation.description = PAR_NAinBrAPI
+        investigation.submission_date = PAR_NAinBrAPI
+        investigation.public_release_date = PAR_NAinBrAPI
+        investigation.comments.append(Comment(name="License", value=PAR_NAinBrAPI))
 
         if 'contacts' in trial:
             for brapicontact in trial['contacts']:
                 #NOTE: brapi has just name attribute -> no seperate first/last name
                 ContactName = brapicontact['name'].split(' ')
-                role = OntologyAnnotation(term=att_test(brapicontact, 'type', 'NA'))
+                role = OntologyAnnotation(term=att_test(brapicontact, 'type', PAR_NAinData))
                 contact = Person(first_name=ContactName[0], last_name=ContactName[1],
-                affiliation=att_test(brapicontact,'institutionName', 'NA'), email=att_test(brapicontact,'email', 'NA'), address='NA in BrAPI', roles=[role])
+                affiliation=att_test(brapicontact,'institutionName', PAR_NAinData), email=att_test(brapicontact,'email', PAR_NAinData), address=PAR_NAinBrAPI, roles=[role])
                 investigation.contacts.append(contact)
 
         investigation.comments.append(Comment(name="MIAPPE version", value="1.1"))
@@ -317,7 +318,7 @@ def main(arg):
         if 'publications' in trial:
             for brapipublic in trial['publications']:
                 #This is BrAPI v1.3 specific (when older, skipped) 
-                publication = Publication(doi=att_test(brapipublic, 'publicationPUI', 'NA'))
+                publication = Publication(doi=att_test(brapipublic, 'publicationPUI', PAR_NAinData))
                 publication.status = OntologyAnnotation(term="published")
 
                 investigation.publications.append(publication)
