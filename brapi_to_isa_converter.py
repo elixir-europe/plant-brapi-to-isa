@@ -6,11 +6,19 @@ import copy
 from collections import defaultdict
 from brapi_client import BrapiClient
 
-def att_test(dictionary, attribute):
+def att_test(dictionary, attribute, NA=""):
     if attribute in dictionary and dictionary[attribute]:
         return str(dictionary[attribute])
     else:
-        return ""
+        return NA
+
+# ENVIRONMENTAL PARAMETERS
+# ------------------------
+
+PAR_NAinData = "NA"
+PAR_NAinBrAPI = "NA in BrAPI"
+PAR_defaultObsLvl = "plant"
+PAR_suppObsLvl = ['block', 'sub-block', 'plot', 'plant', 'study', 'pot', 'replication', 'replicate','individual', 'virtual_trial', 'unit-parcel']
 
 class BrapiToIsaConverter:
     """ Converter json coming out of the BRAPI to ISA object
@@ -35,16 +43,15 @@ class BrapiToIsaConverter:
         obs_levels = defaultdict(set)
         for ou in OBSERVATIONUNITLIST:
             for obs in ou['observations']:
-                if ou['observationLevel']:
-                    obs_level_in_study[ou['observationLevel']].add(
-                        obs['observationVariableName'])
+                if 'observationLevel' in ou and ou['observationLevel']:
+                    obs_level_in_study[ou['observationLevel'].lower()].add(
+                        att_test(obs, 'observationVariableName', "NA variable"))
                     if 'observationLevels' in ou.keys() and ou['observationLevels']:
                         for obslvl in ou['observationLevels'].split(","):
                             a, b = obslvl.split(":")
-                            obs_levels[ou['observationLevel']].add(a)
+                            obs_levels[ou['observationLevel'].lower()].add(a)
                 else:
-                    obs_level_in_study['study'].add(
-                        obs['observationVariableName'])
+                        obs_level_in_study[PAR_defaultObsLvl].add(att_test(obs, 'observationVariableName', "NA variable"))
 
         self.logger.info("Observation Levels in study: " +
                          ",".join(obs_level_in_study.keys()))
@@ -62,11 +69,13 @@ class BrapiToIsaConverter:
             germplasm_id)
 
         if 'taxonId' in all_germplasm_attributes and all_germplasm_attributes['taxonId']:
-            c = self.create_isa_characteristic(
-                        'Organism', str(all_germplasm_attributes['taxonId']))
+            taxonids =[]
+            for taxonid in all_germplasm_attributes['taxonId']:
+                taxonids.append(att_test(taxonid, 'sourceName', 'NCBI') + ":" + str(taxonid['taxonId']))
+            c = self.create_isa_characteristic('Organism', ';'.join(taxonids))
             returned_characteristics.append(c)
         else:
-            if all_germplasm_attributes['genus'] or all_germplasm_attributes['species']:
+            if ('genus' in all_germplasm_attributes and all_germplasm_attributes['genus']) or ('species' in all_germplasm_attributes and all_germplasm_attributes['species']):
                 taxonId = self._brapi_client.get_taxonId(all_germplasm_attributes['genus'],all_germplasm_attributes['species'])
                 if taxonId:
                     c = self.create_isa_characteristic(
@@ -123,43 +132,57 @@ class BrapiToIsaConverter:
         elif 'studyName' in brapi_study:
             this_study.title = brapi_study['studyName']
         else:
-            this_study.title = ""
+            this_study.title = PAR_NAinData
 
-        this_study.description = att_test(brapi_study, 'studyDescription')
+        this_study.description = att_test(brapi_study, 'studyDescription', PAR_NAinData)
+
+        oa_st_design = OntologyAnnotation(term=att_test(brapi_study, 'studyType', PAR_NAinData))
+        oa_st_design.comments.append(Comment(name="Study Design Description", value=PAR_NAinBrAPI))
+        oa_st_design.comments.append(Comment(name="Observation Unit Level Hierarchy", value=PAR_NAinBrAPI))
+        oa_st_design.comments.append(Comment(name="Observation Unit Description", value=PAR_NAinBrAPI))
+        oa_st_design.comments.append(Comment(name="Map of Experimental Design", value=PAR_NAinBrAPI))  
+        this_study.design_descriptors = [oa_st_design]
+
         this_study.comments.append(Comment(name="Study Start Date", value=att_test(brapi_study, 'startDate')))
         this_study.comments.append(Comment(name="Study End Date", value=att_test(brapi_study, 'endDate')))
-        this_study.comments.append(Comment(name="Study Experimental Site", value=att_test(brapi_study['location'], 'name')))
-        study_design = att_test(brapi_study, 'studyType')
-        oa_st_design = OntologyAnnotation(term=study_design)
-        this_study.design_descriptors = [oa_st_design]
         this_study.comments.append(Comment(name="Trait Definition File", value="t_" + str(brapi_study_id) + ".txt"))
+        this_study.comments.append(Comment(name="Description of Growth Facility",value=PAR_NAinBrAPI))
+        this_study.comments.append(Comment(name="Type of Growth Facility",value=PAR_NAinBrAPI))
+        this_study.comments.append(Comment(name="Study Contact institution",value=PAR_NAinBrAPI))
+        this_study.comments.append(Comment(name="Study Experimental site",value=PAR_NAinBrAPI))
         
         # Adding Location information 
-        if 'countryCode' in brapi_study['location'] and brapi_study['location']['countryCode']:
-            if len(brapi_study['location']['countryCode']) == 3:
-                this_study.comments.append(Comment(name="Study Country",
-                                                   value=a3a2(brapi_study['location']['countryCode'])))
-            elif len(brapi_study['location']['countryCode']) == 2:
-                this_study.comments.append(Comment(name="Study Country",
-                                                   value=brapi_study['location']['countryCode']))
-        elif 'countryName' in brapi_study['location'] and brapi_study['location']['countryName']:
-            this_study.comments.append(Comment(name="Study Country",
-                                               value=brapi_study['location']['countryName']))
-        else:
-            this_study.comments.append(
-                Comment(name="Study Country", value=""))
+        if 'location' in brapi_study and brapi_study['location']:
+            this_study.comments.append(Comment(name="Study Experimental Site", value=att_test(brapi_study['location'], 'name', PAR_NAinData)))
 
-        this_study.comments.append(Comment(name="Study Latitude", value=att_test(brapi_study['location'], 'latitude')))
-        this_study.comments.append(Comment(name="Study Longitude", value=att_test(brapi_study['location'], 'longitude')))
-        this_study.comments.append(Comment(name="Study Altitude",value=att_test(brapi_study['location'], 'altitude')))
+            if 'countryCode' in brapi_study['location'] and brapi_study['location']['countryCode']:
+                if len(brapi_study['location']['countryCode']) == 3:
+                    this_study.comments.append(Comment(name="Study Country",
+                                                    value=a3a2(brapi_study['location']['countryCode'])))
+                elif len(brapi_study['location']['countryCode']) == 2:
+                    this_study.comments.append(Comment(name="Study Country",
+                                                    value=brapi_study['location']['countryCode']))
+            elif 'countryName' in brapi_study['location'] and brapi_study['location']['countryName']:
+                this_study.comments.append(Comment(name="Study Country",
+                                                value=brapi_study['location']['countryName']))
+            else:
+                this_study.comments.append(
+                    Comment(name="Study Country", value=PAR_NAinData))
+
+            this_study.comments.append(Comment(name="Study Latitude", value=att_test(brapi_study['location'], 'latitude')))
+            this_study.comments.append(Comment(name="Study Longitude", value=att_test(brapi_study['location'], 'longitude')))
+            this_study.comments.append(Comment(name="Study Altitude",value=att_test(brapi_study['location'], 'altitude')))
+        else:
+            self.logger.info("BrAPI study " + brapi_study['studyDbId'] + "has no location attribute, this is mandatory to be MIAPPE compliant.")
 
         # Adding Contacts information
         if 'contacts' in brapi_study:
             for brapicontact in brapi_study['contacts']:
                 #NOTE: brapi has just name attribute -> no separate first/last name
                 ContactName = brapicontact['name'].split(' ')
+                role = OntologyAnnotation(term=att_test(brapicontact, 'type', PAR_NAinData))
                 contact = Person(first_name=ContactName[0], last_name=ContactName[1],
-                affiliation=att_test(brapicontact, 'institutionName'), email=att_test(brapicontact, 'email'))
+                affiliation=att_test(brapicontact, 'institutionName'), email=att_test(brapicontact, 'email'), address=PAR_NAinBrAPI, roles=[role])
                 this_study.contacts.append(contact)
 
         # Adding dataLinks inforamtion
@@ -167,7 +190,7 @@ class BrapiToIsaConverter:
             for brapidata in brapi_study['dataLinks']:
                 this_study.comments.append(Comment(name="Study Data File Link",value=brapidata['url']))
                 this_study.comments.append(Comment(name="Study Data File Description",value=brapidata['type']))
-                this_study.comments.append(Comment(name="Study Data File Version",value="NA"))
+                this_study.comments.append(Comment(name="Study Data File Version",value=PAR_NAinBrAPI))
 
         # Declaring as many ISA Assay Types as there are BRAPI Observation Levels
         ###########################################################################
@@ -227,15 +250,15 @@ class BrapiToIsaConverter:
             if att_test(obs_var['method'], 'name'):
                 elements['Method'].append(att_test(obs_var['method'], 'name'))
             else:
-                elements['Method'].append(att_test(obs_var, 'name'))
+                elements['Method'].append(att_test(obs_var, 'name', PAR_NAinData))
             
             if att_test(obs_var['method'], 'description'):
                 elements['Method Description'].append(att_test(obs_var['method'], 'description'))
             else:
-                elements['Method Description'].append(att_test(obs_var['trait'], 'description'))
+                elements['Method Description'].append(att_test(obs_var['trait'], 'description', PAR_NAinData))
             
-            elements['Reference Associated to the Method'].append(att_test(obs_var['method'], 'reference'))
-            elements['Scale'].append(att_test(obs_var['scale'], 'name'))
+            elements['Reference Associated to the Method'].append(att_test(obs_var['method'], 'reference', PAR_NAinData))
+            elements['Scale'].append(att_test(obs_var['scale'], 'name', PAR_NAinData))
 
         # Deleting empty columns
         data_elements = []
@@ -279,7 +302,7 @@ class BrapiToIsaConverter:
             emptyRow.append("")
 
         for obs_unit in obs_units:
-            if obs_unit['observationLevel'] == level:
+            if ('observationLevel' in obs_unit and obs_unit['observationLevel'].lower() == level) or (level == PAR_defaultObsLvl):
                 row = copy.deepcopy(emptyRow)
                 # Get data from observationUnit
                 for obs_unit_attribute in obs_unit.keys():
@@ -307,7 +330,7 @@ class BrapiToIsaConverter:
                                 row[head.index(
                                     "accessionNumber")] = germplasminfo[obs_unit[obs_unit_attribute]][0]
                         else:
-                            row[head.index(obs_unit_attribute)] = "NA"
+                            row[head.index(obs_unit_attribute)] = PAR_NAinData
 
                 rowbuffer = copy.deepcopy(row)
 
@@ -319,7 +342,7 @@ class BrapiToIsaConverter:
                                 ] = measurement[obs_attribute]
                         else:
                             row[head.index(obs_attribute)
-                                ] = "NA"
+                                ] = PAR_NAinData
                             # DEBUG self.logger.info(obs_attribute + " does not exist in observation in observationUnit " + obs_unit['observationUnitDbId'])
                     if measurement["observationVariableName"] in head:
                         row[head.index(measurement["observationVariableName"])] = str(

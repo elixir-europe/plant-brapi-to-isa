@@ -6,7 +6,7 @@ services:
             - python
             - /brapi_to_isa.py
             - -e
-            - https://urgi.versailles.inra.fr/gnpis-core-srv/brapi/v1/
+            - https://urgi.versailles.inra.fr/faidare/brapi/v1/
             - -t
             - "24"
         volumes:
@@ -17,7 +17,7 @@ services:
             - python
             - /brapi_to_isa.py
             - -e
-            - https://urgi.versailles.inra.fr/gnpis-core-srv/brapi/v1/
+            - https://urgi.versailles.inra.fr/faidare/brapi/v1/
             - -s
             - "RIGW1"
         volumes:
@@ -28,9 +28,9 @@ services:
             - python
             - /brapi_to_isa.py
             - -e
-            - https://urgi.versailles.inra.fr/gnpis-core-srv/brapi/v1/
+            - https://urgi.versailles.inra.fr/faidare/brapi/v1/
             - -s
-            - "RIGW1,GWAS_Tomato_Solcap_Avignon"
+            - RIGW1,GWAS_Tomato_Solcap_Avignon
         volumes:
          - ./outputdir:/outputdir
     test_pippa:

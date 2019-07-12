@@ -7,18 +7,18 @@
             <description><![CDATA[(MIAPPE: Observation unit ID) Identifier used to identify the observation unit in data files containing the values observed or measured on that unit. Must be locally unique.]]></description>
             <default-value><![CDATA[obs_unit_X]]></default-value>
         </field>
-        <field data-type="list" header="Characteristics[Observation Unit Type]" is-file-field="false" is-forced-ontology="false" is-hidden="false" is-multiple-value="false" is-required="true">
+        <field data-type="list" header="Characteristics[Observation Unit Type]" is-file-field="false" is-forced-ontology="false" is-hidden="false" is-multiple-value="false" is-required="false">
             <description><![CDATA[(MIAPPE: Experimental unit type) Type of observation unit in textual form, usually one of the following: block, sub-block, plot, plant, study, pot, replication or replicate, individual, virtual_trial, unit-parcel]]></description>
             <list-values>block,sub-block,plot,plant,study,pot,replicate,individual,virtual_trial,unit-parcel</list-values>
             <default-value><![CDATA[sub-block]]></default-value>
         </field>
         <protocol-field protocol-type="Sampling"/>
 
-        <field data-type="String" header="Parameter Value[Collection Date]" is-file-field="false" is-forced-ontology="false" is-hidden="false" is-multiple-value="false" is-required="true">
+        <field data-type="String" header="Parameter Value[Collection Date]" is-file-field="false" is-forced-ontology="false" is-hidden="false" is-multiple-value="false" is-required="false">
             <description><![CDATA[(MIAPPE: (Sample) Collection date) Any information not captured by the other sample fields, including quantification, sample treatments and processing.]]></description>
             <default-value><![CDATA[e.g. 2005-08-15T15:52:01+00:00]]></default-value>
         </field>
-        <field data-type="String" header="Parameter Value[Sample Description]" is-file-field="false" is-forced-ontology="false" is-hidden="false" is-multiple-value="false" is-required="true">
+        <field data-type="String" header="Parameter Value[Sample Description]" is-file-field="false" is-forced-ontology="false" is-hidden="false" is-multiple-value="false" is-required="false">
             <description><![CDATA[(MIAPPE: Sample description) Any information not captured by the other sample fields, including quantification, sample treatments and processing.]]></description>
             <default-value><![CDATA[e.g. Distal part of the leaf ; 100 mg of roots taken from 10 roots at 20°C, conserved in vacuum at 20 mM NaCl salinity, stored at -60 °C to -85 °C.]]></default-value>
         </field>
