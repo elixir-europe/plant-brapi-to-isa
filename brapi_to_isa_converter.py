@@ -41,6 +41,7 @@ class BrapiToIsaConverter:
         # every observation will be checked for its variables and be linked to the obeservation level
         obs_level_in_study = defaultdict(set)
         obs_levels = defaultdict(set)
+        lvlNotAvailable = False
         for ou in OBSERVATIONUNITLIST:
             for obs in ou['observations']:
                 if 'observationLevel' in ou and ou['observationLevel']:
@@ -51,7 +52,11 @@ class BrapiToIsaConverter:
                             a, b = obslvl.split(":")
                             obs_levels[ou['observationLevel'].lower()].add(a)
                 else:
-                        obs_level_in_study[PAR_defaultObsLvl].add(att_test(obs, 'observationVariableName', "NA variable"))
+                    obs_level_in_study[PAR_defaultObsLvl].add(att_test(obs, 'observationVariableName', "NA variable"))
+                    lvlNotAvailable = True
+        if lvlNotAvailable:
+            self.logger.info("This BrAPI endpoint does not contain observation levels. Please add 'observationLevel' to the observations. Default " + PAR_defaultObsLvl + " is taken as observation level.")
+            self.logger.info("Following observation levels are supported: " + str(PAR_suppObsLvl) + ".")
 
         self.logger.info("Observation Levels in study: " +
                          ",".join(obs_level_in_study.keys()))
@@ -195,6 +200,9 @@ class BrapiToIsaConverter:
         # Declaring as many ISA Assay Types as there are BRAPI Observation Levels
         ###########################################################################
         for level in obs_levels_in_study:
+            if level not in PAR_suppObsLvl:
+                self.logger.info("The observation level " + level + " is not supported by MIAPPE at this moment and will not be validated.")
+                self.logger.info("Following observation levels are supported: " + str(PAR_suppObsLvl) + ".")
 
             oref_mt = OntologySource(
                 name="OBI", description="Ontology for Biomedical Investigation")
