@@ -153,8 +153,7 @@ class BrapiToIsaConverter:
         this_study.comments.append(Comment(name="Trait Definition File", value="t_" + str(brapi_study_id) + ".txt"))
         this_study.comments.append(Comment(name="Description of Growth Facility",value=PAR_NAinBrAPI))
         this_study.comments.append(Comment(name="Type of Growth Facility",value=PAR_NAinBrAPI))
-        this_study.comments.append(Comment(name="Study Contact institution",value=PAR_NAinBrAPI))
-        this_study.comments.append(Comment(name="Study Experimental site",value=PAR_NAinBrAPI))
+        this_study.comments.append(Comment(name="Study Contact Institution",value=PAR_NAinBrAPI))
         
         # Adding Location information 
         if 'location' in brapi_study and brapi_study['location']:
