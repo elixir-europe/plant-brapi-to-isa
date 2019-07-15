@@ -7,7 +7,7 @@
             <description><![CDATA[(MIAPPE: Observation unit ID) Identifier used to identify the observation unit in data files containing the values observed or measured on that unit. Must be locally unique.]]></description>
             <default-value><![CDATA[obs_unit_X]]></default-value>
         </field>
-        <field data-type="list" header="Characteristics[Observation Unit Type]" is-file-field="false" is-forced-ontology="false" is-hidden="false" is-multiple-value="false" is-required="true">
+        <field data-type="list" header="Characteristics[Observation Unit Type]" is-file-field="false" is-forced-ontology="false" is-hidden="false" is-multiple-value="false" is-required="false">
             <description><![CDATA[(MIAPPE: Experimental unit type) Type of observation unit in textual form, usually one of the following: block, sub-block, plot, plant, study, pot, replication or replicate, individual, virtual_trial, unit-parcel]]></description>
             <list-values>placeholder,block,sub-block,plot,plant,study,pot,replicate,individual,virtual_trial,unit-parcel</list-values>
             <default-value><![CDATA[placeholder]]></default-value>
@@ -46,10 +46,6 @@
                         <default-value><![CDATA[e.g. Biosamples:SAMEA4202911]]></default-value>
         </field>
         <protocol-field protocol-type="Phenotyping"/>
-        <field data-type="String" header="Parameter Value[Trait Definition File]" is-file-field="false" is-forced-ontology="false" is-hidden="false" is-multiple-value="false" is-required="true">
-            <description><![CDATA[Name of the Trait definition file, holding the trait descriptions (MIAPPE: Observed Variable)]]></description>
-                        <default-value><![CDATA[e.g. tdf.txt]]></default-value>
-        </field>
         <field data-type="String" header="Assay Name" is-file-field="false" is-forced-ontology="false" is-hidden="false" is-multiple-value="false" is-required="true">
             <description><![CDATA[Assay Name]]></description>
                         <default-value><![CDATA[assay_A]]></default-value>
