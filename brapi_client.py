@@ -4,7 +4,8 @@ from collections import Iterable
 from typing import List
 import requests
 from requests.adapters import HTTPAdapter
-from requests.packages.urllib3.util.retry import Retry
+from urllib3.util.retry import Retry
+import urllib3.request
 import time
 import re
 from cachetools import cached, LRUCache, TTLCache
@@ -243,4 +244,18 @@ class BrapiClient:
                 
             else:
                 return None
-            
+    
+    def get_ontologies(self):
+        ont = {}
+        link = 'http://www.obofoundry.org/registry/ontologies.jsonld'
+        self.logger.debug('GET ' + link)
+        r = requests.get(link)
+        if r.status_code != requests.codes.ok:
+            self.logger.error("problem with request: " + str(r))
+            raise RuntimeError("Non-200 status code")
+        else:
+            data = r.json()
+        for ontology in data['ontologies']:
+            if ontology['activity_status'] == "active":
+                ont[ontology['id']] = [ontology['title'], ontology['ontology_purl']]
+        return ont

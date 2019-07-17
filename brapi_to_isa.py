@@ -79,7 +79,7 @@ logger.info("\n----------------\ntrials IDs to be exported : "
 
 
 
-def create_study_sample_and_assay(client, brapi_study_id, isa_study,  sample_collection_protocol, phenotyping_protocol, data_transformation_protocol, OBSERVATIONUNITLIST):
+def create_study_sample_and_assay(client, brapi_study_id, isa_study,  growth_protocol, phenotyping_protocol, data_transformation_protocol, OBSERVATIONUNITLIST):
 
     spat_dist_mapping_dictionary = {
         "X": "X",
@@ -154,10 +154,10 @@ def create_study_sample_and_assay(client, brapi_study_id, isa_study,  sample_col
 
             # Creating the corresponding ISA sample entity for structure the document:
             # ------------------------------------------------------------------------
-            sample_collection_process = Process(executes_protocol=sample_collection_protocol)
-            sample_collection_process.inputs.append(this_source)
-            sample_collection_process.outputs.append(this_isa_sample)
-            isa_study.process_sequence.append(sample_collection_process)
+            growth_process = Process(executes_protocol=growth_protocol)
+            growth_process.inputs.append(this_source)
+            growth_process.outputs.append(this_isa_sample)
+            isa_study.process_sequence.append(growth_process)
 
         # Assays at observation unit level
         # --------------------------------
@@ -171,14 +171,14 @@ def create_study_sample_and_assay(client, brapi_study_id, isa_study,  sample_col
         phenotyping_process.name = obs_unit["observationUnitDbId"] 
 
         # Adding Parameter Value[Collection Date] column
-        col_date_pp = ProtocolParameter(parameter_name=OntologyAnnotation(term="Collection Date"))
-        col_date_pv = ParameterValue(category=col_date_pp,value=OntologyAnnotation(term=PAR_NAinBrAPI))
-        phenotyping_process.parameter_values.append(col_date_pv)
+        # col_date_pp = ProtocolParameter(parameter_name=OntologyAnnotation(term="Collection Date"))
+        # col_date_pv = ParameterValue(category=col_date_pp,value=OntologyAnnotation(term=PAR_NAinBrAPI))
+        # sample_collection_process.parameter_values.append(col_date_pv)
 
         # Adding Parameter Value[Sample Description] column
-        sampl_des_pp = ProtocolParameter(parameter_name=OntologyAnnotation(term="Sample Description"))
-        sampl_des_pv = ParameterValue(category=sampl_des_pp,value=OntologyAnnotation(term=PAR_NAinBrAPI))
-        phenotyping_process.parameter_values.append(sampl_des_pv)
+        # sampl_des_pp = ProtocolParameter(parameter_name=OntologyAnnotation(term="Sample Description"))
+        # sampl_des_pv = ParameterValue(category=sampl_des_pp,value=OntologyAnnotation(term=PAR_NAinBrAPI))
+        # sample_collection_process.parameter_values.append(sampl_des_pv)
         
         # Data Transformation
         data_transformation_process = Process(executes_protocol=data_transformation_protocol)
@@ -197,7 +197,7 @@ def create_study_sample_and_assay(client, brapi_study_id, isa_study,  sample_col
         data_transformation_process.outputs.append(DER_datafile)
 
         isa_study.assays[i].process_sequence.append(phenotyping_process)
-        plink(sample_collection_process, phenotyping_process)
+        plink(growth_process, phenotyping_process)
         
         isa_study.assays[i].process_sequence.append(data_transformation_process)
         plink(phenotyping_process, data_transformation_process)
@@ -345,21 +345,27 @@ def main(arg):
                 investigation.studies.append(isa_study)
 
                 # creating the main ISA protocols:
-                sample_collection_protocol = Protocol(name="Sampling",
-                                                    protocol_type=OntologyAnnotation(term="sample collection"))
-                isa_study.protocols.append(sample_collection_protocol)
 
                 # !!!: fix isatab.py to access other protocol_type values to enable Assay Tab serialization
                 # TODO: see https://github.com/ISA-tools/isa-api/blob/master/isatools/isatab.py#L886
+
                 phenotyping_protocol = Protocol(name="Phenotyping",
                                                 protocol_type=OntologyAnnotation(term="nucleic acid sequencing"))
-
-                col_date_pp = ProtocolParameter(parameter_name=OntologyAnnotation(term="Collection Date"))
-                phenotyping_protocol.parameters.append(col_date_pp)
-                sampl_des_pp = ProtocolParameter(parameter_name=OntologyAnnotation(term="Sample Description"))
-                phenotyping_protocol.parameters.append(sampl_des_pp)
-                
                 isa_study.protocols.append(phenotyping_protocol)
+
+                growth_protocol = Protocol(name="Growth",
+                                                protocol_type=OntologyAnnotation(term="growth"))
+                isa_study.protocols.append(growth_protocol)
+
+                # Sample protocol
+                # sample_collection_protocol = Protocol(name="Sampling",
+                #                                     protocol_type=OntologyAnnotation(term="sample collection"))
+                # isa_study.protocols.append(sample_collection_protocol)
+                # col_date_pp = ProtocolParameter(parameter_name=OntologyAnnotation(term="Collection Date"))
+                # sample_collection_protocol.parameters.append(col_date_pp)
+                # sampl_des_pp = ProtocolParameter(parameter_name=OntologyAnnotation(term="Sample Description"))
+                # sample_collection_protocol.parameters.append(sampl_des_pp)
+                
 
                 data_transformation_protocol = Protocol(name="Data Transformation",
                                                 protocol_type=OntologyAnnotation(term="Data Transformation"))
@@ -382,7 +388,7 @@ def main(arg):
                     isa_study.sources.append(source)
 
                 # Now dealing with BRAPI observation units and attempting to create ISA samples
-                create_study_sample_and_assay(client, brapi_study_id, isa_study,  sample_collection_protocol, phenotyping_protocol, data_transformation_protocol, OBSERVATIONUNITLIST)
+                create_study_sample_and_assay(client, brapi_study_id, isa_study, growth_protocol, phenotyping_protocol, data_transformation_protocol, OBSERVATIONUNITLIST)
                 
 
                 # Writing isa_study to ISA-Tab format:
