@@ -270,7 +270,7 @@ class BrapiToIsaConverter:
 
             else:
                 if att_test(obs_var, 'synonyms'):  
-                    elements['Variable Name'].append(';'.join(obs_var['synonyms']) + ';' + str(obs_var_id))
+                    elements['Variable Name'].append(';'.join(obs_var['synonyms']) + ';' + att_test(obs_var, 'observationVariableDbId', 'NA'))
                 else: 
                      elements['Variable Name'].append(att_test(obs_var, 'observationVariableDbId'))
 
