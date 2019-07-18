@@ -48,13 +48,13 @@ class BrapiToIsaConverter:
             for obs in ou['observations']:
                 if 'observationLevel' in ou and ou['observationLevel']:
                     obs_level_in_study[ou['observationLevel'].lower()].add(
-                        att_test(obs, 'observationVariableName', "NA variable"))
+                        re.sub('[\s]+', '_', att_test(obs, 'observationVariableName', "NA variable name")))
                     if 'observationLevels' in ou.keys() and ou['observationLevels']:
                         for obslvl in ou['observationLevels'].split(","):
                             a, b = obslvl.split(":")
                             obs_levels[ou['observationLevel'].lower()].add(a)
                 else:
-                    obs_level_in_study[PAR_defaultObsLvl].add(att_test(obs, 'observationVariableName', "NA variable"))
+                    obs_level_in_study[PAR_defaultObsLvl].add(re.sub('[\s]+', '_', att_test(obs, 'observationVariableName', "NA variable")))
                     lvlNotAvailable = True
         if lvlNotAvailable:
             self.logger.info("This BrAPI endpoint does not contain observation levels. Please add 'observationLevel' to the observations. Default " + PAR_defaultObsLvl + " is taken as observation level.")
@@ -264,13 +264,13 @@ class BrapiToIsaConverter:
             
             if obs_var_id and obs_var_id.group(1).lower() in self.ontologies:
                 if att_test(obs_var, 'synonyms'):  
-                    elements['Variable Name'].append(';'.join(obs_var['synonyms']))
+                    elements['Variable Name'].append('; '.join(obs_var['synonyms']))
 
                 elements['Variable Accession Number'].append(obs_var_id.group(0).upper())
 
             else:
                 if att_test(obs_var, 'synonyms'):  
-                    elements['Variable Name'].append(';'.join(obs_var['synonyms']) + ';' + att_test(obs_var, 'observationVariableDbId', 'NA'))
+                    elements['Variable Name'].append('; '.join(obs_var['synonyms']) + ' (BrAPI variableDbId: ' + att_test(obs_var, 'observationVariableDbId', 'NA') + ')')
                 else: 
                      elements['Variable Name'].append(att_test(obs_var, 'observationVariableDbId'))
 
@@ -374,7 +374,7 @@ class BrapiToIsaConverter:
                                 ] = PAR_NAinData
                             # DEBUG self.logger.info(obs_attribute + " does not exist in observation in observationUnit " + obs_unit['observationUnitDbId'])
                     if measurement["observationVariableName"] in head:
-                        row[head.index(measurement["observationVariableName"])] = str(
+                        row[head.index(re.sub('[\s]+', '_', measurement["observationVariableName"]))] = str(
                             measurement["value"])
                         data_records.append('\t'.join(row))
                         row = copy.deepcopy(rowbuffer)
