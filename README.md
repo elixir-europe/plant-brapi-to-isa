@@ -2,7 +2,7 @@
 
 Code to pull data from BrAPI endpoints and create an [ISA](http://isa-tools.org) representation of the experiments in a MIAPPE compliant way. This script is part of the Data Validation implementation study of ELIXIR.
 
-![](https://raw.githubusercontent.com/elixir-europe/plant-brapi-to-isa/e5534823b80c46ae48989142b46dde0004d8dae8/validation-overview.png)
+![](https://raw.githubusercontent.com/elixir-europe/plant-brapi-to-isa/master/)
 
 The mapping from ISA to MIAPPE is fully documented here: https://github.com/MIAPPE/ISA-Tab-for-plant-phenotyping/blob/v1.1/README.md
 
@@ -24,8 +24,6 @@ BrAPI to isa is tested and optimized for BrAPI version 1.0, 1.1, 1.2 and 1.3.
 
 ## Output
 
-Output will be put into a subfolder `/outputdir`.
-
 * Meta-data in ISA-tab
    * 1 investigation file (i_investigation.txt)
    * 1 study file / study (s_*.txt)
@@ -35,10 +33,12 @@ Output will be put into a subfolder `/outputdir`.
 * 1 Data file in tabular format / observation level (d_*.txt)
 * 1 Validation log file (*_validation_log.json)
 
-## Unavailable values
-BrAPI v1.3 and earlier do not support all the necessary attributes that are needed for MIAPPE compliance. These fields will be filled in with `"NA in BrAPI"`. Be aware that these fields are not detected by the validator since they are filled in with a string. 
+Output will be put into a subfolder `/outputdir`.
 
-Values that are supported by BrAPI but are not implemented in the given endpoint, will be filled in with `"NA"`. This is an R analysis environment friendly way compared to the REST full way used by BrAPI.
+## Unavailable values
+BrAPI v1.3 and earlier does not support all the necessary attributes that are needed for MIAPPE compliance. These fields will be filled in with `"NA in BrAPI"`. Be aware that these fields are not detected by the validator since they are filled in with a string. 
+
+Values that are supported by BrAPI but are not implemented in the given endpoint, will be filled in with `"NA"`. This is a R analysis environment friendly way compared to the REST full way used in BrAPI.
 
 ## Validation
 
@@ -83,7 +83,7 @@ python brapi_to_isa.py -e https://brapi.biodata.pt/brapi/v1/ -t 2
 
 ## Docker
 
-This is setup to be used with Docker for easy dependency requirements. You can download and run with a command like:
+This setup is to be used with Docker for easy dependency requirements.
 
 ### Running BrAPI to ISA in a container without test containers:
 
@@ -127,10 +127,12 @@ Usage:
 import brapi_to_isa
 ```
 ## Documentation
- * https://github.com/MIAPPE/MIAPPE/blob/master/MIAPPE_Checklist-Data-Model-v1.1/MIAPPE_Checklist-Data-Model-v1.1.pdf - MIAPPE checklist
- * https://docs.google.com/spreadsheets/d/1SiUVvauhdNSpAfHgds-vQpjAXYs34lFD8wSOZdkyCgY/edit?usp=sharing - MIAPPE spec
- * https://docs.google.com/spreadsheets/d/1RE_lXBFY4FsFcJcPAr-3QTlvKz4azedLob18ONrGZj0/edit?usp=sharing - BrAPI <-> MIAPPE mapping
+ * https://github.com/MIAPPE/MIAPPE/blob/master/MIAPPE_Checklist-Data-Model-v1.1/MIAPPE_Checklist-Data-Model-v1.1.pdf - MIAPPE v1.1 checklist
+ * https://docs.google.com/spreadsheets/d/1d2HyJddYJsVnTesPXcaflg9gqE8IA9a8SHCYIPTA_fQ - BrAPI <-> MIAPPE mapping
  * http://docs.brapi.apiary.io/# - BrAPI documentation
  
   
+## License 
+Copyright (c) 2019, ELIXIR Europe
 
+All rights reserved.
