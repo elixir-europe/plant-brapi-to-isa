@@ -1,16 +1,14 @@
-**WARNING** :  Repository about to be frozen, the reference/working repository will be : https://github.com/ISA-tools/plant-brapi-to-isa
-
-**NB**:the mapping from BrAPI to MIAPPE is fully documented here : 
-https://github.com/MIAPPE/ISA-Tab-for-plant-phenotyping/blob/v1.1/README.md 
 
 **Unavailable values**
 In BrAPI, unavailable value are treated the REST way, with null. In ISA MIAPPE, we must handle missing values in a R analysis environment friendly way. Therefore  all null value must be converted to "na".
 
-# plant-brapi-to-isa
+# BrAPI2ISA
 
 Code to pull data from BrAPI endpoints and create an [ISA](http://isa-tools.org) representation of the experiments. 
 
-# Docker
+
+
+## Docker
 
 This is setup to be used with Docker for easy dependency requirements. You can download and run with a command like:
 
@@ -41,7 +39,7 @@ docker-compose build && docker-compose run <>
 
 Output will be put into a subfolder `/outputdir`.
 
-# setup.py 
+## setup.py 
 Allows to use this program as a python pip package.
 
 Install the package with:
@@ -51,7 +49,7 @@ Where <REF> is the git tag or branch or commit
 And then it can just be imported with
 import brapi_to_isa
 
-# Documentation
+## Documentation
 
 
  * https://docs.google.com/spreadsheets/d/1SiUVvauhdNSpAfHgds-vQpjAXYs34lFD8wSOZdkyCgY/edit?usp=sharing - MIAPPE spec

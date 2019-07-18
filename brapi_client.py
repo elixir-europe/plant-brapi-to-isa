@@ -5,7 +5,6 @@ from typing import List
 import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
-import urllib3.request
 import time
 import re
 from cachetools import cached, LRUCache, TTLCache
