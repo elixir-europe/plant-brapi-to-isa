@@ -60,7 +60,7 @@ Optional:
 * -J, --json &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*flag to deactivate json dump*
 * -V, --validator &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*flag to deactivate validation*
 
-## Dependencies:
+## Dependencies
 
 * python 3.5 +
 * following python modules:
@@ -68,6 +68,14 @@ Optional:
     * requests
     * pycountry-convert 
     * cachetools
+
+### External resources
+
+To determine the NCBI taxon-id following link is used:
+https://www.ebi.ac.uk/ena/data/view/Taxon:&display=xml
+
+To fetch all the ontologies and there corresponding information, following link is used:
+http://www.obofoundry.org/registry/ontologies.jsonld
 
 
 ## Tested Examples
