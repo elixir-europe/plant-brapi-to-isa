@@ -51,14 +51,14 @@ python brapi_to_isa.py [options…]
 ```
 
 Mandatory options:
-* -e, --endpoint 	A BrAPI server endpoint
-* -t, --trials 		Comma separated list of trial Ids. Use 'all' to get all trials\
+* -e, --endpoint &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*A BrAPI server endpoint*
+* -t, --trials &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*Comma separated list of trial Ids. Use 'all' to get all trials*\
 or
-* -s, --studies		Comma separated list of study Ids
+* -s, --studies &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*Comma separated list of study Ids*
 
 Optional:
-* -J, --json			flag to deactivate json dump
-* -V, --validator		flag to deactivate validation
+* -J, --json &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*flag to deactivate json dump*
+* -V, --validator &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*flag to deactivate validation*
 
 ## Dependencies:
 
