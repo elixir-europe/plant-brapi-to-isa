@@ -1,8 +1,8 @@
 <?xml version="1.0" ?>
 <isatab-config-file xmlns="http://www.ebi.ac.uk/bii/isatab_configuration#">
-    <isatab-configuration isatab-assay-type="generic_assay" isatab-conversion-target="generic" table-name="phenotyping_study_level">
+    <isatab-configuration isatab-assay-type="generic_assay" isatab-conversion-target="generic" table-name="phenotyping_sub-plot_level">
         <measurement source-abbreviation="" term-accession="" term-label="phenotyping"/>
-        <technology source-abbreviation="" term-accession="" term-label="study level analysis"/>
+        <technology source-abbreviation="" term-accession="" term-label="sub-plot level analysis"/>
         <field data-type="String" header="Sample Name" is-file-field="false" is-forced-ontology="false" is-hidden="false" is-multiple-value="false" is-required="true">
             <description><![CDATA[(MIAPPE: Observation unit ID) Identifier used to identify the observation unit in data files containing the values observed or measured on that unit. Must be locally unique.]]></description>
             <default-value><![CDATA[obs_unit_X]]></default-value>
@@ -10,7 +10,7 @@
         <field data-type="list" header="Characteristics[Observation Unit Type]" is-file-field="false" is-forced-ontology="false" is-hidden="false" is-multiple-value="false" is-required="false">
             <description><![CDATA[(MIAPPE: Experimental unit type) Type of observation unit in textual form, usually one of the following: study, block, sub-block, plot, sub-plot, pot, plant]]></description>
             <list-values>study,block,sub-block,plot,sub-plot,pot,plant</list-values>
-            <default-value><![CDATA[study]]></default-value>
+            <default-value><![CDATA[sub-plot]]></default-value>
         </field>
 
         <protocol-field protocol-type="Phenotyping"/>

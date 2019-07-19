@@ -272,7 +272,7 @@ class BrapiToIsaConverter:
                 if att_test(obs_var, 'synonyms'):  
                     elements['Variable Name'].append('; '.join(obs_var['synonyms']) + ' (BrAPI variableDbId: ' + att_test(obs_var, 'observationVariableDbId', 'NA') + ')')
                 else: 
-                     elements['Variable Name'].append(att_test(obs_var, 'observationVariableDbId'))
+                     elements['Variable Name'].append('(BrAPI variableDbId: ' + att_test(obs_var, 'observationVariableDbId', 'NA') + ')')
 
             elements['Trait'].append(att_test(obs_var['trait'], 'name'))
 
