@@ -2,7 +2,7 @@
 
 Code to pull data from BrAPI endpoints and create an [ISA](http://isa-tools.org) representation of the experiments in a MIAPPE compliant way. This script is part of the Data Validation implementation study of ELIXIR.
 
-![](https://raw.githubusercontent.com/elixir-europe/plant-brapi-to-isa/master/)
+![](https://raw.githubusercontent.com/elixir-europe/plant-brapi-to-isa/master/validation-overview.png)
 
 The mapping from ISA to MIAPPE is fully documented here: https://github.com/MIAPPE/ISA-Tab-for-plant-phenotyping/blob/v1.1/README.md
 
