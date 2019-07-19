@@ -1,18 +1,97 @@
-**WARNING** :  Repository about to be frozen, the reference/working repository will be : https://github.com/ISA-tools/plant-brapi-to-isa
+# BrAPI2ISA
 
-**NB**:the mapping from BrAPI to MIAPPE is fully documented here : 
-https://github.com/MIAPPE/ISA-Tab-for-plant-phenotyping/blob/v1.1/README.md 
+Code to pull data from BrAPI endpoints and create an [ISA](http://isa-tools.org) representation of the experiments in a MIAPPE compliant way. This script is part of the Data Validation implementation study of ELIXIR.
 
-**Unavailable values**
-In BrAPI, unavailable value are treated the REST way, with null. In ISA MIAPPE, we must handle missing values in a R analysis environment friendly way. Therefore  all null value must be converted to "na".
+![](https://raw.githubusercontent.com/elixir-europe/plant-brapi-to-isa/master/)
 
-# plant-brapi-to-isa
+The mapping from ISA to MIAPPE is fully documented here: https://github.com/MIAPPE/ISA-Tab-for-plant-phenotyping/blob/v1.1/README.md
 
-Code to pull data from BrAPI endpoints and create an [ISA](http://isa-tools.org) representation of the experiments. 
+## Input
 
-# Docker
+A valid BrAPI endpoint with following GET calls implemented:
 
-This is setup to be used with Docker for easy dependency requirements. You can download and run with a command like:
+* /trials
+* /trials/{trialDbId}
+* /studies/{studyDbId}
+* /studies/{studyDbId}/observationunits or /phenotypes-search
+* /studies/{studyDbId}/observationvariables
+* /studies/{studyDbId}/germplasm
+* /germplasm/{germplasmDbId}
+
+Test your endpoints [here](http://webapps.ipk-gatersleben.de/brapivalidator/) for BrAPI compliance.
+
+BrAPI to isa is tested and optimized for BrAPI version 1.0, 1.1, 1.2 and 1.3.
+
+## Output
+
+* Meta-data in ISA-tab
+   * 1 investigation file (i_investigation.txt)
+   * 1 study file / study (s_*.txt)
+   * 1 assay file / study / observation level (a_*.txt)
+* Meta-data in 1 ISA-JSON file (*.json)
+* 1 Trait definition file / study (t_*.txt)
+* 1 Data file in tabular format / observation level (d_*.txt)
+* 1 Validation log file (*_validation_log.json)
+
+Output will be put into a subfolder `/outputdir`.
+
+## Unavailable values
+BrAPI v1.3 and earlier does not support all the necessary attributes that are needed for MIAPPE compliance. These fields will be filled in with `"NA in BrAPI"`. Be aware that these fields are not detected by the validator since they are filled in with a string. 
+
+Values that are supported by BrAPI but are not implemented in the given endpoint, will be filled in with `"NA"`. This is a R analysis environment friendly way compared to the REST full way used in BrAPI.
+
+## Validation
+
+The dumped ISA-tab files are automatically validated by the ISA-API using the [MIAPPE configuration files](https://github.com/MIAPPE/ISA-Tab-for-plant-phenotyping/tree/v1.1/isaconfig-phenotyping/isaconfig-phenotyping-basic). This to ensure MIAPPE compliance.
+
+## Usage
+
+```
+python brapi_to_isa.py [options…]
+```
+
+Mandatory options:
+* -e, --endpoint &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*A BrAPI server endpoint*
+* -t, --trials &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*Comma separated list of trial Ids. Use 'all' to get all trials*\
+or
+* -s, --studies &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*Comma separated list of study Ids*
+
+Optional:
+* -J, --json &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*flag to deactivate json dump*
+* -V, --validator &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*flag to deactivate validation*
+
+## Dependencies
+
+* python 3.5 +
+* following python modules:
+    * isatools
+    * requests
+    * pycountry-convert 
+    * cachetools
+
+### External resources
+
+To determine the NCBI taxon-id following link is used:
+https://www.ebi.ac.uk/ena/data/view/Taxon:&display=xml
+
+To fetch all the ontologies and there corresponding information, following link is used:
+http://www.obofoundry.org/registry/ontologies.jsonld
+
+
+## Tested Examples
+
+```
+python brapi_to_isa.py -e https://urgi.versailles.inra.fr/faidare/brapi/v1/ -s RIGW1
+python brapi_to_isa.py -e https://urgi.versailles.inra.fr/faidare/brapi/v1/ -t 24
+python brapi_to_isa.py -e https://urgi.versailles.inra.fr/faidare/brapi/v1/ -t 6
+python brapi_to_isa.py -e https://pippa.psb.ugent.be/BrAPIPPA/brapi/v1/ -t all
+python brapi_to_isa.py -e https://www.eu-sol.wur.nl/webapi/tomato/brapi/v1/ -t 2
+python brapi_to_isa.py -e https://brapi.biodata.pt/brapi/v1/ -t 2
+```
+
+## Docker
+
+This setup is to be used with Docker for easy dependency requirements.
 
 ### Running BrAPI to ISA in a container without test containers:
 
@@ -27,6 +106,7 @@ docker run -it -v <absolutepath>/outputdir:/outputdir brapi2isa -t <your trial D
 ```bash
 docker-compose build && docker-compose run BrAPI2ISA -t <your trial DbId> -e <your endpoint>
 ```
+
 ### Usage for testing:
 
 ```bash
@@ -41,44 +121,26 @@ docker-compose build && docker-compose run <>
 
 Output will be put into a subfolder `/outputdir`.
 
-# setup.py 
+## setup<i></i>.py 
 Allows to use this program as a python pip package.
 
 Install the package with:
-pip install git+ssh://git@github.com:elixir-europe/plant-brapi-to-isa.git@<REF>#egg=brapi2isa
+```
+pip install git+ssh://git@github.com:elixir-europe/plant-brapi-to-isa.git@master#egg=brapi2isa
+```
 
-Where <REF> is the git tag or branch or commit
-And then it can just be imported with
+Usage:
+
+```
 import brapi_to_isa
-
-# Documentation
-
-
- * https://docs.google.com/spreadsheets/d/1SiUVvauhdNSpAfHgds-vQpjAXYs34lFD8wSOZdkyCgY/edit?usp=sharing - MIAPPE spec
- * https://docs.google.com/spreadsheets/d/1RE_lXBFY4FsFcJcPAr-3QTlvKz4azedLob18ONrGZj0/edit?usp=sharing - BrAPI <-> MIAPPE mapping
+```
+## Documentation
+ * https://github.com/MIAPPE/MIAPPE/blob/master/MIAPPE_Checklist-Data-Model-v1.1/MIAPPE_Checklist-Data-Model-v1.1.pdf - MIAPPE v1.1 checklist
+ * https://docs.google.com/spreadsheets/d/1d2HyJddYJsVnTesPXcaflg9gqE8IA9a8SHCYIPTA_fQ - BrAPI <-> MIAPPE mapping
  * http://docs.brapi.apiary.io/# - BrAPI documentation
  
-
- # MIAPPE BrAPI2ISA mapping Overview
- ## MIAPPE Investigation
- ISA investigation file from brapi/v1/study/trials.
- ## BRAPI/MIAPPE Study 
- 
- ISA investigation file from brapi/v1/study/{id}/
- 
- Plant material / MCPD (ie ISA Source): Stored in Study File (s_* files) from brapi/v1/study/{id}/germplasm
- ## MIAPPE Assay
- Stored in the ISATab trait definition file, from brapi/v1/study/{id}/observationVariable 
- 
- ## MIAPPE ObservationUnit ie the combination of *treatment x plant material x level*
- ISATab.Sample equals BrAPI/MIAPPE.ObservationUnit. 
-ISATab.Sample Treatment * Level * Material Source
-Declared in Study files (s_*)
-
-## ISATab Assay
-One ISATab Assay file (a_*) by level  
   
- ## MIAPPE Data File
- Flat file allongside ISA files. Listed in ISA Assay File in Raw Data File. One file by level. 
- From brapi/v1/study/{id}/dataLink and brapi/v1/study/{id}/observationUnit transformed to CSV. 
- The issue of creating one ISA Assay per Brapi Observation Level was raised during the biohackathon when you pointed out that could be useful or requested by users. Simply reading BRAPI documentation did not make this obvious.
+## License 
+Copyright (c) 2019, ELIXIR Europe
+
+All rights reserved.

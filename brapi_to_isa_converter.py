@@ -5,6 +5,7 @@ from pycountry_convert import country_alpha3_to_country_alpha2 as a3a2
 import copy
 from collections import defaultdict
 from brapi_client import BrapiClient
+import re
 
 def att_test(dictionary, attribute, NA=""):
     if attribute in dictionary and dictionary[attribute]:
@@ -34,6 +35,7 @@ class BrapiToIsaConverter:
         self.logger = logger
         self.endpoint = endpoint
         self._brapi_client = BrapiClient(self.endpoint, self.logger)
+        self.ontologies = self._brapi_client.get_ontologies()
 
 
     def get_obs_levels(self, brapi_study_id, OBSERVATIONUNITLIST):
@@ -46,13 +48,13 @@ class BrapiToIsaConverter:
             for obs in ou['observations']:
                 if 'observationLevel' in ou and ou['observationLevel']:
                     obs_level_in_study[ou['observationLevel'].lower()].add(
-                        att_test(obs, 'observationVariableName', "NA variable"))
+                        re.sub('[\s]+', '_', att_test(obs, 'observationVariableName', "NA variable name")))
                     if 'observationLevels' in ou.keys() and ou['observationLevels']:
                         for obslvl in ou['observationLevels'].split(","):
                             a, b = obslvl.split(":")
                             obs_levels[ou['observationLevel'].lower()].add(a)
                 else:
-                    obs_level_in_study[PAR_defaultObsLvl].add(att_test(obs, 'observationVariableName', "NA variable"))
+                    obs_level_in_study[PAR_defaultObsLvl].add(re.sub('[\s]+', '_', att_test(obs, 'observationVariableName', "NA variable")))
                     lvlNotAvailable = True
         if lvlNotAvailable:
             self.logger.info("This BrAPI endpoint does not contain observation levels. Please add 'observationLevel' to the observations. Default " + PAR_defaultObsLvl + " is taken as observation level.")
@@ -186,7 +188,7 @@ class BrapiToIsaConverter:
                 ContactName = brapicontact['name'].split(' ')
                 role = OntologyAnnotation(term=att_test(brapicontact, 'type', PAR_NAinData))
                 contact = Person(first_name=ContactName[0], last_name=ContactName[1],
-                affiliation=att_test(brapicontact, 'institutionName'), email=att_test(brapicontact, 'email'), address=PAR_NAinBrAPI, roles=[role])
+                affiliation=att_test(brapicontact, 'institutionName', PAR_NAinData), email=att_test(brapicontact, 'email'), address=PAR_NAinBrAPI, roles=[role])
                 this_study.contacts.append(contact)
 
         # Adding dataLinks inforamtion
@@ -204,11 +206,11 @@ class BrapiToIsaConverter:
                 self.logger.info("Following observation levels are supported: " + str(PAR_suppObsLvl) + ".")
 
             oref_mt = OntologySource(
-                name="OBI", description="Ontology for Biomedical Investigation")
+                name="OBI", description=self.ontologies["obi"][0], file=self.ontologies["obi"][1])
             oa_mt = OntologyAnnotation(
                 term="phenotyping", term_accession="", term_source=oref_mt)
             oref_tt = OntologySource(
-                name="OBI", description="Ontology for Biomedical Investigation")
+                name="OBI", description=self.ontologies["obi"][0], file=self.ontologies["obi"][1])
             oa_tt = OntologyAnnotation(
                 term=level + " level analysis", term_accession="", term_source=oref_tt)
             
@@ -241,8 +243,11 @@ class BrapiToIsaConverter:
         elements = {
             "Variable ID": [],
             "Variable Name": [],
+            "Variable Accession Number": [],
             "Trait": [],
+            "Trait Accession Number": [],
             "Method": [],
+            "Method Accession Number": [],
             "Method Description": [],
             "Reference Associated to the Method": [],
             "Scale": []
@@ -250,21 +255,38 @@ class BrapiToIsaConverter:
 
         # decorating dictionairy
         for i, obs_var in enumerate(obsvars):
-            elements['Variable ID'].append(att_test(obs_var, 'observationVariableDbId'))
-            elements['Variable Name'].append(att_test(obs_var, 'name'))
+            obs_var_id = re.search('([a-zA-Z]*):[0-9]*', att_test(obs_var, 'observationVariableDbId'))
+            obs_var_name = att_test(obs_var, 'name')
+            obs_var_trait_id = re.search('([a-zA-Z]*):[0-9]*', att_test(obs_var['trait'], 'traitDbId'))
+            obs_var_method_id = re.search('([a-zA-Z]*):[0-9]*', att_test(obs_var['method'], 'methodDbId'))
+
+            elements['Variable ID'].append(re.sub('[\s]+', '_', obs_var_name))
+            
+            if obs_var_id and obs_var_id.group(1).lower() in self.ontologies:
+                if att_test(obs_var, 'synonyms'):  
+                    elements['Variable Name'].append('; '.join(obs_var['synonyms']))
+
+                elements['Variable Accession Number'].append(obs_var_id.group(0).upper())
+
+            else:
+                if att_test(obs_var, 'synonyms'):  
+                    elements['Variable Name'].append('; '.join(obs_var['synonyms']) + ' (BrAPI variableDbId: ' + att_test(obs_var, 'observationVariableDbId', 'NA') + ')')
+                else: 
+                     elements['Variable Name'].append('(BrAPI variableDbId: ' + att_test(obs_var, 'observationVariableDbId', 'NA') + ')')
+
             elements['Trait'].append(att_test(obs_var['trait'], 'name'))
+
+            if obs_var_trait_id and obs_var_trait_id.group(1).lower() in self.ontologies:
+                elements['Trait Accession Number'].append(obs_var_trait_id.group(0).upper())
+
+            elements['Method'].append(att_test(obs_var['method'], 'name', att_test(obs_var, 'name', PAR_NAinData)))
             
-            if att_test(obs_var['method'], 'name'):
-                elements['Method'].append(att_test(obs_var['method'], 'name'))
-            else:
-                elements['Method'].append(att_test(obs_var, 'name', PAR_NAinData))
+            elements['Method Description'].append(att_test(obs_var['method'], 'description', att_test(obs_var['trait'], 'description', PAR_NAinData)))
             
-            if att_test(obs_var['method'], 'description'):
-                elements['Method Description'].append(att_test(obs_var['method'], 'description'))
-            else:
-                elements['Method Description'].append(att_test(obs_var['trait'], 'description', PAR_NAinData))
-            
-            elements['Reference Associated to the Method'].append(att_test(obs_var['method'], 'reference', PAR_NAinData))
+            if obs_var_method_id and obs_var_method_id.group(1).lower() in self.ontologies:
+                elements['Method Accession Number'].append(obs_var_method_id.group(0).upper())
+
+            elements['Reference Associated to the Method'].append(att_test(obs_var['method'], 'reference'))
             elements['Scale'].append(att_test(obs_var['scale'], 'name', PAR_NAinData))
 
         # Deleting empty columns
@@ -352,7 +374,7 @@ class BrapiToIsaConverter:
                                 ] = PAR_NAinData
                             # DEBUG self.logger.info(obs_attribute + " does not exist in observation in observationUnit " + obs_unit['observationUnitDbId'])
                     if measurement["observationVariableName"] in head:
-                        row[head.index(measurement["observationVariableName"])] = str(
+                        row[head.index(re.sub('[\s]+', '_', measurement["observationVariableName"]))] = str(
                             measurement["value"])
                         data_records.append('\t'.join(row))
                         row = copy.deepcopy(rowbuffer)

@@ -155,6 +155,14 @@
             <description><![CDATA[No MIAPPE equivalent, but use this field as necessary to indicate your study files.]]></description>
             <default-value><![CDATA[]]></default-value>
         </field>
+        <field data-type="String" header="Comment[Description of Growth Facility]" is-file-field="false" is-forced-ontology="false" is-hidden="false" is-multiple-value="false" is-required="true" section="STUDY">
+            <description><![CDATA[(MIAPPE: Description of growth facility) Short description of the facility in which the study was carried out.]]></description>
+            <default-value><![CDATA[Field environment condition]]></default-value>
+        </field>
+        <field data-type="String" header="Comment[Type of Growth Facility]" is-file-field="false" is-forced-ontology="false" is-hidden="false" is-multiple-value="false" is-required="false" section="STUDY">
+            <description><![CDATA[(MIAPPE: Type of growth facility) Type of growth facility in which the study was carried out, in the form of an accession number from the Crop Ontology (subclass of CO_715:0000005).]]></description>
+            <default-value><![CDATA[CO_715:0000162]]></default-value>
+        </field>
         <field data-type="String" header="Comment[Study Data File Link]" is-file-field="false" is-forced-ontology="false" is-hidden="false" is-multiple-value="true" is-required="false" section="STUDY">
             <description><![CDATA[(MIAPPE: Data file link) Link to the data file (or digital object) in a public database or in a persistant institutional repository; or identifier of the data file when submitted together with the MIAPPE submission.]]></description>
             <default-value><![CDATA[e.g. http://www.ebi.ac.uk/arrayexpress/experiments/E-GEOD-32551/]]></default-value>
@@ -283,11 +291,11 @@
             <default-value/>
         </field>
         <field data-type="String" header="Study Protocol Name" is-file-field="false" is-forced-ontology="false" is-hidden="false" is-multiple-value="true" is-required="true" section="STUDY PROTOCOLS">
-            <description><![CDATA[Fixed protocols: Growth, Sampling (optional), Phenotyping, Data transformation. Optional: Event.]]></description>
+            <description><![CDATA[Fixed protocols: Growth, Sampling (optional), Phenotyping, Data Transformation. Optional: Event.]]></description>
             <default-value/>
         </field>
         <field data-type="Ontology term" header="Study Protocol Type" is-file-field="false" is-forced-ontology="false" is-hidden="false" is-multiple-value="true" is-required="true" section="STUDY PROTOCOLS">
-            <description><![CDATA[For Growth protocol: (MIAPPE) Description of growth facility. For Events: (fixed) Event. For Sampling, Phenotyping: same.]]></description>
+            <description><![CDATA[For Events: (fixed) Event. For Sampling, Phenotyping: same.]]></description>
             <default-value/>
         </field>
         <field data-type="String" header="Study Protocol Description" is-file-field="false" is-forced-ontology="false" is-hidden="false" is-multiple-value="true" is-required="false" section="STUDY PROTOCOLS">
@@ -295,7 +303,7 @@
             <default-value/>
         </field>
         <field data-type="String" header="Study Protocol URI" is-file-field="false" is-forced-ontology="false" is-hidden="false" is-multiple-value="true" is-required="false" section="STUDY PROTOCOLS">
-            <description><![CDATA[For Growth protocol: (MIAPPE) Type of growth facility. For Events: (MIAPPE) Event accession number.]]></description>
+            <description><![CDATA[For Events: (MIAPPE) Event accession number.]]></description>
             <default-value/>
         </field>
         <field data-type="String" header="Study Protocol Version" is-file-field="false" is-forced-ontology="false" is-hidden="false" is-multiple-value="true" is-required="false" section="STUDY PROTOCOLS">
@@ -303,7 +311,7 @@
             <default-value/>
         </field>
         <field data-type="Ontology term" header="Study Protocol Parameters Name" is-file-field="false" is-forced-ontology="false" is-hidden="false" is-multiple-value="true" is-required="false" section="STUDY PROTOCOLS">
-            <description><![CDATA[For Growth: (MIAPPE) Environment Parameter. For Events: (MIAPPE - fixed) Event Date. For Phenotyping: (fixed) Trait definition file.]]></description>
+            <description><![CDATA[For Growth: (MIAPPE) Environment Parameter. For Events: (MIAPPE - fixed) Event Date.]]></description>
             <default-value/>
         </field>
         <field data-type="String" header="Study Protocol Components Name" is-file-field="false" is-forced-ontology="false" is-hidden="false" is-multiple-value="true" is-required="false" section="STUDY PROTOCOLS">

@@ -93,9 +93,9 @@
             <default-value><![CDATA[e.g. obs_unit_B]]></default-value>
         </field>
         <field data-type="list" header="Characteristics[Observation Unit Type]" is-file-field="false" is-forced-ontology="false" is-hidden="false" is-multiple-value="false" is-required="true">
-            <description><![CDATA[(MIAPPE: Observation unit type) Type of observation unit in textual form, usually one of the following: block, sub-block, plot, plant, trial, pot, replication or replicate, individual, virtual_trial, unit-parcel]]></description>
+            <description><![CDATA[(MIAPPE: Observation unit type) Type of observation unit in textual form, usually one of the following: study, block, sub-block, plot, sub-plot, pot, plant]]></description>
             <default-value><![CDATA[plant]]></default-value>
-            <list-values>block,sub-block,plot,plant,trial,pot,replicate,individual,virtual_trial,unit-parcel</list-values>
+            <list-values>study,block,sub-block,plot,sub-plot,pot,plant</list-values>
         </field>
         <field data-type="String" header="Characteristics[External ID]" is-file-field="false" is-forced-ontology="false" is-hidden="false" is-multiple-value="false" is-required="false">
             <description><![CDATA[(MIAPPE: External ID) Identifier for the observation unit in a persistent repository, comprises the name of the repository and the identifier of the observation unit therein. The EBI Biosamples repository can be used. URI are recommended when possible.]]></description>
@@ -103,7 +103,7 @@
         </field>
         <field data-type="String" header="Characteristics[Spatial Distribution]" is-file-field="false" is-forced-ontology="false" is-hidden="false" is-multiple-value="false" is-required="false">
             <description><![CDATA[(MIAPPE: Spatial distribution) Type and value of a spatial coordinate (georeference or relative) or level of observation (plot 45, subblock 7, block 2) provided as a key-value pair of the form type:value. Levels of observation must be consistent with those listed in the Study section.]]></description>
-            <default-value><![CDATA[e.g. Latitude:+2.341; row:4 ; X:3; Y:6; Xm:35; Ym:65; Block:1; Plot:894]]></default-value>
+            <default-value><![CDATA[e.g. latitude:+2.341; row:4 ; X:3; Y:6; Xm:35; Ym:65; block:1; plot:894; replicate:1]]></default-value>
         </field>
         <field data-type="String" header="Factor Value[e.g. Watering]" is-file-field="false" is-forced-ontology="false" is-hidden="false" is-multiple-value="false" is-required="false">
             <description><![CDATA[(MIAPPE: Observation Unit factor value) List of values for each factor applied to the observation unit - one per column, for the respective factor name.]]></description>
