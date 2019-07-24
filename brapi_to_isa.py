@@ -430,7 +430,7 @@ def main(arg):
                                             filetype="d_", ObservationLevel=level)
                         if FLATTEN_boolean:
                             write_records_to_file(this_study_id=str(brapi_study_id), this_directory=output_directory, records=data_readings_flat,
-                                                filetype="d_", ObservationLevel='flat_'+level)
+                                                filetype="d_", ObservationLevel=level+'_flat')
                     except Exception as ioe:
                         logger.info('Data file fails to generate!...')
                         logger.info(str(ioe))
