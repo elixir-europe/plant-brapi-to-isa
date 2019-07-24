@@ -47,6 +47,9 @@ parser.add_argument('-t', '--trials', help="comma separated list of trial Ids. '
 parser.add_argument('-s', '--studies', help="comma separated list of study Ids", type=str, action='append')
 parser.add_argument('-J', '--json', help="flag to deactivate json dump", action="store_false")
 parser.add_argument('-V', '--validator', help="flag to deactivate validation", action="store_false")
+parser.add_argument('-F', '--flatten', help="flag to generate flattened data file", action="store_true")
+
+
 
 SERVER = 'https://test-server.brapi.org/brapi/v1/'
 
@@ -56,6 +59,7 @@ TRIAL_IDS = args.trials
 STUDY_IDS = args.studies
 JSON_boolean = args.json
 VALIDATOR_boolean = args.validator
+FLATTEN_boolean = args.flatten
 
 if args.endpoint:
     SERVER = args.endpoint
@@ -420,10 +424,13 @@ def main(arg):
                 # -------------------------------------------
                 for level, variables in obs_level.items():
                     try:
-                        data_readings = converter.create_isa_obs_data_from_obsvars(OBSERVATIONUNITLIST, list(variables), level, germplasminfo, obs_levels)
+                        data_readings, data_readings_flat = converter.create_isa_obs_data_from_obsvars(OBSERVATIONUNITLIST, list(variables), level, germplasminfo, obs_levels, FLATTEN_boolean)
                         logger.info("Generating data files")
                         write_records_to_file(this_study_id=str(brapi_study_id), this_directory=output_directory, records=data_readings,
                                             filetype="d_", ObservationLevel=level)
+                        if FLATTEN_boolean:
+                            write_records_to_file(this_study_id=str(brapi_study_id), this_directory=output_directory, records=data_readings_flat,
+                                                filetype="d_", ObservationLevel='flat_'+level)
                     except Exception as ioe:
                         logger.info('Data file fails to generate!...')
                         logger.info(str(ioe))
