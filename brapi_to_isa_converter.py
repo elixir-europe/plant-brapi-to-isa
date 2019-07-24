@@ -378,7 +378,7 @@ class BrapiToIsaConverter:
                                 timestamps[measurement['observationTimeStamp']][head.index(obs_attribute)
                                     ] = PAR_NAinData
                                 # DEBUG self.logger.info(obs_attribute + " does not exist in observation in observationUnit " + obs_unit['observationUnitDbId'])
-                        if measurement["observationVariableName"] in head:
+                        if re.sub('[\s]+', '_', att_test(measurement, 'observationVariableName', "NA variable")) in head:
                             timestamps[measurement['observationTimeStamp']][head.index(re.sub('[\s]+', '_', measurement["observationVariableName"]))] = str(
                                 measurement["value"])
                     
@@ -391,7 +391,7 @@ class BrapiToIsaConverter:
                             row[head.index(obs_attribute)
                                 ] = PAR_NAinData
                             # DEBUG self.logger.info(obs_attribute + " does not exist in observation in observationUnit " + obs_unit['observationUnitDbId'])
-                    if measurement["observationVariableName"] in head:
+                    if re.sub('[\s]+', '_', att_test(measurement, 'observationVariableName', "NA variable")) in head:
                         row[head.index(re.sub('[\s]+', '_', measurement["observationVariableName"]))] = str(
                             measurement["value"])
                         data_records.append('\t'.join(row))
