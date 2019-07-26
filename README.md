@@ -59,6 +59,7 @@ or
 Optional:
 * -J, --json &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*flag to deactivate json dump*
 * -V, --validator &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*flag to deactivate validation*
+* -F, --flatten &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*flag to generate a flattened data file based on observationTimStamp*
 
 ## Dependencies
 

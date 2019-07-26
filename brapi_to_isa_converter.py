@@ -307,8 +307,9 @@ class BrapiToIsaConverter:
 
         return records
 
-    def create_isa_obs_data_from_obsvars(self, obs_units, obs_variables, level, germplasminfo, obs_levels):
+    def create_isa_obs_data_from_obsvars(self, obs_units, obs_variables, level, germplasminfo, obs_levels, FLATTEN_boolean):
         data_records = []
+        data_records_flat = []
         obs_levels_header = []
         for obslvl in obs_levels[level]:
             obs_levels_header.append("observationLevels[{}]".format(obslvl))
@@ -325,6 +326,7 @@ class BrapiToIsaConverter:
 
         datafile_header = '\t'.join(head)
         data_records.append(datafile_header)
+        data_records_flat.append(datafile_header)
 
         emptyRow = []  # Empty row that is later filled in with values -> fixed row size
         for i in range(len(head)):
@@ -333,7 +335,6 @@ class BrapiToIsaConverter:
         for obs_unit in obs_units:
             if ('observationLevel' in obs_unit and obs_unit['observationLevel'].lower() == level) or (level == PAR_defaultObsLvl):
                 row = copy.deepcopy(emptyRow)
-                # Get data from observationUnit
                 for obs_unit_attribute in obs_unit.keys():
                     if obs_unit_attribute == "observationLevels" and obs_unit['observationLevels']:
                         # NOTE: INRA specific
@@ -362,8 +363,25 @@ class BrapiToIsaConverter:
                             row[head.index(obs_unit_attribute)] = PAR_NAinData
 
                 rowbuffer = copy.deepcopy(row)
+                rowbuffer_flat = copy.deepcopy(row)
 
+                timestamps ={}
                 for measurement in obs_unit['observations']:
+                    if FLATTEN_boolean and att_test(measurement, 'observationTimeStamp'):
+                        if measurement['observationTimeStamp'] not in timestamps:
+                            timestamps[measurement['observationTimeStamp']] = copy.deepcopy(rowbuffer)
+                        for obs_attribute in obs_header:
+                            if obs_attribute in measurement and measurement[obs_attribute]:
+                                timestamps[measurement['observationTimeStamp']][head.index(obs_attribute)
+                                    ] = measurement[obs_attribute]
+                            else:
+                                timestamps[measurement['observationTimeStamp']][head.index(obs_attribute)
+                                    ] = PAR_NAinData
+                                # DEBUG self.logger.info(obs_attribute + " does not exist in observation in observationUnit " + obs_unit['observationUnitDbId'])
+                        if re.sub('[\s]+', '_', att_test(measurement, 'observationVariableName', "NA variable")) in head:
+                            timestamps[measurement['observationTimeStamp']][head.index(re.sub('[\s]+', '_', measurement["observationVariableName"]))] = str(
+                                measurement["value"])
+                    
                     # Get data from observation
                     for obs_attribute in obs_header:
                         if obs_attribute in measurement and measurement[obs_attribute]:
@@ -373,12 +391,15 @@ class BrapiToIsaConverter:
                             row[head.index(obs_attribute)
                                 ] = PAR_NAinData
                             # DEBUG self.logger.info(obs_attribute + " does not exist in observation in observationUnit " + obs_unit['observationUnitDbId'])
-                    if measurement["observationVariableName"] in head:
+                    if re.sub('[\s]+', '_', att_test(measurement, 'observationVariableName', "NA variable")) in head:
                         row[head.index(re.sub('[\s]+', '_', measurement["observationVariableName"]))] = str(
                             measurement["value"])
                         data_records.append('\t'.join(row))
                         row = copy.deepcopy(rowbuffer)
                     #else:
                         # DEBUG self.logger.info(measurement["observationVariableName"] + " does not exist in observationVariable list ")
+                if timestamps:
+                    for lines in timestamps.values():
+                        data_records_flat.append('\t'.join(lines))
 
-        return data_records
+        return data_records, data_records_flat
