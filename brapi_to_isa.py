@@ -358,7 +358,7 @@ def main(arg):
                 isa_study.protocols.append(phenotyping_protocol)
 
                 growth_protocol = Protocol(name="Growth",
-                                                protocol_type=OntologyAnnotation(term="growth"))
+                                                protocol_type=OntologyAnnotation(term="Growth"))
                 isa_study.protocols.append(growth_protocol)
 
                 # Sample protocol
