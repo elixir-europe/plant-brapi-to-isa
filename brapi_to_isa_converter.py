@@ -340,7 +340,6 @@ class BrapiToIsaConverter:
                 row = copy.deepcopy(emptyRow)
                 for obs_unit_attribute in obs_unit.keys():
                     if obs_unit_attribute == "observationLevels" and obs_unit['observationLevels']:
-                        # NOTE: INRA specific
                         for obslvls in obs_unit['observationLevels'].split(","):
                             if len(obslvl.split(":")) == 2:
                                 a, b = obslvls.split(":")
@@ -368,7 +367,7 @@ class BrapiToIsaConverter:
                                     "accessionNumber")] = germplasminfo[obs_unit[obs_unit_attribute]][0]
                         else:
                             row[head.index(obs_unit_attribute)] = PAR_NAinData
-                    
+
                 rowbuffer = copy.deepcopy(row)
                 rowbuffer_flat = copy.deepcopy(row)
 
