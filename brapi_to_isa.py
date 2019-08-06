@@ -146,7 +146,7 @@ def create_study_sample_and_assay(client, brapi_study_id, isa_study,  growth_pro
 
             # Looking for treatment in BRAPI and mapping to ISA samples 
             # ---------------------------------------------------------
-            if 'treatments' in obs_unit:
+            if att_test(obs_unit, 'treatments'):
                 for treatment in obs_unit['treatments']:
                     if att_test(treatment,'factor') and att_test(treatment, 'modality'):
                         if treatment['modality'] not in treatments[treatment['factor']]:
@@ -319,6 +319,11 @@ def main(arg):
                 contact = Person(first_name=ContactName[0], last_name=ContactName[1],
                 affiliation=att_test(brapicontact,'institutionName', PAR_NAinData), email=att_test(brapicontact,'email', PAR_NAinData), address=PAR_NAinBrAPI, roles=[role])
                 investigation.contacts.append(contact)
+        else:
+            role = OntologyAnnotation(term=PAR_NAinData)
+            contact = Person(first_name=PAR_NAinData, last_name=PAR_NAinData,
+            affiliation=PAR_NAinData, email=PAR_NAinData, address=PAR_NAinData, roles=[role])
+            investigation.contacts.append(contact)
 
         investigation.comments.append(Comment(name="MIAPPE version", value="1.1"))
 
@@ -327,8 +332,12 @@ def main(arg):
                 #This is BrAPI v1.3 specific (when older, skipped) 
                 publication = Publication(doi=att_test(brapipublic, 'publicationPUI', PAR_NAinData))
                 publication.status = OntologyAnnotation(term="published")
-
                 investigation.publications.append(publication)
+        else:
+            publication = Publication(doi=PAR_NAinData)
+            publication.status = OntologyAnnotation(term=PAR_NAinData)
+            investigation.publications.append(publication)
+
         # iterating through the BRAPI studies associated to a given BRAPI trial:
         for brapi_study in trial['studies']:
             germplasminfo = {}
