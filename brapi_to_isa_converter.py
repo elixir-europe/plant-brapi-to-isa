@@ -19,7 +19,7 @@ def att_test(dictionary, attribute, NA=""):
 PAR_NAinData = "NA"
 PAR_NAinBrAPI = "NA in BrAPI"
 PAR_defaultObsLvl = "plant"
-PAR_suppObsLvl = ['block', 'sub-block', 'plot', 'plant', 'study', 'pot', 'replication', 'replicate','individual', 'virtual_trial', 'unit-parcel']
+PAR_suppObsLvl = ['block', 'sub-block', 'plot', 'plant', 'study', 'pot', 'replication', 'replicate','individual', 'unit-parcel']
 
 class BrapiToIsaConverter:
     """ Converter json coming out of the BRAPI to ISA object
