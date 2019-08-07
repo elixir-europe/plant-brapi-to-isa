@@ -19,7 +19,7 @@ def att_test(dictionary, attribute, NA=""):
 PAR_NAinData = "NA"
 PAR_NAinBrAPI = "NA in BrAPI"
 PAR_defaultObsLvl = "plant"
-PAR_suppObsLvl = ['block', 'sub-block', 'plot', 'plant', 'study', 'pot', 'replication', 'replicate','individual', 'virtual_trial', 'unit-parcel']
+PAR_suppObsLvl = ['block', 'sub-block', 'plot', 'plant', 'study', 'pot', 'replication', 'replicate','individual', 'unit-parcel']
 
 class BrapiToIsaConverter:
     """ Converter json coming out of the BRAPI to ISA object
@@ -51,8 +51,11 @@ class BrapiToIsaConverter:
                         re.sub('[\s]+', '_', att_test(obs, 'observationVariableName', "NA variable name")))
                     if 'observationLevels' in ou.keys() and ou['observationLevels']:
                         for obslvl in ou['observationLevels'].split(","):
-                            a, b = obslvl.split(":")
-                            obs_levels[ou['observationLevel'].lower()].add(a)
+                            if len(obslvl.split(":")) == 2:
+                                a, b = obslvl.split(":")
+                                obs_levels[ou['observationLevel'].lower()].add(a)
+                            elif len(obslvl.split(":")) == 1:
+                                obs_levels[ou['observationLevel'].lower()].add(obslvl)
                 else:
                     obs_level_in_study[PAR_defaultObsLvl].add(re.sub('[\s]+', '_', att_test(obs, 'observationVariableName', "NA variable")))
                     lvlNotAvailable = True
@@ -182,7 +185,7 @@ class BrapiToIsaConverter:
             self.logger.info("BrAPI study " + brapi_study['studyDbId'] + "has no location attribute, this is mandatory to be MIAPPE compliant.")
 
         # Adding Contacts information
-        if 'contacts' in brapi_study:
+        if att_test(brapi_study,'contacts' ):
             for brapicontact in brapi_study['contacts']:
                 #NOTE: brapi has just name attribute -> no separate first/last name
                 ContactName = brapicontact['name'].split(' ')
@@ -192,7 +195,7 @@ class BrapiToIsaConverter:
                 this_study.contacts.append(contact)
 
         # Adding dataLinks inforamtion
-        if 'dataLinks' in brapi_study:
+        if att_test(brapi_study,'dataLinks'):
             for brapidata in brapi_study['dataLinks']:
                 this_study.comments.append(Comment(name="Study Data File Link",value=brapidata['url']))
                 this_study.comments.append(Comment(name="Study Data File Description",value=brapidata['type']))
@@ -337,11 +340,14 @@ class BrapiToIsaConverter:
                 row = copy.deepcopy(emptyRow)
                 for obs_unit_attribute in obs_unit.keys():
                     if obs_unit_attribute == "observationLevels" and obs_unit['observationLevels']:
-                        # NOTE: INRA specific
                         for obslvls in obs_unit['observationLevels'].split(","):
-                            a, b = obslvls.split(":")
-                            row[head.index(
-                                "observationLevels[{}]".format(a))] = b
+                            if len(obslvl.split(":")) == 2:
+                                a, b = obslvls.split(":")
+                                row[head.index(
+                                    "observationLevels[{}]".format(a))] = b
+                            if len(obslvl.split(":")) == 1:
+                                row[head.index(
+                                    "observationLevels[{}]".format(obslvl))] = obslvl
                     if obs_unit_attribute in obs_unit_header:
                         if obs_unit[obs_unit_attribute]: 
                             outp = []

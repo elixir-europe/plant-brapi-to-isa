@@ -88,7 +88,7 @@ def create_study_sample_and_assay(client, brapi_study_id, isa_study,  growth_pro
     spat_dist_mapping_dictionary = {
         "X": "X",
         "Y": "Y",
-        "blockNumber": "Block",
+        "blockNumber": "block",
         "plotNumber": "plot",
         "plantNumber": "plant",
         "replicate": "replicate"
@@ -127,12 +127,15 @@ def create_study_sample_and_assay(client, brapi_study_id, isa_study,  growth_pro
             
             spat_dist = []
             for key in spat_dist_mapping_dictionary:
-                if key in obs_unit and obs_unit[key]:
+                if att_test(obs_unit,key):
                     spat_dist.append('[' + spat_dist_mapping_dictionary[key] + ']' + obs_unit[key])
-            if 'observationLevels' in obs_unit and obs_unit['observationLevels']:
+            if att_test(obs_unit,'observationLevels'):
                 for lvl in obs_unit['observationLevels'].split(","):
-                    a, b = lvl.split(":")
-                    spat_dist.append(a + ':' + b)
+                    if len(lvl.split(":")) == 2:    
+                        a, b = lvl.split(":")
+                        spat_dist.append(a + ':' + b)
+                    elif len(lvl.split(":")) == 1:
+                        spat_dist.append(lvl)
             spat_dist_str = '; '.join(spat_dist)
             if spat_dist:
                 c = Characteristic(category=OntologyAnnotation(term="Spatial Distribution"),
@@ -143,9 +146,9 @@ def create_study_sample_and_assay(client, brapi_study_id, isa_study,  growth_pro
 
             # Looking for treatment in BRAPI and mapping to ISA samples 
             # ---------------------------------------------------------
-            if 'treatments' in obs_unit:
+            if att_test(obs_unit, 'treatments'):
                 for treatment in obs_unit['treatments']:
-                    if 'factor' in treatment and 'modality' in treatment:
+                    if att_test(treatment,'factor') and att_test(treatment, 'modality'):
                         if treatment['modality'] not in treatments[treatment['factor']]:
                             treatments[treatment['factor']].append(treatment['modality'])
                         f = StudyFactor(name=treatment['factor'], factor_type=OntologyAnnotation(term=treatment['factor']))
@@ -296,19 +299,19 @@ def main(arg):
         investigation = Investigation()
 
         output_directory = get_output_path(filenameFormat(trial['trialName']))
-        logger.info("Generating output in : "+ output_directory)
+        logger.info("Generating output in : " + output_directory)
 
         # FILL IN TRIAL INFORMATION
         investigation.identifier = trial['trialDbId']
         investigation.title = trial['trialName']
 
         #Investigation fields unavailable in BrAPI
-        investigation.description = PAR_NAinBrAPI
+        investigation.description = att_test(trial, "trialDescription", PAR_NAinData)
         investigation.submission_date = PAR_NAinBrAPI
         investigation.public_release_date = PAR_NAinBrAPI
         investigation.comments.append(Comment(name="License", value=PAR_NAinBrAPI))
 
-        if 'contacts' in trial:
+        if att_test(trial, 'contacts'):
             for brapicontact in trial['contacts']:
                 #NOTE: brapi has just name attribute -> no seperate first/last name
                 ContactName = brapicontact['name'].split(' ')
@@ -316,25 +319,34 @@ def main(arg):
                 contact = Person(first_name=ContactName[0], last_name=ContactName[1],
                 affiliation=att_test(brapicontact,'institutionName', PAR_NAinData), email=att_test(brapicontact,'email', PAR_NAinData), address=PAR_NAinBrAPI, roles=[role])
                 investigation.contacts.append(contact)
+        else:
+            role = OntologyAnnotation(term=PAR_NAinData)
+            contact = Person(first_name=PAR_NAinData, last_name=PAR_NAinData,
+            affiliation=PAR_NAinData, email=PAR_NAinData, address=PAR_NAinData, roles=[role])
+            investigation.contacts.append(contact)
 
         investigation.comments.append(Comment(name="MIAPPE version", value="1.1"))
 
-        if 'publications' in trial:
+        if att_test(trial, 'publications'):
             for brapipublic in trial['publications']:
                 #This is BrAPI v1.3 specific (when older, skipped) 
                 publication = Publication(doi=att_test(brapipublic, 'publicationPUI', PAR_NAinData))
                 publication.status = OntologyAnnotation(term="published")
-
                 investigation.publications.append(publication)
+        else:
+            publication = Publication(doi=PAR_NAinData)
+            publication.status = OntologyAnnotation(term=PAR_NAinData)
+            investigation.publications.append(publication)
+
         # iterating through the BRAPI studies associated to a given BRAPI trial:
         for brapi_study in trial['studies']:
             germplasminfo = {}
             
-            brapi_study_id = brapi_study['studyDbId']
+            brapi_study_id = str(brapi_study['studyDbId'])
             try:
-                brapi_study['studyDbId'].encode('ascii')
+                brapi_study_id.encode('ascii')
             except:
-                logger.debug("Study " + brapi_study['studyDbId'] + " contains a non ascii character and will be skipped.")
+                logger.debug("Study " + brapi_study_id + " contains a non ascii character and will be skipped.")
                 continue
             else:
                 #NOTE NEW: holding observationUnits in OBSERVATIONUNITLIST
