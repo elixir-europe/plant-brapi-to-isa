@@ -299,14 +299,14 @@ def main(arg):
         investigation = Investigation()
 
         output_directory = get_output_path(filenameFormat(trial['trialName']))
-        logger.info("Generating output in : "+ output_directory)
+        logger.info("Generating output in : " + output_directory)
 
         # FILL IN TRIAL INFORMATION
         investigation.identifier = trial['trialDbId']
         investigation.title = trial['trialName']
 
         #Investigation fields unavailable in BrAPI
-        investigation.description = PAR_NAinBrAPI
+        investigation.description = att_test(trial, "trialDescription", PAR_NAinData)
         investigation.submission_date = PAR_NAinBrAPI
         investigation.public_release_date = PAR_NAinBrAPI
         investigation.comments.append(Comment(name="License", value=PAR_NAinBrAPI))
