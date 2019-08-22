@@ -85,20 +85,27 @@ class BrapiToIsaConverter:
             c = self.create_isa_characteristic('Organism', ';'.join(taxonids))
             returned_characteristics.append(c)
         else:
-            if ('genus' in all_germplasm_attributes and all_germplasm_attributes['genus']) or ('species' in all_germplasm_attributes and all_germplasm_attributes['species']):
+            if att_test(all_germplasm_attributes,'genus') or att_test(all_germplasm_attributes,'species'):
                 taxonId = self._brapi_client.get_taxonId(all_germplasm_attributes['genus'],all_germplasm_attributes['species'])
+                organism = ""
+                if att_test(all_germplasm_attributes,'genus') and att_test(all_germplasm_attributes,'species'):
+                    organism = all_germplasm_attributes['genus'] + ' ' + all_germplasm_attributes['species']
+                else:
+                    organism = att_test(all_germplasm_attributes,'genus') + att_test(all_germplasm_attributes,'species')
                 if taxonId:
-                    c = self.create_isa_characteristic(
-                        'Organism', 'NCBI:'+ str(taxonId))
+                    ncbitaxon = OntologySource(name='NCBITaxon', description="NCBI Taxonomy")
+                    c = Characteristic(category=OntologyAnnotation(term="Organism"),
+                                     value=OntologyAnnotation(term=organism, term_source=ncbitaxon,
+                                                              term_accession="http://purl.bioontology.org/ontology/NCBITAXON/{}".format(taxonId)))
                     
                 else:
-                    if 'commonCropName' in all_germplasm_attributes and all_germplasm_attributes['commonCropName']:
+                    if att_test(all_germplasm_attributes, 'commonCropName'):
                         c = self.create_isa_characteristic('Organism', all_germplasm_attributes['commonCropName'])
                     else:
                         c = self.create_isa_characteristic('Organism', "")
 
             else:
-                if 'commonCropName' in all_germplasm_attributes and all_germplasm_attributes['commonCropName']:
+                if att_test(all_germplasm_attributes,'commonCropName'):
                     c = self.create_isa_characteristic('Organism', all_germplasm_attributes['commonCropName'])
                 else:
                     c = self.create_isa_characteristic('Organism', "")
