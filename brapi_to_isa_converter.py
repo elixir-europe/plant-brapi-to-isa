@@ -99,16 +99,10 @@ class BrapiToIsaConverter:
                                                               term_accession="http://purl.bioontology.org/ontology/NCBITAXON/{}".format(taxonId)))
                     
                 else:
-                    if att_test(all_germplasm_attributes, 'commonCropName'):
-                        c = self.create_isa_characteristic('Organism', all_germplasm_attributes['commonCropName'])
-                    else:
-                        c = self.create_isa_characteristic('Organism', "")
+                    c = self.create_isa_characteristic('Organism', att_test(all_germplasm_attributes, 'commonCropName'), PAR_NAinData)
 
             else:
-                if att_test(all_germplasm_attributes,'commonCropName'):
-                    c = self.create_isa_characteristic('Organism', all_germplasm_attributes['commonCropName'])
-                else:
-                    c = self.create_isa_characteristic('Organism', "")
+                c = self.create_isa_characteristic('Organism', att_test(all_germplasm_attributes,'commonCropName'), PAR_NAinData)
             returned_characteristics.append(c)
         
         mapping_dictionnary = {
@@ -121,13 +115,8 @@ class BrapiToIsaConverter:
 
 
         for key in mapping_dictionnary:
-            if att_test(all_germplasm_attributes,'key'):
-                c = self.create_isa_characteristic(
-                        mapping_dictionnary[key], str(all_germplasm_attributes[key]))
-            else:
-                c = self.create_isa_characteristic(
-                    mapping_dictionnary[key], "")
-            
+            c = self.create_isa_characteristic(
+                    mapping_dictionnary[key], str(att_test(all_germplasm_attributes,'key')))
             returned_characteristics.append(c)
 
         return returned_characteristics
