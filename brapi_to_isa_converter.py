@@ -122,6 +122,7 @@ class BrapiToIsaConverter:
             returned_characteristics.append(c)
         else:
             c = self.organism_characteristic(all_germplasm_attributes, "")
+            returned_characteristics.append(c)
 
         
         mapping_dictionnary = {
