@@ -116,7 +116,7 @@ class BrapiToIsaConverter:
 
         for key in mapping_dictionnary:
             c = self.create_isa_characteristic(
-                    mapping_dictionnary[key], str(att_test(all_germplasm_attributes,'key')))
+                    mapping_dictionnary[key], str(att_test(all_germplasm_attributes,key)))
             returned_characteristics.append(c)
 
         return returned_characteristics
