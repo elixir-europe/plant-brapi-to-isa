@@ -9,6 +9,8 @@ import re
 
 def att_test(dictionary, attribute, NA=""):
     if attribute in dictionary and dictionary[attribute]:
+        if dictionary[attribute] in ['NA', 'na','Na', 'n.a.', 'N.A.', 'N.a.']:
+            return NA
         return str(dictionary[attribute])
     else:
         return NA
