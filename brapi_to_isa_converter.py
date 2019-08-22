@@ -69,6 +69,22 @@ class BrapiToIsaConverter:
                          ",".join(obs_level_in_study.keys()))
         return obs_level_in_study, obs_levels
 
+    def organism_characteristic(self,all_germplasm_attributes, taxonId):
+        if not taxonId:
+            taxonId = self._brapi_client.get_taxonId(all_germplasm_attributes['genus'],all_germplasm_attributes['species'])
+        if att_test(all_germplasm_attributes,'genus') and att_test(all_germplasm_attributes,'species'):
+            organism = all_germplasm_attributes['genus'] + ' ' + all_germplasm_attributes['species']
+        else:
+            organism = att_test(all_germplasm_attributes,'genus') + att_test(all_germplasm_attributes,'species')
+        if taxonId:
+            ncbitaxon = OntologySource(name='NCBITaxon', description="NCBI Taxonomy")
+            return Characteristic(category=OntologyAnnotation(term="Organism"),
+                                    value=OntologyAnnotation(term=organism, term_source=ncbitaxon,
+                                                            term_accession="http://purl.bioontology.org/ontology/NCBITAXON/{}".format(taxonId)))
+        else:
+            return self.create_isa_characteristic('Organism', att_test(all_germplasm_attributes, 'commonCropName'), PAR_NAinData)
+
+
     def create_germplasm_chars(self, germplasm):
         """" Given a BRAPI Germplasm ID, retrieve the list of all attributes from BRAPI and returns a list of ISA
         characteristics using MIAPPE tags for compliance + X-check against ISAconfiguration"""
@@ -80,28 +96,15 @@ class BrapiToIsaConverter:
         all_germplasm_attributes = self._brapi_client.get_germplasm(
             germplasm_id)
 
-        if att_test(all_germplasm_attributes,'taxonId'):
-            taxonids =[]
-            for taxonid in all_germplasm_attributes['taxonId']:
-                taxonids.append(att_test(taxonid, 'sourceName', 'NCBI') + ":" + str(taxonid['taxonId']))
-            c = self.create_isa_characteristic('Organism', ';'.join(taxonids))
+        if att_test(all_germplasm_attributes,'taxonIds'):
+            taxonId = ''
+            for taxonid in all_germplasm_attributes['taxonIds']:
+                if taxonid['sourceName'] in ['NCBITaxon', 'ncbiTaxon']:
+                    c = self.organism_characteristic(all_germplasm_attributes, taxonid['taxonId'])
             returned_characteristics.append(c)
         else:
             if att_test(all_germplasm_attributes,'genus') or att_test(all_germplasm_attributes,'species'):
-                taxonId = self._brapi_client.get_taxonId(all_germplasm_attributes['genus'],all_germplasm_attributes['species'])
-                organism = ""
-                if att_test(all_germplasm_attributes,'genus') and att_test(all_germplasm_attributes,'species'):
-                    organism = all_germplasm_attributes['genus'] + ' ' + all_germplasm_attributes['species']
-                else:
-                    organism = att_test(all_germplasm_attributes,'genus') + att_test(all_germplasm_attributes,'species')
-                if taxonId:
-                    ncbitaxon = OntologySource(name='NCBITaxon', description="NCBI Taxonomy")
-                    c = Characteristic(category=OntologyAnnotation(term="Organism"),
-                                     value=OntologyAnnotation(term=organism, term_source=ncbitaxon,
-                                                              term_accession="http://purl.bioontology.org/ontology/NCBITAXON/{}".format(taxonId)))
-                    
-                else:
-                    c = self.create_isa_characteristic('Organism', att_test(all_germplasm_attributes, 'commonCropName'), PAR_NAinData)
+                c = self.organism_characteristic(all_germplasm_attributes, "")
 
             else:
                 c = self.create_isa_characteristic('Organism', att_test(all_germplasm_attributes,'commonCropName'), PAR_NAinData)
