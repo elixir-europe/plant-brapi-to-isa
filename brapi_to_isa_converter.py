@@ -78,7 +78,7 @@ class BrapiToIsaConverter:
         all_germplasm_attributes = self._brapi_client.get_germplasm(
             germplasm_id)
 
-        if 'taxonId' in all_germplasm_attributes and all_germplasm_attributes['taxonId']:
+        if att_test(all_germplasm_attributes,'taxonId'):
             taxonids =[]
             for taxonid in all_germplasm_attributes['taxonId']:
                 taxonids.append(att_test(taxonid, 'sourceName', 'NCBI') + ":" + str(taxonid['taxonId']))
@@ -121,7 +121,7 @@ class BrapiToIsaConverter:
 
 
         for key in mapping_dictionnary:
-            if key in all_germplasm_attributes and all_germplasm_attributes[key]:
+            if att_test(all_germplasm_attributes,'key'):
                 c = self.create_isa_characteristic(
                         mapping_dictionnary[key], str(all_germplasm_attributes[key]))
             else:
