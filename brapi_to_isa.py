@@ -130,7 +130,7 @@ def create_study_sample_and_assay(client, brapi_study_id, isa_study,  growth_pro
                 if att_test(obs_unit,key):
                     spat_dist.append(spat_dist_mapping_dictionary[key] + ':' + obs_unit[key])
             if att_test(obs_unit,'observationLevels'):
-                for lvl in obs_unit['observationLevels'].split(","):
+                for lvl in obs_unit['observationLevels'].split(", "):
                     if len(lvl.split(":")) == 2:    
                         a, b = lvl.split(":")
                         spat_dist.append(a + ':' + b)
