@@ -128,7 +128,7 @@ def create_study_sample_and_assay(client, brapi_study_id, isa_study,  growth_pro
             spat_dist = []
             for key in spat_dist_mapping_dictionary:
                 if att_test(obs_unit,key):
-                    spat_dist.append('[' + spat_dist_mapping_dictionary[key] + ']' + obs_unit[key])
+                    spat_dist.append(spat_dist_mapping_dictionary[key] + ':' + obs_unit[key])
             if att_test(obs_unit,'observationLevels'):
                 for lvl in obs_unit['observationLevels'].split(","):
                     if len(lvl.split(":")) == 2:    
@@ -136,7 +136,7 @@ def create_study_sample_and_assay(client, brapi_study_id, isa_study,  growth_pro
                         spat_dist.append(a + ':' + b)
                     elif len(lvl.split(":")) == 1:
                         spat_dist.append(lvl)
-            spat_dist_str = '; '.join(spat_dist)
+            spat_dist_str = ';'.join(spat_dist)
             if spat_dist:
                 c = Characteristic(category=OntologyAnnotation(term="Spatial Distribution"),
                                     value=OntologyAnnotation(term=spat_dist_str,
