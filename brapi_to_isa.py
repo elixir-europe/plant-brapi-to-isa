@@ -147,16 +147,22 @@ def create_study_sample_and_assay(client, brapi_study_id, isa_study,  growth_pro
             # Looking for treatment in BRAPI and mapping to ISA samples 
             # ---------------------------------------------------------
             if att_test(obs_unit, 'treatments'):
+                treatmentbuffer = defaultdict(list)
                 for treatment in obs_unit['treatments']:
                     if att_test(treatment,'factor') and att_test(treatment, 'modality'):
-                        if treatment['modality'] not in treatments[treatment['factor']]:
-                            treatments[treatment['factor']].append(treatment['modality'])
-                        f = StudyFactor(name=treatment['factor'], factor_type=OntologyAnnotation(term=treatment['factor']))
-                        fv = FactorValue(factor_name=f,
-                                        value=OntologyAnnotation(term=str(treatment['modality']),
-                                                                term_source="",
-                                                                term_accession=""))
-                        this_isa_sample.factor_values.append(fv)
+
+                        if str(treatment['modality']) not in treatmentbuffer[treatment['factor']]:
+                            treatmentbuffer[treatment['factor']].append(str(treatment['modality']))
+                for factor,modality in treatmentbuffer.items():
+                    modalities = ','.join(modality)
+                    if modalities not in treatments[factor]:
+                        treatments[factor].append(modalities)
+                    f = StudyFactor(name=factor, factor_type=OntologyAnnotation(term=factor))
+                    fv = FactorValue(factor_name=f,
+                                    value=OntologyAnnotation(term=modalities,
+                                                            term_source="",
+                                                            term_accession=""))
+                    this_isa_sample.factor_values.append(fv)
             isa_study.samples.append(this_isa_sample)
 
             # Creating the corresponding ISA sample entity for structure the document:
