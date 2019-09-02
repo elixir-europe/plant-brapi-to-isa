@@ -9,6 +9,8 @@ import re
 
 def att_test(dictionary, attribute, NA=""):
     if attribute in dictionary and dictionary[attribute]:
+        if dictionary[attribute] in ['NA', 'na','Na', 'n.a.', 'N.A.', 'N.a.']:
+            return NA
         return str(dictionary[attribute])
     else:
         return NA
@@ -67,6 +69,21 @@ class BrapiToIsaConverter:
                          ",".join(obs_level_in_study.keys()))
         return obs_level_in_study, obs_levels
 
+    def organism_characteristic(self, all_germplasm_attributes, taxonId):
+        """" Given a a dictionairy with the germplasm details, retrieve the organism characteristic"""
+
+        #Testing for genus and species availability
+        genus = att_test(all_germplasm_attributes, 'genus')
+        species = att_test(all_germplasm_attributes, 'species')
+
+        #Checking if taxonId is supplied or not, otherwise fetch it from www.ebi.ac.uk
+        if not taxonId or not taxonId.isdigit():
+            taxonId = self._brapi_client.get_taxonId(genus, species)
+        if taxonId:
+            return self.create_isa_characteristic('Organism', "NCBITAXON:{}".format(str(taxonId)))
+        else:
+            return self.create_isa_characteristic('Organism', att_test(all_germplasm_attributes, 'commonCropName', PAR_NAinData))
+
     def create_germplasm_chars(self, germplasm):
         """" Given a BRAPI Germplasm ID, retrieve the list of all attributes from BRAPI and returns a list of ISA
         characteristics using MIAPPE tags for compliance + X-check against ISAconfiguration"""
@@ -78,32 +95,18 @@ class BrapiToIsaConverter:
         all_germplasm_attributes = self._brapi_client.get_germplasm(
             germplasm_id)
 
-        if 'taxonId' in all_germplasm_attributes and all_germplasm_attributes['taxonId']:
-            taxonids =[]
-            for taxonid in all_germplasm_attributes['taxonId']:
-                taxonids.append(att_test(taxonid, 'sourceName', 'NCBI') + ":" + str(taxonid['taxonId']))
-            c = self.create_isa_characteristic('Organism', ';'.join(taxonids))
+        if att_test(all_germplasm_attributes, 'taxonIds'):
+            taxonId = ''
+            for taxonid in all_germplasm_attributes['taxonIds']:
+                if taxonid['sourceName'] in ['NCBITaxon', 'ncbiTaxon']:
+                    c = self.organism_characteristic(
+                        all_germplasm_attributes, taxonid['taxonId'])
             returned_characteristics.append(c)
+            
         else:
-            if ('genus' in all_germplasm_attributes and all_germplasm_attributes['genus']) or ('species' in all_germplasm_attributes and all_germplasm_attributes['species']):
-                taxonId = self._brapi_client.get_taxonId(all_germplasm_attributes['genus'],all_germplasm_attributes['species'])
-                if taxonId:
-                    c = self.create_isa_characteristic(
-                        'Organism', 'NCBI:'+ str(taxonId))
-                    
-                else:
-                    if 'commonCropName' in all_germplasm_attributes and all_germplasm_attributes['commonCropName']:
-                        c = self.create_isa_characteristic('Organism', all_germplasm_attributes['commonCropName'])
-                    else:
-                        c = self.create_isa_characteristic('Organism', "")
-
-            else:
-                if 'commonCropName' in all_germplasm_attributes and all_germplasm_attributes['commonCropName']:
-                    c = self.create_isa_characteristic('Organism', all_germplasm_attributes['commonCropName'])
-                else:
-                    c = self.create_isa_characteristic('Organism', "")
+            c = self.organism_characteristic(all_germplasm_attributes, "")
             returned_characteristics.append(c)
-        
+
         mapping_dictionnary = {
             "genus": "Genus",
             "species": "Species",
@@ -112,15 +115,9 @@ class BrapiToIsaConverter:
             "germplasmPUI": "Material Source DOI",
         }
 
-
         for key in mapping_dictionnary:
-            if key in all_germplasm_attributes and all_germplasm_attributes[key]:
-                c = self.create_isa_characteristic(
-                        mapping_dictionnary[key], str(all_germplasm_attributes[key]))
-            else:
-                c = self.create_isa_characteristic(
-                    mapping_dictionnary[key], "")
-            
+            c = self.create_isa_characteristic(
+                mapping_dictionnary[key], str(att_test(all_germplasm_attributes, key)))
             returned_characteristics.append(c)
 
         return returned_characteristics
