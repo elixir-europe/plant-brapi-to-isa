@@ -181,7 +181,7 @@ def create_study_sample_and_assay(client, brapi_study_id, isa_study,  growth_pro
 
         phenotyping_process = Process(executes_protocol=phenotyping_protocol)
         phenotyping_process.inputs.append(this_isa_sample)
-        phenotyping_process.name = obs_unit["observationUnitDbId"] 
+        phenotyping_process.name =  att_test(obs_unit, 'observationLevel', PAR_defaultObsLvl).lower()
 
         # Adding Parameter Value[Collection Date] column
         # col_date_pp = ProtocolParameter(parameter_name=OntologyAnnotation(term="Collection Date"))
