@@ -191,7 +191,7 @@ class BrapiToIsaConverter:
                 affiliation=att_test(brapicontact, 'institutionName', PAR_NAinData), email=att_test(brapicontact, 'email'), address=PAR_NAinBrAPI, roles=[role])
                 this_study.contacts.append(contact)
 
-        # Adding dataLinks inforamtion
+        # Adding dataLinks information
         if att_test(brapi_study,'dataLinks'):
             for brapidata in brapi_study['dataLinks']:
                 this_study.comments.append(Comment(name="Study Data File Link",value=brapidata['url']))
@@ -205,14 +205,10 @@ class BrapiToIsaConverter:
                 self.logger.info("The observation level " + level + " is not supported by MIAPPE at this moment and will not be validated.")
                 self.logger.info("Following observation levels are supported: " + str(PAR_suppObsLvl) + ".")
 
-            oref_mt = OntologySource(
-                name="OBI", description=self.ontologies["obi"][0], file=self.ontologies["obi"][1])
             oa_mt = OntologyAnnotation(
-                term="phenotyping", term_accession="", term_source=oref_mt)
-            oref_tt = OntologySource(
-                name="OBI", description=self.ontologies["obi"][0], file=self.ontologies["obi"][1])
+                term="phenotyping", term_accession="", term_source="")
             oa_tt = OntologyAnnotation(
-                term=level + " level analysis", term_accession="", term_source=oref_tt)
+                term=level + " level analysis", term_accession="", term_source="")
             
             isa_assay_file = "a_" + str(brapi_study_id) + "_" + level + ".txt"
             new_assay = Assay(measurement_type=oa_mt,
@@ -220,11 +216,6 @@ class BrapiToIsaConverter:
             new_assay.characteristic_categories.append(level)
 
             this_study.assays.append(new_assay)
-
-            if oref_mt not in investigation.ontology_source_references:
-                investigation.ontology_source_references.append(oref_mt)
-            if oref_tt not in investigation.ontology_source_references:
-                investigation.ontology_source_references.append(oref_tt)
 
         self.logger.info("Number of ISA assays: " + str(len(this_study.assays)))
 
@@ -270,9 +261,9 @@ class BrapiToIsaConverter:
 
             else:
                 if att_test(obs_var, 'synonyms'):  
-                    elements['Variable Name'].append('; '.join(obs_var['synonyms']) + ' (BrAPI variableDbId: ' + att_test(obs_var, 'observationVariableDbId', 'NA') + ')')
+                    elements['Variable Name'].append('; '.join(obs_var['synonyms']) + ' (BrAPI variableDbId: ' + att_test(obs_var, 'observationVariableDbId', PAR_NAinData) + ')')
                 else: 
-                     elements['Variable Name'].append('(BrAPI variableDbId: ' + att_test(obs_var, 'observationVariableDbId', 'NA') + ')')
+                     elements['Variable Name'].append('(BrAPI variableDbId: ' + att_test(obs_var, 'observationVariableDbId', PAR_NAinData) + ')')
 
             elements['Trait'].append(att_test(obs_var['trait'], 'name'))
 
@@ -314,7 +305,7 @@ class BrapiToIsaConverter:
         for obslvl in obs_levels[level]:
             obs_levels_header.append("observationLevels[{}]".format(obslvl))
         # headers belonging observation unit
-        obs_unit_header = ["observationUnitDbId", "observationUnitXref",
+        obs_unit_header = ["observationUnitName", "observationUnitXref",
                            "X", "Y", "germplasmDbId", "germplasmName"]
         # headers belonging germplasm
         germpl_header = ["accessionNumber"]
