@@ -21,7 +21,7 @@ def att_test(dictionary, attribute, NA=""):
 PAR_NAinData = "NA"
 PAR_NAinBrAPI = "NA in BrAPI"
 PAR_defaultObsLvl = "plant"
-PAR_suppObsLvl = ['block', 'sub-block', 'plot', 'plant', 'study', 'pot', 'replication', 'replicate','individual', 'unit-parcel']
+PAR_suppObsLvl = ['study', 'block', 'sub-block', 'plot', 'sub-plot', 'pot', 'plant']
 
 class BrapiToIsaConverter:
     """ Converter json coming out of the BRAPI to ISA object
@@ -101,6 +101,8 @@ class BrapiToIsaConverter:
                 if taxonid['sourceName'] in ['NCBITaxon', 'ncbiTaxon']:
                     c = self.organism_characteristic(
                         all_germplasm_attributes, taxonid['taxonId'])
+                else:
+                    c = self.organism_characteristic(all_germplasm_attributes, "")
             returned_characteristics.append(c)
             
         else:
@@ -175,11 +177,16 @@ class BrapiToIsaConverter:
                 this_study.comments.append(
                     Comment(name="Study Country", value=PAR_NAinData))
 
-            this_study.comments.append(Comment(name="Study Latitude", value=att_test(brapi_study['location'], 'latitude')))
-            this_study.comments.append(Comment(name="Study Longitude", value=att_test(brapi_study['location'], 'longitude')))
-            this_study.comments.append(Comment(name="Study Altitude",value=att_test(brapi_study['location'], 'altitude')))
+            if att_test(brapi_study['location'], 'latitude'):
+                this_study.comments.append(Comment(name="Study Latitude", value=brapi_study['location']['latitude']))
+            if att_test(brapi_study['location'], 'longitude'):
+                this_study.comments.append(Comment(name="Study Longitude", value=brapi_study['location']['longitude']))
+            if att_test(brapi_study['location'], 'altitude'):
+                this_study.comments.append(Comment(name="Study Altitude",value=brapi_study['location']['altitude']))
         else:
             self.logger.info("BrAPI study " + brapi_study['studyDbId'] + "has no location attribute, this is mandatory to be MIAPPE compliant.")
+            this_study.comments.append(Comment(name="Study Country",value=PAR_NAinData))
+            this_study.comments.append(Comment(name="Study Experimental Site",value=PAR_NAinData))
 
         # Adding Contacts information
         if att_test(brapi_study,'contacts' ):
