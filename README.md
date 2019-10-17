@@ -6,7 +6,7 @@ Code to pull data from BrAPI endpoints and create an [ISA](http://isa-tools.org)
 
 The mapping from ISA to MIAPPE is fully documented here: https://github.com/MIAPPE/ISA-Tab-for-plant-phenotyping/blob/v1.1/README.md
 
-NOTE: For full MIAPPE compliance, make sure to have isatools v0.10.4 + installed.
+NOTE: For full MIAPPE compliance, make sure to have [isatools](https://github.com/ISA-tools/isa-api) v0.10.4 + installed.
 
 ## Input
 
