@@ -6,6 +6,8 @@ Code to pull data from BrAPI endpoints and create an [ISA](http://isa-tools.org)
 
 The mapping from ISA to MIAPPE is fully documented here: https://github.com/MIAPPE/ISA-Tab-for-plant-phenotyping/blob/v1.1/README.md
 
+NOTE: For full MIAPPE compliance, make sure to have isatools v0.10.4 + installed.
+
 ## Input
 
 A valid BrAPI endpoint with following GET calls implemented:
@@ -65,7 +67,7 @@ Optional:
 
 * python 3.5 +
 * following python modules:
-    * isatools
+    * isatools v0.10.4 +
     * requests
     * pycountry-convert 
     * cachetools
