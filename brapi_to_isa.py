@@ -372,7 +372,7 @@ def main(arg):
                 # TODO: see https://github.com/ISA-tools/isa-api/blob/master/isatools/isatab.py#L886
 
                 phenotyping_protocol = Protocol(name="Phenotyping",
-                                                protocol_type=OntologyAnnotation(term="Phenotyping"))
+                                                protocol_type=OntologyAnnotation(term="nucleic acid sequencing"))
                 isa_study.protocols.append(phenotyping_protocol)
 
                 growth_protocol = Protocol(name="Growth",
