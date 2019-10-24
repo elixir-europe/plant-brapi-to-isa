@@ -84,9 +84,9 @@ http://www.obofoundry.org/registry/ontologies.jsonld
 ## Tested Examples
 
 ```
-python brapi_to_isa.py -e https://urgi.versailles.inra.fr/faidare/brapi/v1/ -s RIGW1
-python brapi_to_isa.py -e https://urgi.versailles.inra.fr/faidare/brapi/v1/ -t 24
-python brapi_to_isa.py -e https://urgi.versailles.inra.fr/faidare/brapi/v1/ -t 6
+python brapi_to_isa.py -e https://urgi.versailles.inra.fr/faidare/brapi/v1/ -s dXJuOlVSR0kvc3R1ZHkvUklHVzE=
+python brapi_to_isa.py -e https://urgi.versailles.inra.fr/faidare/brapi/v1/ -t aHR0cDovL2R4LmRvaS5vcmcvMTAuMTE4Ni8xNDcxLTIyMjktMTItMTcz
+python brapi_to_isa.py -e https://urgi.versailles.inra.fr/faidare/brapi/v1/ -t dXJuOlVSR0kvdHJpYWwvNw==
 python brapi_to_isa.py -e https://pippa.psb.ugent.be/BrAPIPPA/brapi/v1/ -t all
 python brapi_to_isa.py -e https://www.eu-sol.wur.nl/webapi/tomato/brapi/v1/ -t 2
 python brapi_to_isa.py -e https://brapi.biodata.pt/brapi/v1/ -t 2
