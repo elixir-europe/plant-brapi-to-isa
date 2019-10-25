@@ -141,11 +141,11 @@ class BrapiToIsaConverter:
         elif 'studyName' in brapi_study:
             this_study.title = brapi_study['studyName']
         else:
-            this_study.title = PAR_NAinData
+            this_study.title = PAR_NAinBrAPI
 
-        this_study.description = att_test(brapi_study, 'studyDescription', PAR_NAinData)
+        this_study.description = att_test(brapi_study, 'studyDescription', PAR_NAinBrAPI)
 
-        oa_st_design = OntologyAnnotation(term=att_test(brapi_study, 'studyType', PAR_NAinData))
+        oa_st_design = OntologyAnnotation(term=att_test(brapi_study, 'studyType', PAR_NAinBrAPI))
         oa_st_design.comments.append(Comment(name="Study Design Description", value=PAR_NAinBrAPI))
         oa_st_design.comments.append(Comment(name="Observation Unit Level Hierarchy", value=PAR_NAinBrAPI))
         oa_st_design.comments.append(Comment(name="Observation Unit Description", value=PAR_NAinBrAPI))
@@ -161,7 +161,7 @@ class BrapiToIsaConverter:
         
         # Adding Location information 
         if 'location' in brapi_study and brapi_study['location']:
-            this_study.comments.append(Comment(name="Study Experimental Site", value=att_test(brapi_study['location'], 'name', PAR_NAinData)))
+            this_study.comments.append(Comment(name="Study Experimental Site", value=att_test(brapi_study['location'], 'name', PAR_NAinBrAPI)))
 
             if 'countryCode' in brapi_study['location'] and brapi_study['location']['countryCode']:
                 if len(brapi_study['location']['countryCode']) == 3:
@@ -185,15 +185,15 @@ class BrapiToIsaConverter:
                 this_study.comments.append(Comment(name="Study Altitude",value=brapi_study['location']['altitude']))
         else:
             self.logger.info("BrAPI study " + brapi_study['studyDbId'] + "has no location attribute, this is mandatory to be MIAPPE compliant.")
-            this_study.comments.append(Comment(name="Study Country",value=PAR_NAinData))
-            this_study.comments.append(Comment(name="Study Experimental Site",value=PAR_NAinData))
+            this_study.comments.append(Comment(name="Study Country",value=PAR_NAinBrAPI))
+            this_study.comments.append(Comment(name="Study Experimental Site",value=PAR_NAinBrAPI))
 
         # Adding Contacts information
         if att_test(brapi_study,'contacts' ):
             for brapicontact in brapi_study['contacts']:
                 #NOTE: brapi has just name attribute -> no separate first/last name
                 ContactName = brapicontact['name'].split(' ')
-                role = OntologyAnnotation(term=att_test(brapicontact, 'type', PAR_NAinData))
+                role = OntologyAnnotation(term=att_test(brapicontact, 'type', PAR_NAinBrAPI))
                 contact = Person(first_name=ContactName[0], last_name=ContactName[1],
                 affiliation=att_test(brapicontact, 'institutionName', PAR_NAinData), email=att_test(brapicontact, 'email'), address=PAR_NAinBrAPI, roles=[role])
                 this_study.contacts.append(contact)
@@ -201,9 +201,9 @@ class BrapiToIsaConverter:
         # Adding dataLinks information
         if att_test(brapi_study,'dataLinks'):
             for brapidata in brapi_study['dataLinks']:
-                this_study.comments.append(Comment(name="Study Data File Link",value=brapidata['url']))
-                this_study.comments.append(Comment(name="Study Data File Description",value=brapidata['type']))
-                this_study.comments.append(Comment(name="Study Data File Version",value=PAR_NAinBrAPI))
+                this_study.comments.append(Comment(name="Study Data File Link", value=brapidata['url']))
+                this_study.comments.append(Comment(name="Study Data File Description", value=brapidata['type']))
+                this_study.comments.append(Comment(name="Study Data File Version", value=PAR_NAinBrAPI))
 
         # Declaring as many ISA Assay Types as there are BRAPI Observation Levels
         ###########################################################################
