@@ -1,3 +1,5 @@
+![](https://github.com/elixir-europe/plant-brapi-to-isa/workflows/Python%20package/badge.svg)
+
 # BrAPI2ISA
 
 Code to pull data from BrAPI endpoints and create an [ISA](http://isa-tools.org) representation of the experiments in a MIAPPE compliant way. This script is part of the Data Validation implementation study of ELIXIR.
@@ -40,7 +42,7 @@ Output will be put into a subfolder `/outputdir`.
 ## Unavailable values
 BrAPI v1.3 and earlier does not support all the necessary attributes that are needed for MIAPPE compliance. These fields will be filled in with `"NA in BrAPI"`. Be aware that these fields are not detected by the validator since they are filled in with a string. 
 
-Values that are supported by BrAPI but are not implemented in the given endpoint, will be filled in with `"NA"`. This is a R analysis environment friendly way compared to the REST full way used in BrAPI.
+Values that are supported by BrAPI but are not implemented in the given endpoint, will be filled in with `"NA in endpoint"`.
 
 ## Validation
 
