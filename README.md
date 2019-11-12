@@ -1,4 +1,5 @@
-![](https://github.com/elixir-europe/plant-brapi-to-isa/workflows/Python%20package/badge.svg)
+![](https://github.com/elixir-europe/plant-brapi-to-isa/workflows/Python%20package/badge.svg)![](https://github.com/elixir-europe/plant-brapi-to-isa/workflows/Docker%20Build/badge.svg)
+
 
 # BrAPI2ISA
 
