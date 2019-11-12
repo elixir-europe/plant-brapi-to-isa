@@ -121,7 +121,6 @@ docker-compose build && docker-compose run <>
  Where <> can be following values:
 - test_trial
 - test_study
-- test_studies_notrial
 - test_pippa
 
 

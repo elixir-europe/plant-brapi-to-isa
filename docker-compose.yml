@@ -6,9 +6,9 @@ services:
             - python
             - /brapi_to_isa.py
             - -e
-            - https://urgi.versailles.inra.fr/faidare/brapi/v1/
+            - https://urgi.versailles.inra.fr/faidare/brapi/v1/ 
             - -t
-            - "24"
+            - "dXJuOlVSR0kvdHJpYWwvNw=="
         volumes:
          - ./outputdir:/outputdir
     test_study:
@@ -19,18 +19,7 @@ services:
             - -e
             - https://urgi.versailles.inra.fr/faidare/brapi/v1/
             - -s
-            - "RIGW1"
-        volumes:
-         - ./outputdir:/outputdir
-    test_studies_notrial:
-        build: ./
-        entrypoint: 
-            - python
-            - /brapi_to_isa.py
-            - -e
-            - https://urgi.versailles.inra.fr/faidare/brapi/v1/
-            - -s
-            - RIGW1,GWAS_Tomato_Solcap_Avignon
+            - "dXJuOlVSR0kvc3R1ZHkvUklHVzE="
         volumes:
          - ./outputdir:/outputdir
     test_pippa:
