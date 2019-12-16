@@ -18,7 +18,7 @@ def att_test(dictionary, attribute, NA=""):
 # ENVIRONMENTAL PARAMETERS
 # ------------------------
 
-PAR_NAinData = "NA"
+PAR_NAinData = "NA in endpoint"
 PAR_NAinBrAPI = "NA in BrAPI"
 PAR_defaultObsLvl = "plant"
 PAR_suppObsLvl = ['study', 'block', 'sub-block', 'plot', 'sub-plot', 'pot', 'plant']
@@ -201,9 +201,9 @@ class BrapiToIsaConverter:
         # Adding dataLinks information
         if att_test(brapi_study,'dataLinks'):
             for brapidata in brapi_study['dataLinks']:
-                this_study.comments.append(Comment(name="Study Data File Link",value=brapidata['url']))
-                this_study.comments.append(Comment(name="Study Data File Description",value=brapidata['type']))
-                this_study.comments.append(Comment(name="Study Data File Version",value=PAR_NAinBrAPI))
+                this_study.comments.append(Comment(name="Study Data File Link", value=brapidata['url']))
+                this_study.comments.append(Comment(name="Study Data File Description", value=brapidata['type']))
+                this_study.comments.append(Comment(name="Study Data File Version", value=PAR_NAinBrAPI))
 
         # Declaring as many ISA Assay Types as there are BRAPI Observation Levels
         ###########################################################################
@@ -404,3 +404,4 @@ class BrapiToIsaConverter:
                         data_records_flat.append('\t'.join(lines))
 
         return data_records, data_records_flat
+        
