@@ -323,7 +323,7 @@ def main(arg):
                 ContactName = brapicontact['name'].split(' ')
                 role = OntologyAnnotation(term=att_test(brapicontact, 'type', PAR_NAinData))
                 contact = Person(first_name=ContactName[0], last_name=' '.join(ContactName[1:]),
-                affiliation=att_test(brapicontact,'institutionName', PAR_NAinData), email=att_test(brapicontact,'email', PAR_NAinData), address=PAR_NAinBrAPI, roles=[role])
+                affiliation=att_test(brapicontact,'institutionName', PAR_NAinData), email=att_test(brapicontact,'email'), address=PAR_NAinBrAPI, roles=[role])
                 investigation.contacts.append(contact)
         else:
             role = OntologyAnnotation(term=PAR_NAinData)
