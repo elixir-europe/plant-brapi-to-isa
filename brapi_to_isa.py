@@ -319,10 +319,10 @@ def main(arg):
 
         if att_test(trial, 'contacts'):
             for brapicontact in trial['contacts']:
-                #NOTE: brapi has just name attribute -> no seperate first/last name
+                #NOTE: brapi has just name attribute -> no separate first/last name
                 ContactName = brapicontact['name'].split(' ')
                 role = OntologyAnnotation(term=att_test(brapicontact, 'type', PAR_NAinData))
-                contact = Person(first_name=ContactName[0], last_name=ContactName[1],
+                contact = Person(first_name=ContactName[0], last_name=' '.join(ContactName[1:]),
                 affiliation=att_test(brapicontact,'institutionName', PAR_NAinData), email=att_test(brapicontact,'email', PAR_NAinData), address=PAR_NAinBrAPI, roles=[role])
                 investigation.contacts.append(contact)
         else:
