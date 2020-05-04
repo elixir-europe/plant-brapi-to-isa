@@ -96,7 +96,6 @@ class BrapiToIsaConverter:
             germplasm_id)
 
         if att_test(all_germplasm_attributes, 'taxonIds'):
-            taxonId = ''
             for taxonid in all_germplasm_attributes['taxonIds']:
                 if taxonid['sourceName'] in ['NCBITaxon', 'ncbiTaxon']:
                     c = self.organism_characteristic(
@@ -252,7 +251,7 @@ class BrapiToIsaConverter:
         }
 
         # decorating dictionairy
-        for i, obs_var in enumerate(obsvars):
+        for obs_var in obsvars:
             obs_var_id = re.search('([a-zA-Z]*):[0-9]*', att_test(obs_var, 'observationVariableDbId'))
             obs_var_name = att_test(obs_var, 'name')
             obs_var_trait_id = re.search('([a-zA-Z]*):[0-9]*', att_test(obs_var['trait'], 'traitDbId'))
@@ -364,7 +363,6 @@ class BrapiToIsaConverter:
                             row[head.index(obs_unit_attribute)] = PAR_NAinData
 
                 rowbuffer = copy.deepcopy(row)
-                rowbuffer_flat = copy.deepcopy(row)
 
                 timestamps ={}
                 for measurement in obs_unit['observations']:
