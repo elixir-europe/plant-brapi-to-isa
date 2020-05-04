@@ -462,7 +462,7 @@ def main(arg):
                 output_file_path = output_directory + filenameFormat(trial['trialName']) + '.json'
 
                 isa_json = isatab2json.convert(
-                input_file_path, use_new_parser=False, validate_first=False)
+                input_file_path, use_new_parser=True, validate_first=False)
                 with open(output_file_path, 'w') as out_fp:
                     json.dump(isa_json, out_fp, indent=4)
             except Exception as ioe:
