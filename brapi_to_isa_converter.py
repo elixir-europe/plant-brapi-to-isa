@@ -92,8 +92,9 @@ class BrapiToIsaConverter:
         returned_characteristics = []
 
         germplasm_id = germplasm['germplasmDbId']
-        all_germplasm_attributes = self._brapi_client.get_germplasm(
-            germplasm_id)
+        #all_germplasm_attributes = self._brapi_client.get_germplasm(
+        #    germplasm_id)
+        all_germplasm_attributes = germplasm
 
         if att_test(all_germplasm_attributes, 'taxonIds'):
             taxonId = ''
@@ -101,8 +102,8 @@ class BrapiToIsaConverter:
                 if taxonid['sourceName'] in ['NCBITaxon', 'ncbiTaxon']:
                     c = self.organism_characteristic(
                         all_germplasm_attributes, taxonid['taxonId'])
-            returned_characteristics.append(c)
-            
+                    returned_characteristics.append(c)
+            #TODO: Handle cases with thePlantList. In another column
         else:
             c = self.organism_characteristic(all_germplasm_attributes, "")
             returned_characteristics.append(c)
