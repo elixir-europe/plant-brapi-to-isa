@@ -92,9 +92,10 @@ class BrapiToIsaConverter:
         returned_characteristics = []
 
         germplasm_id = germplasm['germplasmDbId']
-        #all_germplasm_attributes = self._brapi_client.get_germplasm(
-        #    germplasm_id)
-        all_germplasm_attributes = germplasm
+        if (not "genus" in germplasm or not "species" in germplasm or not "subtaxa" in germplasm or not "accessionNumber" in germplasm or not "germplasmPUI" in germplasm):
+            all_germplasm_attributes = self._brapi_client.get_germplasm(germplasm_id)
+        else:
+            all_germplasm_attributes = germplasm
 
         if att_test(all_germplasm_attributes, 'taxonIds'):
             for taxonid in all_germplasm_attributes['taxonIds']:
