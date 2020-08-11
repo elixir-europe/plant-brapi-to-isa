@@ -1,6 +1,6 @@
 import json
 import logging
-from collections import Iterable
+from collections.abc import Iterable
 from typing import List
 import requests
 from requests.adapters import HTTPAdapter
@@ -224,25 +224,20 @@ class BrapiClient:
             page += 1
 
     def get_taxonId(self, genus, species):
-        query = genus + ' ' + species
-        query = " ".join(query.split())
-        if query in self.taxon:
-            return self.taxon[query]
-        link = "https://www.ebi.ac.uk/ena/data/view/Taxon:{}&display=xml".format(query)
+        scientific_name = '%20'.join([genus,species])
+        if scientific_name in self.taxon:
+            return self.taxon[scientific_name]
+        
+        link = "https://www.ebi.ac.uk/ena/taxonomy/rest/any-name/{}".format(scientific_name)
         self.logger.debug('GET ' + link)
         r = requests.get(link)
         if r.status_code != requests.codes.ok:
             self.logger.error("problem with request: " + str(r))
             raise RuntimeError("Non-200 status code")
         else:
-            header = re.search('<(taxon scientificName.*?)>', r.text)
-            if header:
-                taxonId = re.search('taxId="(.*?)"', header.group(1)).group(1)
-                self.taxon[query] = taxonId
-                return taxonId
-                
-            else:
-                return None
+            taxonId = r.json()[0]['taxId']
+            self.taxon[scientific_name] = taxonId
+            return taxonId
     
     def get_ontologies(self):
         ont = {}
