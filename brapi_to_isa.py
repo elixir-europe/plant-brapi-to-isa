@@ -280,7 +280,7 @@ def get_empty_trial():
     yield from [empty_trial]
 
 
-def main(arg):
+def main(arg=SERVER):
     """ Given a SERVER value (and BRAPI isa_study identifier), generates an ISA-Tab document"""
 
     client = BrapiClient(SERVER, logger)
@@ -484,7 +484,7 @@ def main(arg):
 """ starting up """
 if __name__ == '__main__':
     try:
-        main(arg=SERVER)
+        main()
     except Exception as e:
         logging.exception(e)
         sys.exit(1)
