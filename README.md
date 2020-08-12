@@ -41,6 +41,12 @@ pip install .
 brapi2isa [options…]
 ```
 
+or exicuting in the cloned directory:
+
+```
+python brapi_to_isa.py [options…]
+```
+
 Mandatory options:
 * -e, --endpoint &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*A BrAPI server endpoint*
 * -t, --trials &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*Comma separated list of trial Ids. Use 'all' to get all trials*\
