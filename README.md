@@ -1,18 +1,28 @@
-![](https://github.com/elixir-europe/plant-brapi-to-isa/workflows/Python%20package/badge.svg)&nbsp;![](https://github.com/elixir-europe/plant-brapi-to-isa/workflows/Docker%20Build/badge.svg)
+[![](https://github.com/elixir-europe/plant-brapi-to-isa/workflows/Python%20package/badge.svg)](https://github.com/elixir-europe/plant-brapi-to-isa/actions?query=workflow%3A%22Python+package%22)
+[![](https://github.com/elixir-europe/plant-brapi-to-isa/workflows/Docker%20Build/badge.svg)](https://github.com/elixir-europe/plant-brapi-to-isa/actions?query=workflow%3A%22Docker+Build%22)
 
 
-# BrAPI2ISA
+# BrAPI to ISA
 
 Code to pull data from BrAPI endpoints and create an [ISA](http://isa-tools.org) representation of the experiments in a MIAPPE compliant way. This script is part of the Data Validation implementation study of ELIXIR.
 
-![](https://raw.githubusercontent.com/elixir-europe/plant-brapi-to-isa/master/validation-overview.png)
+![Validation scheme](validation-overview.png)
 
 The mapping from ISA to MIAPPE is fully documented here: https://github.com/MIAPPE/ISA-Tab-for-plant-phenotyping/blob/v1.1/README.md
 
-NOTE: For full MIAPPE compliance, make sure to have [isatools](https://github.com/ISA-tools/isa-api) v0.10.4 + installed. This can be done using 
+
+## Installation
+Allows to use this program as a python pip package.
+
+Install the package with:
+```
+pip install git+ssh://git@github.com:elixir-europe/plant-brapi-to-isa.git@master#egg=brapi2isa
+```
+
+or clone this repository and exicute this in the root of the directory:
 
 ```
-pip install git+git://github.com/ISA-tools/isa-api#egg=isatools
+pip install .
 ```
 
 ## Input
@@ -25,11 +35,13 @@ A valid BrAPI endpoint with following GET calls implemented:
 * /studies/{studyDbId}/observationunits or /phenotypes-search
 * /studies/{studyDbId}/observationvariables
 * /studies/{studyDbId}/germplasm
+and possibly 
 * /germplasm/{germplasmDbId}
 
 Test your endpoints [here](http://webapps.ipk-gatersleben.de/brapivalidator/) for BrAPI compliance.
 
 BrAPI to isa is tested and optimized for BrAPI version 1.0, 1.1, 1.2 and 1.3.
+NOTE: BrAPI 2.0 is NOT supported
 
 ## Output
 
@@ -45,9 +57,14 @@ BrAPI to isa is tested and optimized for BrAPI version 1.0, 1.1, 1.2 and 1.3.
 Output will be put into a subfolder `/outputdir`.
 
 ## Unavailable values
+
 BrAPI v1.3 and earlier does not support all the necessary attributes that are needed for MIAPPE compliance. These fields will be filled in with `"NA in BrAPI"`. Be aware that these fields are not detected by the validator since they are filled in with a string. 
 
 Values that are supported by BrAPI but are not implemented in the given endpoint, will be filled in with `"NA in endpoint"`.
+
+## Limitations of ISA-tools
+
+Because Phenotyping is not a supported protocol in ISA-tools, we are forced to use nucleic acid sequencing as protocol_type to have an assay name column in the assay file. This is not following the MIAPPE standard, so it is needed to manually change this in the investigation file to Phenotyping.
 
 ## Validation
 
@@ -56,7 +73,7 @@ The dumped ISA-tab files are automatically validated by the ISA-API using the [M
 ## Usage
 
 ```
-python brapi_to_isa.py [options…]
+brapi_to_isa [options…]
 ```
 
 Mandatory options:
@@ -72,17 +89,19 @@ Optional:
 
 ## Dependencies
 
-* python 3.5 +
+* python 3.6 +
 * following python modules:
     * isatools v0.10.4 +
     * requests
     * pycountry-convert 
     * cachetools
 
+NOTE: For better MIAPPE compliance, make sure to have [isatools](https://github.com/ISA-tools/isa-api) v0.10.4 + installed. This can be done using 
+
 ### External resources
 
 To determine the NCBI taxon-id following link is used:
-https://www.ebi.ac.uk/ena/data/view/Taxon:&display=xml
+https://www.ebi.ac.uk/ena/taxonomy/rest/any-name/
 
 To fetch all the ontologies and there corresponding information, following link is used:
 http://www.obofoundry.org/registry/ontologies.jsonld
@@ -130,19 +149,7 @@ docker-compose build && docker-compose run <>
 
 Output will be put into a subfolder `/outputdir`.
 
-## setup<i></i>.py 
-Allows to use this program as a python pip package.
 
-Install the package with:
-```
-pip install git+ssh://git@github.com:elixir-europe/plant-brapi-to-isa.git@master#egg=brapi2isa
-```
-
-Usage:
-
-```
-import brapi_to_isa
-```
 ## Documentation
  * https://github.com/MIAPPE/MIAPPE/blob/master/MIAPPE_Checklist-Data-Model-v1.1/MIAPPE_Checklist-Data-Model-v1.1.pdf - MIAPPE v1.1 checklist
  * https://docs.google.com/spreadsheets/d/1d2HyJddYJsVnTesPXcaflg9gqE8IA9a8SHCYIPTA_fQ - BrAPI <-> MIAPPE mapping
