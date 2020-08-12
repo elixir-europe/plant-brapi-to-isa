@@ -10,6 +10,16 @@ Code to pull data from BrAPI endpoints and create an [ISA](http://isa-tools.org)
 
 The mapping from ISA to MIAPPE is fully documented here: https://github.com/MIAPPE/ISA-Tab-for-plant-phenotyping/blob/v1.1/README.md
 
+## Dependencies
+
+* python 3.6 +
+* following python modules:
+    * isatools v0.10.4 +
+    * requests
+    * pycountry-convert 
+    * cachetools
+
+NOTE: For better MIAPPE compliance, make sure to have [isatools](https://github.com/ISA-tools/isa-api) v0.10.4 + installed. This can be done using 
 
 ## Installation
 Allows to use this program as a python pip package.
@@ -24,6 +34,24 @@ or clone this repository and exicute this in the root of the directory:
 ```
 pip install .
 ```
+
+## Usage
+
+```
+brapi2isa [options…]
+```
+
+Mandatory options:
+* -e, --endpoint &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*A BrAPI server endpoint*
+* -t, --trials &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*Comma separated list of trial Ids. Use 'all' to get all trials*\
+or
+* -s, --studies &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*Comma separated list of study Ids*
+
+Optional:
+* -J, --json &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*flag to deactivate json dump*
+* -V, --validator &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*flag to deactivate validation*
+* -F, --flatten &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*flag to generate a flattened data file based on observationTimStamp*
+
 
 ## Input
 
@@ -67,26 +95,6 @@ Values that are supported by BrAPI but are not implemented in the given endpoint
 Because Phenotyping is not a supported protocol in ISA-tools, we are forced to use nucleic acid sequencing as protocol_type to have an assay name column in the assay file. This is not following the MIAPPE standard, so it is needed to manually change this in the investigation file to Phenotyping.
 
 ## Validation
-
-The dumped ISA-tab files are automatically validated by the ISA-API using the [MIAPPE configuration files](https://github.com/MIAPPE/ISA-Tab-for-plant-phenotyping/tree/v1.1/isaconfig-phenotyping/isaconfig-phenotyping-basic). This to ensure MIAPPE compliance.
-
-## Usage
-
-```
-brapi_to_isa [options…]
-```
-
-Mandatory options:
-* -e, --endpoint &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*A BrAPI server endpoint*
-* -t, --trials &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*Comma separated list of trial Ids. Use 'all' to get all trials*\
-or
-* -s, --studies &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*Comma separated list of study Ids*
-
-Optional:
-* -J, --json &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*flag to deactivate json dump*
-* -V, --validator &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*flag to deactivate validation*
-* -F, --flatten &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*flag to generate a flattened data file based on observationTimStamp*
-
 ## Dependencies
 
 * python 3.6 +
@@ -97,6 +105,9 @@ Optional:
     * cachetools
 
 NOTE: For better MIAPPE compliance, make sure to have [isatools](https://github.com/ISA-tools/isa-api) v0.10.4 + installed. This can be done using 
+
+
+The dumped ISA-tab files are automatically validated by the ISA-API using the [MIAPPE configuration files](https://github.com/MIAPPE/ISA-Tab-for-plant-phenotyping/tree/v1.1/isaconfig-phenotyping/isaconfig-phenotyping-basic). This to ensure MIAPPE compliance.
 
 ### External resources
 
