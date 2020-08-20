@@ -6,6 +6,7 @@ import copy
 from collections import defaultdict
 from brapi_client import BrapiClient
 import re
+import platform
 
 def att_test(dictionary, attribute, NA=""):
     if attribute in dictionary and dictionary[attribute]:
@@ -39,6 +40,14 @@ class BrapiToIsaConverter:
         self._brapi_client = BrapiClient(self.endpoint, self.logger)
         self.ontologies = self._brapi_client.get_ontologies()
 
+    
+    def filename_checker(self, filename):
+        if platform.system() == 'Windows':
+            import string
+            valid_chars = "-_.() %s%s" % (string.ascii_letters, string.digits)
+            for char in filename:
+                if char not in valid_chars:
+                    return True
 
     def get_obs_levels(self, brapi_study_id, OBSERVATIONUNITLIST):
         # because not every obs level has the same variables, and this is not yet supported by brapi to filter on /
@@ -213,7 +222,8 @@ class BrapiToIsaConverter:
             if level not in PAR_suppObsLvl:
                 self.logger.info("The observation level " + level + " is not supported by MIAPPE at this moment and will not be validated.")
                 self.logger.info("Following observation levels are supported: " + str(PAR_suppObsLvl) + ".")
-
+            if self.filename_checker(level):
+                self.logger.error(f"ERROR: The obeservationLevel {level} contains chracters that are not supported in a windows filename. Some files will not be created.")
             oa_mt = OntologyAnnotation(
                 term="phenotyping", term_accession="", term_source="")
             oa_tt = OntologyAnnotation(
@@ -338,11 +348,11 @@ class BrapiToIsaConverter:
                 for obs_unit_attribute in obs_unit.keys():
                     if obs_unit_attribute == "observationLevels" and obs_unit['observationLevels']:
                         for obslvls in obs_unit['observationLevels'].split(","):
-                            if len(obslvl.split(":")) == 2:
+                            if len(obslvls.split(":")) == 2:
                                 a, b = obslvls.split(":")
                                 row[head.index(
                                     "observationLevels[{}]".format(a))] = b
-                            if len(obslvl.split(":")) == 1:
+                            elif len(obslvls.split(":")) == 1:
                                 row[head.index(
                                     "observationLevels[{}]".format(obslvl))] = obslvl
                     if obs_unit_attribute in obs_unit_header:
