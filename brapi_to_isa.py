@@ -407,7 +407,7 @@ def main(arg=SERVER):
                     # isatools.isatab.dumps(investigation)  # dumps() writes out the ISA
                     # !!!: fix isatab.py to access other protocol_type values to enable Assay Tab serialization
                     # !!!: if Assay Table is missing the 'Assay Name' field, remember to check protocol_type used !!!
-                    isatab.dump(isa_obj=investigation, output_path=output_directory)
+                    #isatab.dump(isa_obj=investigation, output_path=output_directory)
                     logger.info('ISA-TAB DUMP DONE!...')
                 except IOError as ioe:
                     logger.info('CONVERSION FAILED!...')
