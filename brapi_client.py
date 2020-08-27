@@ -180,6 +180,7 @@ class BrapiClient:
         params = params or {}
         url = url_path_join(self.endpoint, path)
         session = requests.Session()
+        session.verify = False
         retry = Retry(connect=3, backoff_factor=15)
         adapter = HTTPAdapter(max_retries=retry)
         session.mount('http://', adapter)
