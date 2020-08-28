@@ -14,6 +14,8 @@ from isatools import isatab
 
 from isatools.model import *
 
+from dump import ISADumper
+
 from brapi_client import BrapiClient
 from brapi_to_isa_converter import BrapiToIsaConverter, att_test, PAR_NAinData, PAR_NAinBrAPI, PAR_defaultObsLvl, PAR_suppObsLvl
 
@@ -408,6 +410,7 @@ def main(arg=SERVER):
                     # !!!: fix isatab.py to access other protocol_type values to enable Assay Tab serialization
                     # !!!: if Assay Table is missing the 'Assay Name' field, remember to check protocol_type used !!!
                     #isatab.dump(isa_obj=investigation, output_path=output_directory)
+                    ISADumper.dump(isa_obj=investigation, output_path=output_directory)
                     logger.info('ISA-TAB DUMP DONE!...')
                 except IOError as ioe:
                     logger.info('CONVERSION FAILED!...')
