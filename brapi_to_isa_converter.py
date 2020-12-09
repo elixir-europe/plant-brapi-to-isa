@@ -21,7 +21,7 @@ def get_attribute_or_na(dictionary, attribute, NA=""):
 
 PAR_NAinData = "NA in endpoint"
 PAR_NAinBrAPI = "NA in BrAPI"
-PAR_defaultObsLvl = "plant"
+PAR_defaultObsLvl = "plant" # TODO: check this can generate misleading data
 PAR_suppObsLvl = ['study', 'block', 'sub-block', 'plot', 'sub-plot', 'pot', 'plant']
 
 class BrapiToIsaConverter:

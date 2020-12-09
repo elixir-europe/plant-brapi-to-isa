@@ -89,6 +89,8 @@ def create_study_sample_and_assay(client, brapi_study_id, isa_study,  growth_pro
     for k,assay in enumerate(isa_study.assays):
         obs_level_to_assay[assay.characteristic_categories[0]] = k
 
+    all_samples = []
+    all_levels = set()
     treatments = defaultdict(list)
     allready_converted_obs_unit = [] # Allow to handle multiyear observation units NOTE (INRA specific)
 
@@ -100,6 +102,7 @@ def create_study_sample_and_assay(client, brapi_study_id, isa_study,  growth_pro
         else:
             assay_level = 0
             obslvl = PAR_defaultObsLvl
+        all_levels.add(obslvl)
         # Getting the relevant germplasm used for that observation event:
         # ---------------------------------------------------------------
         this_source = isa_study.get_source(obs_unit['germplasmName'])
@@ -157,10 +160,10 @@ def create_study_sample_and_assay(client, brapi_study_id, isa_study,  growth_pro
 
             # Creating the corresponding ISA sample entity for structure the document:
             # ------------------------------------------------------------------------
-            growth_process = Process(executes_protocol=growth_protocol)
-            growth_process.inputs.append(this_source)
-            growth_process.outputs.append(this_isa_sample)
-            isa_study.process_sequence.append(growth_process)
+            # growth_process = Process(executes_protocol=growth_protocol)
+            # growth_process.inputs.append(this_source)
+            # growth_process.outputs.append(this_isa_sample)
+            # isa_study.process_sequence.append(growth_process)
 
         # Assays at observation unit level
         # --------------------------------
@@ -169,10 +172,10 @@ def create_study_sample_and_assay(client, brapi_study_id, isa_study,  growth_pro
 
         # TODO: This seems to have no impact, check with @procassera et al
         #isa_study.assays[assay_level].samples.append(this_isa_sample)
-
-        phenotyping_process = Process(executes_protocol=phenotyping_protocol)
-        phenotyping_process.inputs.append(this_isa_sample)
-        phenotyping_process.name =  get_attribute_or_na(obs_unit, 'observationLevel', PAR_defaultObsLvl).lower()
+        #
+        # phenotyping_process = Process(executes_protocol=phenotyping_protocol)
+        # phenotyping_process.inputs.append(this_isa_sample)
+        # phenotyping_process.name =  get_attribute_or_na(obs_unit, 'observationLevel', PAR_defaultObsLvl).lower()
 
         # Adding Parameter Value[Collection Date] column
         # col_date_pp = ProtocolParameter(parameter_name=OntologyAnnotation(term="Collection Date"))
@@ -185,28 +188,71 @@ def create_study_sample_and_assay(client, brapi_study_id, isa_study,  growth_pro
         # sample_collection_process.parameter_values.append(sampl_des_pv)
         
         # Data Transformation
+        #data_transformation_process = Process(executes_protocol=data_transformation_protocol)
+
+        #test
+        all_samples.append(this_isa_sample)
+
+        # # Adding Raw Data File column
+        # RAW_datafile = DataFile(filename=PAR_NAinData,
+        #                                 label="Raw Data File",
+        #                                 generated_from=[this_isa_sample])
+        # phenotyping_process.outputs.append(RAW_datafile)
+        # data_transformation_process.inputs.append(RAW_datafile)
+        #
+        # # Adding Derived Data File column
+        # #TODO: this is used here and for datafile generation, make it DRY in a dedicated method getDataFileNAme
+        # #TODO: the level part is also used at the begining of the for obsUnit loop
+        # datafilename = 'd_' + str(brapi_study_id) + '_' + get_attribute_or_na(obs_unit, 'observationLevel', PAR_defaultObsLvl).lower() + '.txt'
+        # DER_datafile = DataFile(filename=datafilename,
+        #                                 label="Derived Data File")
+        # data_transformation_process.outputs.append(DER_datafile)
+        #
+        # isa_study.assays[assay_level].process_sequence.append(phenotyping_process)
+        # plink(growth_process, phenotyping_process)
+        #
+        # isa_study.assays[assay_level].process_sequence.append(data_transformation_process)
+        # plink(phenotyping_process, data_transformation_process)
+
+    # BEGIN test
+
+    for level in all_levels:
         data_transformation_process = Process(executes_protocol=data_transformation_protocol)
+
+        phenotyping_process = Process(executes_protocol=phenotyping_protocol)
+        phenotyping_process.inputs.append(this_isa_sample)
+        phenotyping_process.name = level
 
         # Adding Raw Data File column
         RAW_datafile = DataFile(filename=PAR_NAinData,
-                                        label="Raw Data File",
-                                        generated_from=[this_isa_sample])
+                                label="Raw Data File",
+                                generated_from=all_samples)
         phenotyping_process.outputs.append(RAW_datafile)
         data_transformation_process.inputs.append(RAW_datafile)
-        
+
+        for sample in all_samples:
+            growth_process = Process(executes_protocol=growth_protocol)
+            growth_process.inputs.append(sample.derives_from)
+            growth_process.outputs.append(sample)
+            isa_study.process_sequence.append(growth_process)
+
+
         # Adding Derived Data File column
-        datafilename = 'd_' + str(brapi_study_id) + '_' + get_attribute_or_na(obs_unit, 'observationLevel', PAR_defaultObsLvl).lower() + '.txt'
+        #TODO: this is used here and for datafile generation, make it DRY in a dedicated method getDataFileNAme
+        # TODO: the level part is also used at the begining of the for obsUnit loop
+        datafilename = 'd_' + str(brapi_study_id) + '_' + level + '.txt'
         DER_datafile = DataFile(filename=datafilename,
-                                        label="Derived Data File")
+                                label="Derived Data File")
         data_transformation_process.outputs.append(DER_datafile)
 
-        isa_study.assays[assay_level].process_sequence.append(phenotyping_process)
-        plink(growth_process, phenotyping_process)
+        isa_study.assays[obs_level_to_assay[level]].process_sequence.append(phenotyping_process)
+        #plink(growth_process, phenotyping_process)
 
-        isa_study.assays[assay_level].process_sequence.append(data_transformation_process)
+        isa_study.assays[obs_level_to_assay[level]].process_sequence.append(data_transformation_process)
         plink(phenotyping_process, data_transformation_process)
 
-        
+    #END test
+
     # Mapping treatments to ISA study Factor Value:
     # ---------------------------------------------
     for factor, modalities in treatments.items():
@@ -216,148 +262,6 @@ def create_study_sample_and_assay(client, brapi_study_id, isa_study,  growth_pro
         f.comments.append(Comment(name="Study Factor Description", value=PAR_NAinBrAPI))           
         isa_study.factors.append(f)
 
-
-def create_study_sample_and_assay_full(client, brapi_study_id, isa_study,  growth_protocol, phenotyping_protocol, data_transformation_protocol, OBSERVATIONUNITLIST):
-
-    spat_dist_mapping_dictionary = {
-        "X": "X",
-        "Y": "Y",
-        "blockNumber": "block",
-        "plotNumber": "plot",
-        "plantNumber": "plant",
-        "replicate": "replicate"
-    }
-
-
-    # connecting the correct observation level to the correct assayobject
-    # NOTE observation level is temporarily stored inside isa_study.assays[i].characteristic_categories[0] better field available?
-    obs_level_to_assay = {}
-    for k,assay in enumerate(isa_study.assays):
-        obs_level_to_assay[assay.characteristic_categories[0]] = k
-
-    treatments = defaultdict(list)
-    allready_converted_obs_unit = [] # Allow to handle multiyear observation units NOTE (INRA specific)
-    for obs_unit in OBSERVATIONUNITLIST:
-        if 'observationLevel' in obs_unit and obs_unit['observationLevel']:
-            assay_level = obs_level_to_assay[obs_unit['observationLevel'].lower()]
-            obslvl = obs_unit['observationLevel'].lower()
-        else:
-            assay_level = 0
-            obslvl = PAR_defaultObsLvl
-        # Getting the relevant germplasm used for that observation event:
-        # ---------------------------------------------------------------
-        this_source = isa_study.get_source(obs_unit['germplasmName'])
-        if this_source and obs_unit['observationUnitName'] not in allready_converted_obs_unit:
-            this_isa_sample = Sample(
-                name= obs_unit['observationUnitName'],
-                derives_from=[this_source])
-            allready_converted_obs_unit.append(obs_unit['observationUnitName'])
-
-            c = Characteristic(category=OntologyAnnotation(term="Observation Unit Type"),
-                               value=OntologyAnnotation(term=obslvl,
-                                                        term_source="",
-                                                        term_accession=""))
-            this_isa_sample.characteristics.append(c)
-
-            spat_dist = []
-            for key in spat_dist_mapping_dictionary:
-                if get_attribute_or_na(obs_unit, key):
-                    spat_dist.append(spat_dist_mapping_dictionary[key] + ':' + obs_unit[key])
-            if get_attribute_or_na(obs_unit, 'observationLevels'):
-                for lvl in obs_unit['observationLevels'].split(", "):
-                    if len(lvl.split(":")) == 2:
-                        a, b = lvl.split(":")
-                        spat_dist.append(a + ':' + b)
-                    elif len(lvl.split(":")) == 1:
-                        spat_dist.append(lvl)
-            spat_dist_str = ';'.join(spat_dist)
-            if spat_dist:
-                c = Characteristic(category=OntologyAnnotation(term="Spatial Distribution"),
-                                   value=OntologyAnnotation(term=spat_dist_str,
-                                                            term_source="",
-                                                            term_accession=""))
-                this_isa_sample.characteristics.append(c)
-
-            # Looking for treatment in BRAPI and mapping to ISA samples
-            # ---------------------------------------------------------
-            if get_attribute_or_na(obs_unit, 'treatments'):
-                treatmentbuffer = defaultdict(list)
-                for treatment in obs_unit['treatments']:
-                    if get_attribute_or_na(treatment, 'factor') and get_attribute_or_na(treatment, 'modality'):
-
-                        if str(treatment['modality']) not in treatmentbuffer[treatment['factor']]:
-                            treatmentbuffer[treatment['factor']].append(str(treatment['modality']))
-                for factor,modality in treatmentbuffer.items():
-                    modalities = ','.join(modality)
-                    if modalities not in treatments[factor]:
-                        treatments[factor].append(modalities)
-                    f = StudyFactor(name=factor, factor_type=OntologyAnnotation(term=factor))
-                    fv = FactorValue(factor_name=f,
-                                     value=OntologyAnnotation(term=modalities,
-                                                              term_source="",
-                                                              term_accession=""))
-                    this_isa_sample.factor_values.append(fv)
-            isa_study.samples.append(this_isa_sample)
-
-            # Creating the corresponding ISA sample entity for structure the document:
-            # ------------------------------------------------------------------------
-            growth_process = Process(executes_protocol=growth_protocol)
-            growth_process.inputs.append(this_source)
-            growth_process.outputs.append(this_isa_sample)
-            isa_study.process_sequence.append(growth_process)
-
-        # Assays at observation unit level
-        # --------------------------------
-
-        # !!!: fix isatab.py to access other protocol_type values to enable Assay Tab serialization
-
-        isa_study.assays[assay_level].samples.append(this_isa_sample)
-
-        phenotyping_process = Process(executes_protocol=phenotyping_protocol)
-        phenotyping_process.inputs.append(this_isa_sample)
-        phenotyping_process.name =  get_attribute_or_na(obs_unit, 'observationLevel', PAR_defaultObsLvl).lower()
-
-        # Adding Parameter Value[Collection Date] column
-        # col_date_pp = ProtocolParameter(parameter_name=OntologyAnnotation(term="Collection Date"))
-        # col_date_pv = ParameterValue(category=col_date_pp,value=OntologyAnnotation(term=PAR_NAinBrAPI))
-        # sample_collection_process.parameter_values.append(col_date_pv)
-
-        # Adding Parameter Value[Sample Description] column
-        # sampl_des_pp = ProtocolParameter(parameter_name=OntologyAnnotation(term="Sample Description"))
-        # sampl_des_pv = ParameterValue(category=sampl_des_pp,value=OntologyAnnotation(term=PAR_NAinBrAPI))
-        # sample_collection_process.parameter_values.append(sampl_des_pv)
-
-        # Data Transformation
-        data_transformation_process = Process(executes_protocol=data_transformation_protocol)
-
-        # Adding Raw Data File column
-        RAW_datafile = DataFile(filename=PAR_NAinData,
-                                label="Raw Data File",
-                                generated_from=[this_isa_sample])
-        phenotyping_process.outputs.append(RAW_datafile)
-        data_transformation_process.inputs.append(RAW_datafile)
-
-        # Adding Derived Data File column
-        datafilename = 'd_' + str(brapi_study_id) + '_' + get_attribute_or_na(obs_unit, 'observationLevel', PAR_defaultObsLvl).lower() + '.txt'
-        DER_datafile = DataFile(filename=datafilename,
-                                label="Derived Data File")
-        data_transformation_process.outputs.append(DER_datafile)
-
-        isa_study.assays[assay_level].process_sequence.append(phenotyping_process)
-        plink(growth_process, phenotyping_process)
-
-        isa_study.assays[assay_level].process_sequence.append(data_transformation_process)
-        plink(phenotyping_process, data_transformation_process)
-
-
-    # Mapping treatments to ISA study Factor Value:
-    # ---------------------------------------------
-    for factor, modalities in treatments.items():
-        f = StudyFactor(name=factor, factor_type=OntologyAnnotation(term=factor))
-        modality = ";".join(modalities)
-        f.comments.append(Comment(name="Study Factor Values",value=modality))
-        f.comments.append(Comment(name="Study Factor Description", value=PAR_NAinBrAPI))
-        isa_study.factors.append(f)
 
 
 
