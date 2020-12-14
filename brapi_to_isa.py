@@ -224,17 +224,24 @@ def create_study_sample_and_assay(client, brapi_study_id, isa_study,  growth_pro
         phenotyping_process.name = level
 
         # Adding Raw Data File column
+        # RAW_datafile = DataFile(filename=PAR_NAinData,
+        #                         label="Raw Data File",
+        #                         generated_from=all_samples[0])
         RAW_datafile = DataFile(filename=PAR_NAinData,
-                                label="Raw Data File",
-                                generated_from=all_samples)
+                                label="Raw Data File")
         phenotyping_process.outputs.append(RAW_datafile)
         data_transformation_process.inputs.append(RAW_datafile)
 
+
+
+
         for sample in all_samples:
             growth_process = Process(executes_protocol=growth_protocol)
-            growth_process.inputs.append(sample.derives_from)
+            growth_process.inputs.append(sample.derives_from[0])
             growth_process.outputs.append(sample)
             isa_study.process_sequence.append(growth_process)
+            # if growth_process.name != 'None':
+            #     print(growth_process.name)
 
 
         # Adding Derived Data File column
@@ -246,7 +253,7 @@ def create_study_sample_and_assay(client, brapi_study_id, isa_study,  growth_pro
         data_transformation_process.outputs.append(DER_datafile)
 
         isa_study.assays[obs_level_to_assay[level]].process_sequence.append(phenotyping_process)
-        #plink(growth_process, phenotyping_process)
+        plink(growth_process, phenotyping_process)
 
         isa_study.assays[obs_level_to_assay[level]].process_sequence.append(data_transformation_process)
         plink(phenotyping_process, data_transformation_process)
