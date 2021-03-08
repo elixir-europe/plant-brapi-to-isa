@@ -96,9 +96,6 @@ BrAPI v1.3 and earlier does not support all the necessary attributes that are ne
 
 Values that are supported by BrAPI but are not implemented in the given endpoint, will be filled in with `"NA in endpoint"`.
 
-## Limitations of ISA-tools
-
-Because Phenotyping is not a supported protocol in ISA-tools, we are forced to use nucleic acid sequencing as protocol_type to have an assay name column in the assay file. This is not following the MIAPPE standard, so it is needed to manually change this in the investigation file to Phenotyping.
 
 ## Validation
 The dumped ISA-tab files are automatically validated by the ISA-API using the [MIAPPE configuration files](https://github.com/MIAPPE/ISA-Tab-for-plant-phenotyping/tree/v1.1/isaconfig-phenotyping/isaconfig-phenotyping-basic). This to ensure MIAPPE compliance. Check the generated validation_log.json file for more details.
@@ -107,7 +104,7 @@ The dumped ISA-tab files are automatically validated by the ISA-API using the [M
 
 * python 3.6 +
 * following python modules:
-    * isatools v0.10.4 +
+    * isatools v0.12.0 +
     * requests
     * pycountry-convert 
     * cachetools
