@@ -1,4 +1,4 @@
-isatools==0.12.0
+isatools>=0.12.0
 requests
 pycountry-convert 
 cachetools
