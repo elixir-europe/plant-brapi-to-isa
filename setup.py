@@ -21,7 +21,7 @@ setup(
     classifiers=[
         "Operating System :: OS Independent"
     ],
-    python_requires='>=3.6',
+    python_requires='>=3.7',
     entry_points={
         'console_scripts': ["brapi2isa=brapi_to_isa:main"]
     }

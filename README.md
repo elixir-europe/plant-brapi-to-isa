@@ -12,14 +12,14 @@ The mapping from ISA to MIAPPE is fully documented here: https://github.com/MIAP
 
 ## Dependencies
 
-* python 3.6 +
+* python 3.7 +
 * following python modules:
-    * isatools v0.10.4 +
+    * isatools v0.13.0 +
     * requests
     * pycountry-convert 
     * cachetools
 
-NOTE: For better MIAPPE compliance, make sure to have [isatools](https://github.com/ISA-tools/isa-api) v0.10.4 + installed. This can be done using 
+NOTE: For better MIAPPE compliance, make sure to have [isatools](https://github.com/ISA-tools/isa-api) v0.13.0 + installed. This can be done using 
 
 ## Installation
 Allows to use this program as a python pip package.
@@ -75,7 +75,7 @@ and possibly
 Test your endpoints [here](http://webapps.ipk-gatersleben.de/brapivalidator/) for BrAPI compliance.
 
 BrAPI to isa is tested and optimized for BrAPI version 1.0, 1.1, 1.2 and 1.3.
-NOTE: BrAPI 2.0 is NOT supported
+NOTE: BrAPI 2.0 is NOT yet supported
 
 ## Output
 
@@ -100,16 +100,6 @@ Values that are supported by BrAPI but are not implemented in the given endpoint
 ## Validation
 The dumped ISA-tab files are automatically validated by the ISA-API using the [MIAPPE configuration files](https://github.com/MIAPPE/ISA-Tab-for-plant-phenotyping/tree/v1.1/isaconfig-phenotyping/isaconfig-phenotyping-basic). This to ensure MIAPPE compliance. Check the generated validation_log.json file for more details.
 
-## Dependencies
-
-* python 3.6 +
-* following python modules:
-    * isatools v0.12.0 +
-    * requests
-    * pycountry-convert 
-    * cachetools
-
-NOTE: For better MIAPPE compliance, make sure to have [isatools](https://github.com/ISA-tools/isa-api) v0.10.4 + installed. This can be done using 
 
 ### External resources
 
