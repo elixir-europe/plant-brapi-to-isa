@@ -14,12 +14,12 @@ The mapping from ISA to MIAPPE is fully documented here: https://github.com/MIAP
 
 * python 3.7 +
 * following python modules:
-    * isatools v0.13.0 +
+    * isatools
     * requests
     * pycountry-convert 
     * cachetools
 
-NOTE: For better MIAPPE compliance, make sure to have [isatools](https://github.com/ISA-tools/isa-api) v0.13.0 + installed. This can be done using 
+NOTE: For better MIAPPE compliance, make sure to have [isatools](https://github.com/ISA-tools/isa-api) v0.12.0 + installed.
 
 ## Installation
 Allows to use this program as a python pip package.
