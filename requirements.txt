@@ -2,3 +2,4 @@ isatools>=0.12.2
 requests
 pycountry-convert 
 cachetools
+markupsafe==2.0.1
