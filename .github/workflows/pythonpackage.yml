@@ -36,7 +36,7 @@ jobs:
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
     - name: Test faidare
       run: |
-        python brapi_to_isa.py -e https://urgi.versailles.inra.fr/faidare/brapi/v1/ -t dXJuOlVSR0kvdHJpYWwvMjM=
+        python brapi_to_isa.py -e https://urgi.versailles.inrae.fr/faidare/brapi/v1/ -t aHR0cHM6Ly9kb2kub3JnLzEwLjE1NDU0L0lBU1NUTg==
     - name: Test BrAPIPPA
       run: |
         python brapi_to_isa.py -e https://pippa.psb.ugent.be/BrAPIPPA/brapi/v1/ -t 4
