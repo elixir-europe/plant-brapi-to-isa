@@ -18,6 +18,7 @@ The mapping from ISA to MIAPPE is fully documented here: https://github.com/MIAP
     * requests
     * pycountry-convert 
     * cachetools
+    * markupsafe
 
 NOTE: For better MIAPPE compliance, make sure to have [isatools](https://github.com/ISA-tools/isa-api) v0.12.0 + installed.
 
